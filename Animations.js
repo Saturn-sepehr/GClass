@@ -333,3 +333,7 @@ export function marquee (target , dir , duration , xOffset = 0 , yOffset = 0 , n
 export function flip (state , ease , dur){
     Flip.from(state, {duration: dur, ease: ease || DEFAULT_EASE});
 }
+
+export function animatecss (target , dur , delay , ease, propertyS , propertySValue , propertyE , propertyEValue) {
+    return gsap.fromTo(target , {[propertyS]:propertySValue} , {[propertyE]:propertyEValue , ease:ease, duration:dur, delay:delay})
+}

@@ -1,5 +1,5 @@
 import gsap from 'gsap'
-import { bounce, expandH, expandV, shake, SpawnH, SpawnV, spawnSpinCCW, spawnSpinCW, spinCCW, spinCW, verticalmove, expandA, expandmove, typewriter, bell, spawnBlur, spawnFade, spawnXDown, spawnXUp, spawnYRight, spawnYLeft, pulse, radiate, hover, expandRight, expandLeft, expandUp, expandDown, marquee, magnet, reset } from './Animations'
+import { bounce, expandH, expandV, shake, SpawnH, SpawnV, spawnSpinCCW, spawnSpinCW, spinCCW, spinCW, verticalmove, expandA, expandmove, typewriter, bell, spawnBlur, spawnFade, spawnXDown, spawnXUp, spawnYRight, spawnYLeft, pulse, radiate, hover, expandRight, expandLeft, expandUp, expandDown, marquee, magnet, reset, animatecss } from './Animations'
 import { customAnims } from './CustomAnims'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
 
@@ -70,6 +70,9 @@ export function initListeners() {
             { sel: ".expand-all", from: { opacity: 0, scale: 0 }, play: (el, delay, dur, ease) => expandA(el, delay, dur, ease) },
             { sel: ".typewriter", typewriter: true, from: { text: "" }, play: (el, delay, dur, ease) => typewriter(el, el.innerHTML, dur, delay, ease) },
             { sel: ".typewriter-split", typewriter: true, typewriterSplit: true, from: { opacity: 0 }, play: (el, delay, dur, ease) => playTypewriterSplit(el, delay, dur, ease) },
+            // Generic arbitrary-property fromTo. Swap the property names/values
+            // to taste; `from` must match the start so leave/scroll reverse cleanly.
+            { sel: ".animate-css", from: { y: 50, opacity: 0 }, play: (el, delay, dur, ease) => animatecss(el, dur, delay, ease, "y", 50, "y", 0) },
         ].concat(customAnims)
 
         // Leave animations derive from spawnConfigs so adding an entry here
@@ -858,6 +861,62 @@ export function initListeners() {
             })
         }
 
+        // Dynamic arbitrary-property animation. Class shape:
+        //   css-<prop>-<from>-<to>          -> ping-pong loop (yoyo)
+        //   spawn-css-<prop>-<from>-<to>    -> play once on load/appear
+        //   hover-css-<prop>-<from>-<to>    -> ping-pong while hovered
+        //   click-css-<prop>-<from>-<to>    -> play once on mousedown
+        // Values are numbers (decimals/negatives ok). hover/click wrap in a div
+        // so the hit area stays fixed; `from` should equal the resting value.
+        const CSS_VAL = "(-?\\d+(?:\\.\\d+)?|#[0-9a-fA-F]{3,8})"
+        const CSS_ANIM_RE = new RegExp(`^((spawn|hover|click)-)?css-([a-zA-Z]+)-${CSS_VAL}-${CSS_VAL}$`)
+        const parseCssVal = (s) => /^#/.test(s) ? s : Number(s)
+        const parseCssAnim = (el) => {
+            for (const c of el.classList) {
+                const m = c.match(CSS_ANIM_RE)
+                if (!m) continue
+                return { mode: m[2] || "loop", prop: m[3], from: parseCssVal(m[4]), to: parseCssVal(m[5]) }
+            }
+            return null
+        }
+        const cssTweens = []
+        const setupCssAnims = (el) => {
+            const anim = parseCssAnim(el)
+            if (!anim) return
+            const dur = readClassNumber(el, "time-", 1)
+            const ease = getEase(el)
+            const key = "_cssAnim"
+            const loopVars = { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: -1 }
+            if (anim.mode === "loop") {
+                el[key]?.kill()
+                el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, loopVars)
+                cssTweens.push(el[key])
+            } else if (anim.mode === "spawn") {
+                el[key]?.kill()
+                el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease })
+                cssTweens.push(el[key])
+            } else if (anim.mode === "hover") {
+                const area = wrapTarget(el)
+                addListener(area, "mouseenter", () => {
+                    el[key]?.kill()
+                    el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { ...loopVars })
+                    cssTweens.push(el[key])
+                })
+                addListener(area, "mouseleave", () => {
+                    el[key]?.kill()
+                    el[key] = gsap.to(el, { [anim.prop]: anim.from, duration: dur, ease })
+                    cssTweens.push(el[key])
+                })
+            } else if (anim.mode === "click") {
+                const area = wrapTarget(el)
+                addListener(area, "mousedown", () => {
+                    el[key]?.kill()
+                    el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: 1 })
+                    cssTweens.push(el[key])
+                })
+            }
+        }
+
         // Bind click + loop animations to every element present at load, tagging
         // them so the MutationObserver below never double-binds a dynamic one.
         gsap.utils.toArray("body *").forEach((el) => {
@@ -866,6 +925,7 @@ export function initListeners() {
             setupClicks(el)
             setupLoops(el)
             setupHoverClick(el)
+            setupCssAnims(el)
         })
         applyMagnet()
 
@@ -937,6 +997,7 @@ export function initListeners() {
                         setupClicks(el)
                         setupLoops(el)
                         setupHoverClick(el)
+                        setupCssAnims(el)
                         const wasPinned = el.dataset.gsapPinned
                         setupPin(el)
                         if (!wasPinned && el.dataset.gsapPinned) pinned = true
@@ -995,6 +1056,8 @@ export function initListeners() {
             magnetListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
             magnetQuery?.removeEventListener("change", applyMagnet)
             loopEls.forEach(({ el, key }) => el[key]?.kill())
+            cssTweens.forEach((t) => t?.kill())
+            cssTweens.length = 0
             gsap.utils.toArray(".typewriter").forEach(el => el.typewriter?.kill())
             textSplits.forEach((s) => s.revert())
             textSplits.length = 0
