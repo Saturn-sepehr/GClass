@@ -26,13 +26,10 @@ const defaults = {
     minTextPartDuration: 0.3,
 }
 
-gsap.registerPlugin(TextPlugin, ScrollTrigger, SplitText)
+export default function initListeners() {
+    gsap.registerPlugin(TextPlugin, ScrollTrigger, SplitText)
 
-// Initialises the whole animation system against the current DOM and returns
-// a cleanup function that tears it all down. Call it once the page/DOM is
-// ready (see AnimToggle.js); re-call it to re-scan (e.g. on route change).
-export function initListeners() {
-        const registeredListeners = []
+    const registeredListeners = []
         const addListener = (el, type, fn) => {
             el.addEventListener(type, fn)
             registeredListeners.push({ el, type, fn })
@@ -45,6 +42,22 @@ export function initListeners() {
             const match = [...el.classList].find(c => c.startsWith("ease-"))
             return match ? match.split("-")[1] : defaults.ease
         }
+
+        // `.preserve` keeps an already-rendered element (e.g. one that persists
+        // in a shared layout across route changes) from being re-animated when
+        // the Listeners setup re-runs. The element is animated the first time it
+        // appears and tagged with data-gsap-preserved; on a later path change the
+        // tag survives on the persistent DOM node, so setup skips it.
+        // `.preserve` keeps an already-rendered element from being re-animated. It
+        // applies to the element AND its children: any preserved ancestor also
+        // suppresses animation on this node.
+        const isPreserved = (el) => {
+            for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+                if (node.classList.contains("preserve") && node.dataset.gsapPreserved) return true
+            }
+            return false
+        }
+        const markPreserved = (el) => { if (el.classList.contains("preserve")) el.dataset.gsapPreserved = "1" }
 
         const spawnConfigs = [            { sel: ".spawn-down", from: { opacity: 0, y: -defaults.spawnOffset }, play: (el, delay, dur, ease) => SpawnV(el, delay, -defaults.spawnOffset, dur, ease) },
             { sel: ".spawn-up", from: { opacity: 0, y: defaults.spawnOffset }, play: (el, delay, dur, ease) => SpawnV(el, delay, defaults.spawnOffset, dur, ease) },
@@ -103,6 +116,10 @@ export function initListeners() {
                 tween: node._spawnTween || node._scrollTween,
                 from: config.from,
                 ease: getEase(node),
+                parent: node.parentNode,
+                next: node.nextElementSibling,
+                margin: getComputedStyle(node).margin,
+                zIndex: getComputedStyle(node).zIndex,
             })
         }
 
@@ -183,15 +200,34 @@ export function initListeners() {
             if (!snap || node._leaving) return
             node._leaving = true
 
+            // Hold the removed node's layout space during the leave animation so
+            // the content below doesn't jump up the instant it's removed. The
+            // node is re-attached as a fixed ghost (out of layout), so without
+            // this placeholder everything beneath snaps into place before the
+            // exit finishes. The spacer is dropped once the leave completes.
+            const placeSpacer = (snap) => {
+                if (!snap.parent || snap.parent.nodeType !== 1) return null
+                const spacer = document.createElement("div")
+                spacer.style.cssText = `box-sizing:border-box;width:${snap.rect.width}px;height:${snap.rect.height}px;`
+                if (snap.margin) spacer.style.margin = snap.margin
+                // The captured `next` sibling may itself have been removed by the
+                // time this runs (e.g. several siblings leave together). Only use
+                // it as an anchor if it's still a live child; otherwise append.
+                const next = snap.next && snap.next.parentNode === snap.parent ? snap.next : null
+                snap.parent.insertBefore(spacer, next)
+                return spacer
+            }
+
             // True reverse of the real tween. If the node was already removed
             // (external removal), re-attach that same element fixed at its last
             // position so the reversed tween is actually visible. Observer-facing
             // classes are stripped so the re-attach can't re-trigger enter/leave.
             if (snap.tween) {
                 const reattached = !node.isConnected
+                const spacer = reattached ? placeSpacer(snap) : null
                 if (reattached) {
                     node.classList.remove("leave", "appear", "scroll", "scroll-progress")
-                    node.style.cssText = `position:fixed;left:${snap.rect.left}px;top:${snap.rect.top}px;
+                    node.style.cssText = `position:fixed;z-index:${snap.zIndex};left:${snap.rect.left}px;top:${snap.rect.top}px;
                         width:${snap.rect.width}px;height:${snap.rect.height}px;margin:0;`
                     document.body.appendChild(node)
                 }
@@ -199,6 +235,7 @@ export function initListeners() {
                 snap.tween.eventCallback("onReverseComplete", () => {
                     if (reattached) node.remove()
                     else node.style.display = "none"
+                    spacer?.remove()
                 })
                 return
             }
@@ -209,15 +246,16 @@ export function initListeners() {
             ghost.innerHTML = snap.html
             const g = ghost.firstElementChild
             g.classList.remove("leave", "appear", "scroll", "scroll-progress")
-            g.style.cssText = `position:fixed;left:${snap.rect.left}px;top:${snap.rect.top}px;
+            g.style.cssText = `position:fixed;z-index:${snap.zIndex};left:${snap.rect.left}px;top:${snap.rect.top}px;
                 width:${snap.rect.width}px;height:${snap.rect.height}px;margin:0;`
             document.body.appendChild(g)
+            const spacer = placeSpacer(snap)
 
             gsap.to(g, {
                 ...snap.from,
                 duration: defaults.effectDuration,
                 ease: snap.ease || defaults.ease,
-                onComplete: () => g.remove(),
+                onComplete: () => { g.remove(); spacer?.remove() },
             })
         }
 
@@ -288,13 +326,13 @@ export function initListeners() {
         const RTL_RE = /[\u0590-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
         const isRTLText = (el) => RTL_RE.test(el.textContent || "")
         // Split granularity. Explicit `.lines` / `.words` override everything;
-        // `.split-per-letter` opts back into the per-character mode (the old
+        // `.letter` opts back into the per-character mode (the old
         // default). Default (no class) is per-WORD: far fewer split nodes, so
         // the per-part spawn is much cheaper to animate and paint.
         const getGranularity = (el) => {
             if (el.classList.contains("lines")) return "lines"
             if (el.classList.contains("words")) return "words"
-            if (el.classList.contains("split-per-letter")) return "chars"
+            if (el.classList.contains("letter")) return "chars"
             return "words"
         }
         // Cursive RTL scripts (Arabic/Persian) render each letter as a distinct
@@ -537,49 +575,20 @@ export function initListeners() {
         // and lets the single ScrollTrigger.refresh() at the end reconcile layout.
         gsap.utils.toArray(".pin").forEach(setupPin)
 
-        spawnConfigs.forEach(({ sel, from, typewriter: isTypewriter, typewriterSplit, play }) => {
-            gsap.utils.toArray(sel + ".scroll:not(.scroll-progress)").forEach((el) => {
-                const { delay, duration } = readTiming(el)
-                const ease = isTypewriter
-                    ? ([...el.classList].find(c => c.startsWith("ease-"))?.split("-")[1] ?? "none")
-                    : getEase(el)
+        // `.scroll`/`.scroll-progress` entrance animation, driven by ScrollTrigger.
+        // Split out into a helper so DYNAMICALLY-added elements (e.g. pagination
+        // rendered after a data fetch) get a trigger too, instead of only elements
+        // already in the DOM at setup time. A `.scroll` element is owned by its
+        // ScrollTrigger; `animateAppear` skips it so the entrance never double-fires.
+        const setupScroll = (el) => {
+            if (el.dataset?.gsapScroll) return
+            if (isTextElement(el)) return
+            el.dataset.gsapScroll = "1"
+            const config = findSpawn(el)
+            if (!config) return
+            const { from, typewriter: isTypewriter, typewriterSplit, play } = config
 
-                const fullText = el.innerHTML
-
-                const enter = () => {
-                    if (el._scrollTween) el._scrollTween.kill()
-                    el._scrollTween = isTypewriter
-                        ? (typewriterSplit
-                            ? playTypewriterSplit(el, delay, duration, ease)
-                            : typewriter(el, fullText, duration, delay, ease))
-                        : play(el, delay, duration, ease)
-                }
-                const reverseToStart = () => {
-                    el._scrollTween?.kill()
-                    if (isTypewriter && !typewriterSplit) {
-                        el.innerHTML = fullText
-                        return
-                    }
-                    if (typewriterSplit) {
-                        const parts = getParts(el, getGranularity(el))
-                        if (parts.length) gsap.to(parts, { opacity: 0, ease, duration: 0.3 })
-                        return
-                    }
-                    el._scrollTween = gsap.to(el, { ...from, ease, duration: 0.3 })
-                }
-
-                scrollTriggers.push(ScrollTrigger.create({
-                    trigger: el,
-                    start: "top bottom",
-                    end: "bottom top",
-                    onEnter: enter,
-                    onEnterBack: enter,
-                    onLeave: reverseToStart,
-                    onLeaveBack: reverseToStart,
-                }))
-            })
-
-            gsap.utils.toArray(sel + ".scroll-progress").forEach((el) => {
+            if (el.classList.contains("scroll-progress")) {
                 const ease = isTypewriter
                     ? ([...el.classList].find(c => c.startsWith("ease-"))?.split("-")[1] ?? "none")
                     : getEase(el)
@@ -612,8 +621,51 @@ export function initListeners() {
                     tl.fromTo(el, { ...from }, { ...to, ease })
                 }
                 scrollTriggers.push(tl.scrollTrigger)
+                return
+            }
+
+            if (!el.classList.contains("scroll")) return
+            const { delay, duration } = readTiming(el)
+            const ease = isTypewriter
+                ? ([...el.classList].find(c => c.startsWith("ease-"))?.split("-")[1] ?? "none")
+                : getEase(el)
+
+            const fullText = el.innerHTML
+
+            const enter = () => {
+                if (el._scrollTween) el._scrollTween.kill()
+                el._scrollTween = isTypewriter
+                    ? (typewriterSplit
+                        ? playTypewriterSplit(el, delay, duration, ease)
+                        : typewriter(el, fullText, duration, delay, ease))
+                    : play(el, delay, duration, ease)
+            }
+            const reverseToStart = () => {
+                el._scrollTween?.kill()
+                if (isTypewriter && !typewriterSplit) {
+                    el.innerHTML = fullText
+                    return
+                }
+                if (typewriterSplit) {
+                    const parts = getParts(el, getGranularity(el))
+                    if (parts.length) gsap.to(parts, { opacity: 0, ease, duration: 0.3 })
+                    return
+                }
+                el._scrollTween = gsap.to(el, { ...from, ease, duration: 0.3 })
+            }
+
+            const st = ScrollTrigger.create({
+                trigger: el,
+                start: "top bottom",
+                end: "bottom top",
+                onEnter: enter,
+                onEnterBack: enter,
+                onLeave: reverseToStart,
+                onLeaveBack: reverseToStart,
             })
-        })
+            scrollTriggers.push(st)
+        }
+        gsap.utils.toArray(".scroll, .scroll-progress").forEach(setupScroll)
 
         // SplitText scroll variants: `.spawn-text-<spawn>.scroll` plays the per-part
         // tween when the element enters the viewport and reverses on exit.
@@ -668,9 +720,30 @@ export function initListeners() {
         ScrollTrigger.refresh()
         window.addEventListener("load", ScrollTrigger.refresh)
 
+        // Entrance tweens (expand-down / spawn-down on containers) shift layout
+        // while they run. ScrollTriggers bound to their descendants (list rows,
+        // pagination, cards) that get measured mid-animation report stale,
+        // compressed positions, so they all fire onEnter/onLeave at the same
+        // scroll spot regardless of their real resting place. Debounce a refresh
+        // that fires shortly after the LAST entrance tween completes, re-measuring
+        // every trigger at its true position.
+        let refreshTimer = null
+        const scheduleRefresh = () => {
+            clearTimeout(refreshTimer)
+            refreshTimer = setTimeout(() => {
+                refreshTimer = null
+                ScrollTrigger.refresh()
+            }, 60)
+        }
+        // A couple of early passes too, in case no entrance tween completes on a
+        // scroll-only page: catch mounts that settle before anything finishes.
+        setTimeout(scheduleRefresh, 400)
+        setTimeout(scheduleRefresh, 1200)
+
         spawnConfigs.forEach(({ sel, typewriter: isTypewriter, typewriterSplit, play }) => {
             gsap.utils.toArray(sel).forEach((el) => {
                 if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
+                if (isPreserved(el)) return
                 const { delay, duration } = readTiming(el)
                 if (isTypewriter) {
                     const easeClass = [...el.classList].find(c => c.startsWith("ease-"))
@@ -686,8 +759,11 @@ export function initListeners() {
                     el._spawnTween.eventCallback("onComplete", () => {
                         if (el.classList.contains("leave")) refreshLeaveRect(el)
                         if (el.classList.contains("flip")) captureFlip(el)
+                        if (isCompatibility(el)) resumeCompatLoops(el)
+                        scheduleRefresh()
                     })
                 }
+                markPreserved(el)
             })
         })
 
@@ -699,8 +775,10 @@ export function initListeners() {
             const tSel = "." + TEXT_PREFIX + sel.slice(1)
             gsap.utils.toArray(tSel).forEach((el) => {
                 if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
+                if (isPreserved(el)) return
                 const { delay, duration } = readTiming(el)
                 el._spawnTween = playText(el, from, delay, duration, getEase(el))
+                markPreserved(el)
             })
         })
 
@@ -747,21 +825,40 @@ export function initListeners() {
 
         if (magnetQuery) magnetQuery.addEventListener("change", applyMagnet)
 
+        // `.compatibility` lets an always-on loop (shake/bounce/pulse/...) coexist
+        // with a hover/click interaction on the SAME element. Both write to the
+        // same transform properties, so without this the two tweens fight. While
+        // a hover/click is active we pause every tracked loop tween on the element
+        // and resume it once the interaction ends. Loops are only tracked when the
+        // `.compatibility` class is present, so nothing else changes behaviour.
+        const isCompatibility = (el) => el.classList.contains("compatibility")
+        const compatLoopsOf = (el) => {
+            if (!el._gsapCompatLoops) el._gsapCompatLoops = []
+            return el._gsapCompatLoops
+        }
+        const trackCompatLoop = (el, tween) => {
+            if (tween && isCompatibility(el)) compatLoopsOf(el).push(tween)
+            return tween
+        }
+        const pauseCompatLoops = (el) => compatLoopsOf(el).forEach((t) => t.pause())
+        const resumeCompatLoops = (el) => compatLoopsOf(el).forEach((t) => t.resume())
+
         const setupClicks = (el) => {
             setupMagnet(el)
             if (el.classList.contains("click-hover")) {
+                const area = wrapTarget(el)
                 let touch = false
                 const duration = readClassNumber(el, "ctime-", defaults.clickDuration)
                 const lift = readClassNumber(el, "amount-", defaults.clickOffset)
                 const elEase = getEase(el)
 
-                addListener(el, "mousedown", () => { if (!touch) verticalmove(el, -lift / 2, duration, elEase) })
-                addListener(el, "mouseover", () => { if (!touch) verticalmove(el, -lift, duration, elEase) })
-                addListener(el, "mouseleave", () => { if (!touch) verticalmove(el, 0, duration, elEase) })
-                addListener(el, "mouseup", () => { if (!touch) verticalmove(el, -lift, duration, elEase) })
+                addListener(area, "mousedown", () => { if (!touch) { pauseCompatLoops(el); verticalmove(el, -lift / 2, duration, elEase) } })
+                addListener(area, "mouseover", () => { if (!touch) { pauseCompatLoops(el); verticalmove(el, -lift, duration, elEase) } })
+                addListener(area, "mouseleave", () => { if (!touch) { verticalmove(el, 0, duration, elEase); resumeCompatLoops(el) } })
+                addListener(area, "mouseup", () => { if (!touch) verticalmove(el, -lift, duration, elEase) })
 
-                addListener(el, "touchstart", () => { touch = true, verticalmove(el, lift / 2, duration, elEase) })
-                addListener(el, "touchend", () => {
+                addListener(area, "touchstart", () => { touch = true, pauseCompatLoops(el), verticalmove(el, lift / 2, duration, elEase) })
+                addListener(area, "touchend", () => {
                     touch = true, verticalmove(el, 0, duration, elEase), setTimeout(() => { touch = false }, 0)
                 })
             }
@@ -771,24 +868,14 @@ export function initListeners() {
                 const lift = readClassNumber(el, "amount-", defaults.clickExpandOffset)
                 const elEase = getEase(el)
 
-                addListener(el, "mousedown", () => { if (!touch) expandmove(el, 1, duration, elEase) })
-                addListener(el, "mouseover", () => { if (!touch) expandmove(el, lift, duration, elEase) })
-                addListener(el, "mouseleave", () => { if (!touch) expandmove(el, 1, duration, elEase) })
+                addListener(el, "mousedown", () => { if (!touch) { pauseCompatLoops(el); expandmove(el, 1, duration, elEase) } })
+                addListener(el, "mouseover", () => { if (!touch) { pauseCompatLoops(el); expandmove(el, lift, duration, elEase) } })
+                addListener(el, "mouseleave", () => { if (!touch) { expandmove(el, 1, duration, elEase); resumeCompatLoops(el) } })
                 addListener(el, "mouseup", () => { if (!touch) expandmove(el, lift, duration, elEase) })
 
-                addListener(el, "touchstart", () => { touch = true, expandmove(el, lift, duration, elEase) })
+                addListener(el, "touchstart", () => { touch = true, pauseCompatLoops(el), expandmove(el, lift, duration, elEase) })
                 addListener(el, "touchend", () => {
                     touch = true, expandmove(el, 1, duration, elEase), setTimeout(() => { touch = false }, 0)
-                })
-            }
-            if (el.classList.contains("unclick")) {
-                const lift = readClassNumber(el, "amount-", defaults.clickOffset)
-                const duration = readClassNumber(el, "ctime-", defaults.clickDuration)
-                const elEase = getEase(el)
-
-                addListener(el, "mousedown", () => {
-                    el.shakeanim?.kill()
-                    el.shakeanim = shake(0, el, lift, duration, elEase)
                 })
             }
         }
@@ -800,7 +887,7 @@ export function initListeners() {
             { sel: ".bounce", build: (el) => bounce(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "bounce" },
             { sel: ".bell", build: (el) => bell(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "bell" },
             { sel: ".pulse", build: (el) => pulse(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "pulse" },
-            { sel: ".radiate", build: (el) => radiate(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "radiate" },
+            { sel: ".radiate", build: (el) => radiate(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el), readClassNumber(el, "radiate-z-", null)), key: "radiate" },
             { sel: ".float", build: (el) => hover(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "float" },
             { sel: ".marquee-left", build: (el) => marquee(el, "left", readClassNumber(el, "time-", 20), readClassNumber(el, "marquee-horizontal-offset-", 0), readClassNumber(el, "marquee-vertical-offset-", 0), el.classList.contains("marquee-no-repeat")), key: "marquee" },
             { sel: ".marquee-right", build: (el) => marquee(el, "right", readClassNumber(el, "time-", 20), readClassNumber(el, "marquee-horizontal-offset-", 0), readClassNumber(el, "marquee-vertical-offset-", 0), el.classList.contains("marquee-no-repeat")), key: "marquee" },
@@ -809,14 +896,46 @@ export function initListeners() {
 ]
 
         const loopEls = []
-
-        const setupLoops = (el) => {
+        const buildLoops = (el) => {
             loopConfigs.forEach(({ sel, build, key }) => {
                 if (el.matches(sel)) {
                     el[key]?.kill()
-                    el[key] = build(el).repeat(-1)
+                    el[key] = trackCompatLoop(el, build(el).repeat(-1))
                 }
             })
+        }
+        // Find an in-progress spawn tween on the element or any ancestor. For a
+        // `.compatibility` element, loop building is deferred until that spawn
+        // settles so clone-based loops (radiate) capture the rect at the element's
+        // FINAL position instead of its mid-spawn transform offset.
+        const findSpawnTween = (el) => {
+            for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+                const t = node._spawnTween
+                if (t && t.progress() < 1) return t
+            }
+            return null
+        }
+        const deferLoopBuild = (el, tween) => {
+            if (!tween.__gsapPendingLoops) tween.__gsapPendingLoops = new Set()
+            tween.__gsapPendingLoops.add(el)
+            if (tween.__gsapPendingHooked) return
+            tween.__gsapPendingHooked = true
+            const existing = tween.eventCallback("onComplete")
+            tween.eventCallback("onComplete", function () {
+                existing && existing.call(this)
+                const pending = tween.__gsapPendingLoops
+                tween.__gsapPendingLoops = new Set()
+                tween.__gsapPendingHooked = false
+                pending.forEach((e) => buildLoops(e))
+            })
+        }
+        const setupLoops = (el) => {
+            const spawnTween = isCompatibility(el) ? findSpawnTween(el) : null
+            if (spawnTween) {
+                deferLoopBuild(el, spawnTween)
+                return
+            }
+            buildLoops(el)
         }
 
         // `hover-<name>` and `click-<name>` trigger one of the loop animations on
@@ -826,6 +945,7 @@ export function initListeners() {
         // shifts under the cursor. Marquee is skipped (its build restructures the
         // DOM).
         const wrapTarget = (el) => {
+            if (!el.classList.contains("wrapdiv")) return el
             if (el._gsapWrap) return el._gsapWrap
             const area = document.createElement("div")
             el.before(area)
@@ -841,21 +961,121 @@ export function initListeners() {
                 if (el.classList.contains("hover-" + name)) {
                     const area = wrapTarget(el)
                     addListener(area, "mouseenter", () => {
+                        pauseCompatLoops(el)
                         el[key]?.kill()
                         el[key] = build(el).repeat(-1)
                     })
                     addListener(area, "mouseleave", () => {
                         el[key]?.kill()
                         el[key] = reset(el, readClassNumber(el, "etime-", defaults.effectDuration), getEase(el))
+                        resumeCompatLoops(el)
                     })
                 } else if (el.classList.contains("click-" + name)) {
                     const area = wrapTarget(el)
                     addListener(area, "mousedown", () => {
+                        pauseCompatLoops(el)
                         el[key]?.kill()
                         el[key] = build(el)
                     })
+                    addListener(area, "mouseleave", () => {
+                        resumeCompatLoops(el)
+                    })
                 }
             })
+        }
+
+        // Dynamic arbitrary-property animation. Class shape:
+        //   css-<prop>-<from>-<to>          -> ping-pong loop (yoyo)
+        //   spawn-css-<prop>-<from>-<to>    -> play once on load/appear
+        //   hover-css-<prop>-<from>-<to>    -> ping-pong while hovered
+        //   click-css-<prop>-<from>-<to>    -> play once on mousedown
+        //   hover-css-<prop>-<to>           -> simple hold while hovered (no from),
+        //                                    reverts to the original value on leave
+        //   click-css-<prop>-<to>           -> simple one-shot to the value on mousedown
+        // Values are numbers (decimals/negatives ok). hover/click wrap in a div
+        // so the hit area stays fixed; `from` should equal the resting value.
+        const CSS_VAL = "(-?\\d+(?:\\.\\d+)?|#[0-9a-fA-F]{3,8})"
+        const CSS_ANIM_RE = new RegExp(`^((spawn|hover|click)-)?css-([a-zA-Z]+)-${CSS_VAL}-${CSS_VAL}$`)
+        const CSS_SINGLE_RE = new RegExp(`^((hover|click)-)css-([a-zA-Z]+)-${CSS_VAL}$`)
+        const parseCssVal = (s) => /^#/.test(s) ? s : Number(s)
+        const parseCssAnim = (el) => {
+            for (const c of el.classList) {
+                let m = c.match(CSS_ANIM_RE)
+                if (m) return { mode: m[2] || "loop", prop: m[3], from: parseCssVal(m[4]), to: parseCssVal(m[5]) }
+                m = c.match(CSS_SINGLE_RE)
+                if (m) return { mode: m[2], prop: m[3], to: parseCssVal(m[4]), single: true }
+            }
+            return null
+        }
+        const cssTweens = []
+        const setupCssAnims = (el) => {
+            const anim = parseCssAnim(el)
+            if (!anim) return
+            const dur = readClassNumber(el, "time-", 1)
+            const ease = getEase(el)
+            const key = "_cssAnim"
+            const loopVars = { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: -1 }
+            if (anim.mode === "loop") {
+                el[key]?.kill()
+                el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, loopVars)
+                cssTweens.push(el[key])
+            } else if (anim.mode === "spawn") {
+                el[key]?.kill()
+                el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease })
+                cssTweens.push(el[key])
+            } else if (anim.mode === "hover") {
+                const area = wrapTarget(el)
+                if (anim.single) {
+                    // Single-value hover: tween to the target and HOLD for as long
+                    // as it's hovered; on leave, revert to the element's original
+                    // value (captured at setup, before any animation touched it).
+                    const original = gsap.getProperty(el, anim.prop)
+                    addListener(area, "mouseenter", () => {
+                        el[key]?.kill()
+                        el[key] = gsap.to(el, { [anim.prop]: anim.to, duration: dur, ease })
+                        cssTweens.push(el[key])
+                    })
+                    addListener(area, "mouseleave", () => {
+                        el[key]?.kill()
+                        el[key] = gsap.to(el, { [anim.prop]: original, duration: dur, ease })
+                        cssTweens.push(el[key])
+                    })
+                } else {
+                    addListener(area, "mouseenter", () => {
+                        el[key]?.kill()
+                        el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { ...loopVars })
+                        cssTweens.push(el[key])
+                    })
+                    addListener(area, "mouseleave", () => {
+                        el[key]?.kill()
+                        el[key] = gsap.to(el, { [anim.prop]: anim.from, duration: dur, ease })
+                        cssTweens.push(el[key])
+                    })
+                }
+            } else if (anim.mode === "click") {
+                const area = wrapTarget(el)
+                if (anim.single) {
+                    // Single-value click: tween to the target while pressed, then
+                    // revert to the element's original value on mouseup.
+                    const original = gsap.getProperty(el, anim.prop)
+                    addListener(area, "mousedown", () => {
+                        el[key]?.kill()
+                        el[key] = gsap.to(el, { [anim.prop]: anim.to, duration: dur, ease })
+                        cssTweens.push(el[key])
+                    })
+                    addListener(area, "mouseup", () => {
+                        el[key]?.kill()
+                        el[key] = gsap.to(el, { [anim.prop]: original, duration: dur, ease })
+                        cssTweens.push(el[key])
+                    })
+                } else {
+                    addListener(area, "mousedown", () => {
+                        el[key]?.kill()
+                        el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: 1 })
+                        cssTweens.push(el[key])
+                    })
+                }
+            }
         }
 
         // Bind click + loop animations to every element present at load, tagging
@@ -866,6 +1086,7 @@ export function initListeners() {
             setupClicks(el)
             setupLoops(el)
             setupHoverClick(el)
+            setupCssAnims(el)
         })
         applyMagnet()
 
@@ -886,7 +1107,20 @@ export function initListeners() {
                 flipPendingRaf = requestAnimationFrame(() => {
                     flipPendingRaf = null
                     if (!flipRoots.size) return
-                    flipRoots.forEach(animateFlip)
+                    // A single frame can register several scopes for the SAME
+                    // element: removing a `.leave` node re-attaches a fixed ghost
+                    // to <body>, which adds `body` as a second scope alongside the
+                    // node's former parent. Running animateFlip per scope re-enters
+                    // playFlip on the same element, killing the in-flight tween and
+                    // clearing its transform — snapping the element into place.
+                    // Dedupe across scopes so each element flips exactly once.
+                    const toFlip = new Set()
+                    flipRoots.forEach((scope) => {
+                        if (!scope) return
+                        gsap.utils.toArray(scope.querySelectorAll?.(".flip") || [])
+                            .forEach((el) => { if (el.isConnected) toFlip.add(el) })
+                    })
+                    toFlip.forEach(playFlip)
                     // Refresh baselines for any .flip that settled this frame.
                     gsap.utils.toArray(document.body.querySelectorAll?.(".flip") || []).forEach(captureFlip)
                     flipRoots = new Set()
@@ -899,6 +1133,10 @@ export function initListeners() {
 
         const animateAppear = (el) => {
             if (!el.classList.contains("appear") || el._appeared) return
+            // A `.scroll`/`.scroll-progress` element is owned by its ScrollTrigger
+            // (see setupScroll); `.appear` must not also fire, or it plays on mount
+            // AND again on scroll-enter.
+            if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
             el._appeared = true
             const { delay, duration, ease } = readTiming(el)
 
@@ -931,12 +1169,17 @@ export function initListeners() {
                     const els = node.querySelectorAll?.("*") ? [node, ...node.querySelectorAll("*")] : [node]
                     let pinned = false
                     els.forEach((el) => {
-                        if (el.classList?.contains("appear")) animateAppear(el)
+                        // `.appear` is the opt-in gate for dynamically-added
+                        // elements: without it a newly inserted node is ignored.
+                        if (!el.classList?.contains("appear")) return
+                        animateAppear(el)
+                        setupScroll(el)
                         if (el.dataset?.gsapSetup) return
                         el.dataset.gsapSetup = "1"
                         setupClicks(el)
                         setupLoops(el)
                         setupHoverClick(el)
+                        setupCssAnims(el)
                         const wasPinned = el.dataset.gsapPinned
                         setupPin(el)
                         if (!wasPinned && el.dataset.gsapPinned) pinned = true
@@ -978,25 +1221,28 @@ export function initListeners() {
         window.addEventListener("scroll", refreshLeavePositions, { passive: true })
         window.addEventListener("resize", refreshLeavePositions, { passive: true })
 
-        return () => {
-            appearObserver.disconnect()
-            leaveObserver.disconnect()
-            flipObserver.disconnect()
-            window.removeEventListener("scroll", refreshLeavePositions)
-            window.removeEventListener("resize", refreshLeavePositions)
-            window.removeEventListener("load", ScrollTrigger.refresh)
-            scrollTriggers.forEach((t) => {
-                t.kill()
-                t.trigger._scrollTween?.kill()
-                delete t.trigger._scrollTween
-            })
-            ScrollTrigger.refresh()
-            registeredListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
-            magnetListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
-            magnetQuery?.removeEventListener("change", applyMagnet)
-            loopEls.forEach(({ el, key }) => el[key]?.kill())
-            gsap.utils.toArray(".typewriter").forEach(el => el.typewriter?.kill())
-            textSplits.forEach((s) => s.revert())
-            textSplits.length = 0
-        }
+    return () => {
+        appearObserver.disconnect()
+        leaveObserver.disconnect()
+        flipObserver.disconnect()
+        window.removeEventListener("scroll", refreshLeavePositions)
+        window.removeEventListener("resize", refreshLeavePositions)
+        window.removeEventListener("load", ScrollTrigger.refresh)
+        clearTimeout(refreshTimer)
+        scrollTriggers.forEach((t) => {
+            t.kill()
+            t.trigger._scrollTween?.kill()
+            delete t.trigger._scrollTween
+        })
+        ScrollTrigger.refresh()
+        registeredListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
+        magnetListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
+        magnetQuery?.removeEventListener("change", applyMagnet)
+        loopEls.forEach(({ el, key }) => el[key]?.kill())
+        cssTweens.forEach((t) => t?.kill())
+        cssTweens.length = 0
+        gsap.utils.toArray(".typewriter").forEach(el => el.typewriter?.kill())
+        textSplits.forEach((s) => s.revert())
+        textSplits.length = 0
+    }
 }
