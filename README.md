@@ -8,7 +8,7 @@ Framework-agnostic: works in vanilla JS, React, Vue, Svelte, or any bundler.
 ## Installation
 
 ```
-npm install gsap-animation-system
+npm install gclass
 ```
 
 GSAP is installed automatically as a dependency.
@@ -24,7 +24,7 @@ Import the public API and call `initAnimations()` once the DOM is ready.
 
 ```html
 <script type="module">
-  import { initAnimations } from 'gsap-animation-system'
+  import { initAnimations } from 'gclass'
   initAnimations()
 </script>
 ```
@@ -33,7 +33,7 @@ Import the public API and call `initAnimations()` once the DOM is ready.
 
 ```jsx
 import { useEffect } from 'react'
-import { initAnimations } from 'gsap-animation-system'
+import { initAnimations } from 'gclass'
 
 function App() {
   useEffect(() => {
@@ -48,7 +48,7 @@ function App() {
 
 ```js
 import { onMounted } from 'vue'
-import { initAnimations } from 'gsap-animation-system'
+import { initAnimations } from 'gclass'
 
 export default {
   setup() {
@@ -70,7 +70,7 @@ Add utility classes to your markup. Everything is class-driven — no config.
 ### Toggling animations
 
 ```js
-import { initAnimations, toggleAnimations } from 'gsap-animation-system'
+import { initAnimations, toggleAnimations } from 'gclass'
 
 toggleAnimations() // persists the choice to localStorage and reloads
 ```
@@ -81,7 +81,7 @@ Add entries to `customAnims` (a class, `from` state, and a `play` callback) and
 they integrate with the existing scroll/leave/order/delay/ease machinery.
 
 ```js
-import { customAnims } from 'gsap-animation-system'
+import { customAnims } from 'gclass'
 
 customAnims.push({
   sel: '.whirl',
