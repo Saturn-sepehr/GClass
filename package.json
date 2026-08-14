@@ -1,5 +1,5 @@
 {
-  "name": "gsap-animation-system",
+  "name": "gclass",
   "version": "1.0.0",
   "description": "A Tailwind-style utility layer on top of GSAP. Framework-agnostic — works in vanilla JS, React, Vue, Svelte, or any bundler.",
   "type": "module",
