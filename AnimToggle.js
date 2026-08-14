@@ -1,94 +1,80 @@
-import { initListeners } from './Listeners'
-
-// Plain-JS animation gate: toggles and subscribes to the enabled flag (the
-// drop-in replacement for the old React hook + `<AnimToggle/>` component),
-// and mounts/tears down the whole GSAP system in and out of the DOM.
-//
-//   initAnimations()          // start the system if animations are enabled
-//   isAnimationsEnabled()     // read the flag
-//   setAnimationsEnabled(b)   // set + persist the flag (no reload)
-//   toggleAnimations()        // flip + persist + reload the page
-//   onAnimationsChange(fn)    // subscribe; returns an unsubscribe fn
+import initListeners from './Listeners'
 
 // localStorage key controlling whether the GSAP animation system is mounted.
 const STORAGE_KEY = 'funbyte-animations-enabled'
 
-function readInitial() {
-  if (typeof window === 'undefined') return true
+const reducedMotionQuery = typeof window !== 'undefined'
+  ? window.matchMedia('(prefers-reduced-motion: reduce)')
+  : null
+
+// Module-level singleton store so anything subscribing to it stays in sync.
+let stored = readStored()
+let reduced = reducedMotionQuery?.matches ?? false
+const subscribers = new Set()
+
+// Returns the stored preference, or null when the user has never explicitly
+// chosen (no localStorage value). Distinct from a boolean so we can tell
+// "user override" apart from "use the default".
+function readStored() {
+  if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw === null ? true : raw === 'true'
+    return raw === null ? null : raw === 'true'
   } catch {
-    return true
+    return null
   }
 }
 
-// Module-level singleton store so any subscriber stays in sync, even across
-// app boundaries (a layout gate + any site button).
-let enabled = readInitial()
-const subscribers = new Set()
-let cleanup = null
-
-function emit() {
-  subscribers.forEach((fn) => fn(enabled))
+// Enabled rule:
+//   - If the user HAS an explicit stored choice, respect it (override wins),
+//     even under reduced motion.
+//   - Otherwise (no stored value) fall back to the default, which is ON unless
+//     reduced motion is detected — in which case animations are off.
+function getEnabled() {
+  return stored === null ? !reduced : stored
 }
 
-function setEnabled(next) {
-  enabled = !!next
+function emit() {
+  subscribers.forEach((fn) => fn(getEnabled()))
+}
+
+// React to the OS reduced-motion setting live (no reload). Toggling off
+// reverts tweens; toggling back on re-applies them.
+if (reducedMotionQuery) {
+  reducedMotionQuery.addEventListener('change', () => {
+    reduced = reducedMotionQuery.matches
+    emit()
+  })
+}
+
+function subscribe(cb) {
+  subscribers.add(cb)
+  return () => subscribers.delete(cb)
+}
+
+function getSnapshot() {
+  return getEnabled()
+}
+
+// Persists the new value, then reloads the page so the change applies cleanly.
+export function toggleAnimations() {
+  stored = !getEnabled()
   try {
-    localStorage.setItem(STORAGE_KEY, String(enabled))
+    localStorage.setItem(STORAGE_KEY, String(stored))
   } catch {
     /* ignore storage errors (private mode etc.) */
   }
   emit()
-}
-
-// Plain function intended for wiring into an onClick anywhere in the site:
-//   <button onclick="toggleAnimations()">...</button>
-// Persists the new value, then reloads the page so the change applies cleanly
-// (initAnimations re-reads the stored flag on mount).
-export function toggleAnimations() {
-  setEnabled(!enabled)
   if (typeof window !== 'undefined') window.location.reload()
 }
 
-export function isAnimationsEnabled() {
-  return enabled
-}
+let cleanup = null
 
-export function setAnimationsEnabled(next) {
-  setEnabled(next)
-}
-
-// Subscribe to changes of the enabled flag. Returns an unsubscribe function.
-//   const unsub = onAnimationsChange((val) => { ... })
-export function onAnimationsChange(fn) {
-  subscribers.add(fn)
-  return () => subscribers.delete(fn)
-}
-
-// Start (or restart) the GSAP system against the current DOM, but only while
-// animations are enabled. Returns a function that tears the system back down.
+// Boots the GSAP animation system unless animations are disabled (stored "off"
+// or reduced-motion fallback with no explicit choice). Idempotent: calling it
+// again tears down any previous run first.
 export function initAnimations() {
-  stopAnimations()
-  if (!enabled) return () => {}
+  if (typeof window === 'undefined' || !getEnabled()) return
+  if (cleanup) cleanup()
   cleanup = initListeners()
-  return stopAnimations
-}
-
-// Tear the running system down, if any.
-export function stopAnimations() {
-  if (cleanup) {
-    cleanup()
-    cleanup = null
-  }
-}
-
-// Boot on import: if the DOM is already loaded just go, otherwise wait for it.
-if (typeof window !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAnimations)
-  } else {
-    initAnimations()
-  }
 }

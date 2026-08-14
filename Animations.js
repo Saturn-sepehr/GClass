@@ -14,6 +14,20 @@ const easeOf = (e) => e || DEFAULT_EASE;
 // `amount-N` class is used directly as the target scale. Pass decimal values
 // like amount-1.5 rather than pixel-style numbers.
 
+// The resting opacity the element should settle on. GSAP sets the spawn's
+// `from` state (opacity 0) on the element before the tween is built, so
+// `getComputedStyle` would read that transient 0 rather than the intended
+// value. Temporarily drop the inline opacity to read the CSS-defined one (e.g.
+// a `disabled:opacity-50`, a `.opacity-*` utility, or the default 1), then
+// restore it so the actual animation still starts from the right place.
+const finalOpacity = (target) => {
+    const had = target.style.opacity
+    target.style.removeProperty("opacity")
+    const v = parseFloat(getComputedStyle(target).opacity)
+    if (had !== "") target.style.opacity = had
+    return isNaN(v) ? 1 : v
+}
+
 
 //Spawn animations
 
@@ -21,26 +35,26 @@ export function SpawnV (target , delay , dir , dur , ease) {
     const e = easeOf(ease)
     // A whisper of scale in the same breath as the travel keeps the reveal
     // feeling physical instead of a flat 2D slide.
-    return gsap.fromTo(target , {opacity:0 , y:dir , scale:0.97} , {ease:e , duration:dur , delay:delay , y:0 , opacity:1 , scale:1})
+    return gsap.fromTo(target , {opacity:0 , y:dir , scale:0.97} , {ease:e , duration:dur , delay:delay , y:0 , opacity:finalOpacity(target) , scale:1})
 }
 
 export function SpawnH (target , delay , dir , dur , ease) {
     const e = easeOf(ease)
-    return gsap.fromTo(target , {opacity:0 , x:dir , scale:0.97} , {ease:e , duration:dur , delay:delay , x:0 , opacity:1 , scale:1})
+    return gsap.fromTo(target , {opacity:0 , x:dir , scale:0.97} , {ease:e , duration:dur , delay:delay , x:0 , opacity:finalOpacity(target) , scale:1})
 }
 
 export function expandV (target , delay , dur , ease){
     const e = easeOf(ease)
-    return gsap.fromTo(target , {opacity:1 , scaleY:0} , {ease:e , duration:dur , delay:delay , scaleY:1 , opacity:1 , transformOrigin:"50% 50%"})
+    return gsap.fromTo(target , {opacity:1 , scaleY:0} , {ease:e , duration:dur , delay:delay , scaleY:1 , opacity:finalOpacity(target) , transformOrigin:"50% 50%"})
 }
 
 export function expandH (target , delay , dur , ease){
     const e = easeOf(ease)
-    return gsap.fromTo(target , {opacity:1 , scaleX:0} , {ease:e , duration:dur , delay:delay , scaleX:1 , opacity:1 , transformOrigin:"50% 50%"})
+    return gsap.fromTo(target , {opacity:1 , scaleX:0} , {ease:e , duration:dur , delay:delay , scaleX:1 , opacity:finalOpacity(target) , transformOrigin:"50% 50%"})
 }
 export function expandA (target , delay , dur , ease){
     const e = easeOf(ease)
-    return gsap.fromTo(target , {opacity:1 , scale:0} , {ease:e , duration:dur , delay:delay , scale:1 , opacity:1 , transformOrigin:"50% 50%"})
+    return gsap.fromTo(target , {opacity:1 , scale:0} , {ease:e , duration:dur , delay:delay , scale:1 , opacity:finalOpacity(target) , transformOrigin:"50% 50%"})
 }
 
 export function typewriter (target , text , dur , delay , ease){
@@ -58,42 +72,42 @@ export function spawnSpinCW (target , delay , dur , ease){
 }
 
 export function spawnFade (target , delay , dur , ease){
-    return gsap.fromTo(target , {opacity:0} , {ease:easeOf(ease) , duration:dur , delay:delay , opacity:1})
+    return gsap.fromTo(target , {opacity:0} , {ease:easeOf(ease) , duration:dur , delay:delay , opacity:finalOpacity(target)})
 }
 
 export function spawnBlur (target , delay , dur , ease){
     const e = easeOf(ease)
     // Linger the blur slightly so the focus pull feels deliberate, not abrupt.
-    return gsap.fromTo(target , {opacity:0 , filter:"blur(20px)"} , {ease:e , duration:dur , delay:delay , opacity:1 , filter:"blur(0px)"})
+    return gsap.fromTo(target , {opacity:0 , filter:"blur(20px)"} , {ease:e , duration:dur , delay:delay , opacity:finalOpacity(target) , filter:"blur(0px)"})
 }
 
 export function spawnXUp (target , delay , dur , ease){
     const e = easeOf(ease)
     // Card-spawn: a full 360° front-flip that unfolds into place, with a soft
     // depth scale and an edge anchor so the pivot reads like a flipping card.
-    return gsap.fromTo(target , {scale:0 , rotationX:360 , opacity:0} , {ease:e , duration:dur , delay:delay , scale:1 , rotationX:0 , opacity:1 , transformOrigin:"50% 50%"})
+    return gsap.fromTo(target , {scale:0 , rotationX:360 , opacity:0} , {ease:e , duration:dur , delay:delay , scale:1 , rotationX:0 , opacity:finalOpacity(target) , transformOrigin:"50% 50%"})
 }
 
 export function spawnXDown (target , delay , dur , ease){
     const e = easeOf(ease)
-    return gsap.fromTo(target , {scale:0 , rotationX:-360 , opacity:0} , {ease:e , duration:dur , delay:delay , scale:1 , rotationX:0 , opacity:1 , transformOrigin:"50% 50%"})
+    return gsap.fromTo(target , {scale:0 , rotationX:-360 , opacity:0} , {ease:e , duration:dur , delay:delay , scale:1 , rotationX:0 , opacity:finalOpacity(target) , transformOrigin:"50% 50%"})
 }
 
 export function spawnYRight (target , delay , dur , ease){
     const e = easeOf(ease)
-    return gsap.fromTo(target , {scale:0 , rotationY:360 , opacity:0} , {ease:e , duration:dur , delay:delay , scale:1 , rotationY:0 , opacity:1 , transformOrigin:"50% 50%"})
+    return gsap.fromTo(target , {scale:0 , rotationY:360 , opacity:0} , {ease:e , duration:dur , delay:delay , scale:1 , rotationY:0 , opacity:finalOpacity(target) , transformOrigin:"50% 50%"})
 }
 
 export function spawnYLeft (target , delay , dur , ease){
     const e = easeOf(ease)
-    return gsap.fromTo(target , {scale:0 , rotationY:-360 , opacity:0} , {ease:e , duration:dur , delay:delay , scale:1 , rotationY:0 , opacity:1 , transformOrigin:"50% 50%"})
+    return gsap.fromTo(target , {scale:0 , rotationY:-360 , opacity:0} , {ease:e , duration:dur , delay:delay , scale:1 , rotationY:0 , opacity:finalOpacity(target) , transformOrigin:"50% 50%"})
 }
 
 export function expandRight (target , delay , dur , ease){
         const e = easeOf(ease)
         const tl = gsap.timeline()
     tl.set(target , {transformOrigin : "100% 50%"})
-    .fromTo(target , {opacity:1 , scaleX:0} , {ease:e , duration:dur , delay:delay , scaleX:1 , opacity:1})
+    .fromTo(target , {opacity:1 , scaleX:0} , {ease:e , duration:dur , delay:delay , scaleX:1 , opacity:finalOpacity(target)})
 
     return tl
     
@@ -103,7 +117,7 @@ export function expandLeft (target , delay , dur , ease){
     const e = easeOf(ease)
     const tl = gsap.timeline()
         tl.set(target , {transformOrigin : "0% 50%"})
-    .fromTo(target , {opacity:1 , scaleX:0} , {ease:e , duration:dur , delay:delay , scaleX:1 , opacity:1})
+    .fromTo(target , {opacity:1 , scaleX:0} , {ease:e , duration:dur , delay:delay , scaleX:1 , opacity:finalOpacity(target)})
 
     
     return tl
@@ -113,7 +127,7 @@ export function expandUp (target , delay , dur , ease){
     const e = easeOf(ease)
     const tl = gsap.timeline()
     tl.set(target , {transformOrigin : "50% 100%"})
-    .fromTo(target , {opacity:1 , scaleY:0} , {ease:e , duration:dur , delay:delay , scaleY:1 , opacity:1})
+    .fromTo(target , {opacity:1 , scaleY:0} , {ease:e , duration:dur , delay:delay , scaleY:1 , opacity:finalOpacity(target)})
 
     return tl
 }
@@ -122,7 +136,7 @@ export function expandDown (target , delay , dur , ease){
     const e = easeOf(ease)
     const tl = gsap.timeline()
     tl.set(target , {transformOrigin : "50% 0%"})
-    .fromTo(target , {opacity:1 , scaleY:0} , {ease:e , duration:dur , delay:delay , scaleY:1 , opacity:1})
+    .fromTo(target , {opacity:1 , scaleY:0} , {ease:e , duration:dur , delay:delay , scaleY:1 , opacity:finalOpacity(target)})
 
     return tl
 }
@@ -234,9 +248,9 @@ export function pulse (delay , target , amount , dur , ease){
     return tl
 }
 
-export function radiate (delay , target , amount , dur , ease){
+export function radiate (delay , target , amount , dur , ease , zIndex){
     const clone = target.cloneNode(true)
-    clone.style.cssText = `position:fixed;left:0;top:0;margin:0;pointer-events:none;transform-origin:50% 50%;`
+    clone.style.cssText = `position:fixed;left:0;top:0;right:auto;bottom:auto;margin:0;pointer-events:none;transform-origin:50% 50%;${zIndex != null ? `z-index:${zIndex};` : ""}`
     // Keep the ripple glued to the target so it tracks scroll/resize instead of
     // getting stranded at the position captured when the animation was built.
     // Reposition on scroll/resize (throttled to one pass per frame) rather than
