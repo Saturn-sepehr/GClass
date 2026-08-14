@@ -1,0 +1,51 @@
+GCLASS DEVELOPMENT CHECKLIST
+============================
+
+STATUS KEY: [x] done   [ ] not done
+
+PACKAGING / DISTRIBUTION
+------------------------
+[ ] Publish to npm (not yet published)
+[ ] TypeScript declarations (index.d.ts) - none exist
+[ ] Verify package.json files/exports are complete (Config.js now added; confirm stale refs gone)
+[ ] ESM + CJS dual output / build step
+[ ] sideEffects flag + tree-shaking; .npmignore
+[ ] Repo URL, keywords, CHANGELOG, versioning strategy
+
+CONFIG / EXTENSIBILITY
+----------------------
+[ ] initListeners(config) - accept a runtime config override
+[ ] Re-normalize on init, not once at import (so customAnims pushed at runtime work)
+[ ] Config validation (warn on unknown selector / bad from)
+[ ] Per-entry add/remove lifecycle beyond the single setup hook
+
+ONCOMPLETE SYSTEM
+-----------------
+[x] on-{spawn,loop,click}-complete-{fn} + -anim-{anim}
+[x] .complete-time- / .complete-delay-
+[x] Teardown of triggered tweens
+[ ] Document infinite-loop on-loop-complete semantics (per-cycle) vs a true-complete variant
+
+DOCS
+----
+[ ] Document the Config.js schema in the README
+[ ] Document the onComplete classes
+[ ] Vanilla / React / Vue usage examples
+[ ] API reference
+
+TESTS / CI
+----------
+[ ] Unit tests (vitest/jsdom): config normalization, onComplete, countUp
+[ ] Integration tests: scroll / leave / flip / SplitText
+[ ] CI pipeline (GitHub Actions)
+
+ANIMATIONS / A11Y / PERF
+------------------------
+[ ] More presets (scroll-driven counters, progress bars, parallax)
+[ ] .count-up options: prefix/suffix, number formatting
+[ ] Full prefers-reduced-motion coverage (partially via AnimToggle)
+[ ] Observer throttling / memory (MutationObservers on <body>)
+
+LEGAL / LICENSING
+-----------------
+[ ] License note in README (GClass MIT vs GSAP separate)

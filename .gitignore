@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Dev playground
+dev/
+
 # Build output
 dist/
 build/

@@ -2,6 +2,9 @@ import initListeners from './Listeners'
 
 // localStorage key controlling whether the GSAP animation system is mounted.
 const STORAGE_KEY = 'funbyte-animations-enabled'
+// localStorage key for a forced reduced-motion override (see
+// enableReducedMotion / disableReducedMotion).
+const REDUCED_KEY = 'funbyte-reduced-motion'
 
 const reducedMotionQuery = typeof window !== 'undefined'
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -10,6 +13,7 @@ const reducedMotionQuery = typeof window !== 'undefined'
 // Module-level singleton store so anything subscribing to it stays in sync.
 let stored = readStored()
 let reduced = reducedMotionQuery?.matches ?? false
+let forcedReduced = readReducedOverride()
 const subscribers = new Set()
 
 // Returns the stored preference, or null when the user has never explicitly
@@ -25,12 +29,24 @@ function readStored() {
   }
 }
 
+// Returns whether animations were force-disabled via enableReducedMotion().
+function readReducedOverride() {
+  if (typeof window === 'undefined') return false
+  try {
+    return localStorage.getItem(REDUCED_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
 // Enabled rule:
-//   - If the user HAS an explicit stored choice, respect it (override wins),
-//     even under reduced motion.
+//   - A forced reduced-motion override always wins (animations off).
+//   - Otherwise, if the user HAS an explicit stored choice, respect it
+//     (override wins), even under reduced motion.
 //   - Otherwise (no stored value) fall back to the default, which is ON unless
 //     reduced motion is detected — in which case animations are off.
 function getEnabled() {
+  if (forcedReduced) return false
   return stored === null ? !reduced : stored
 }
 
@@ -63,6 +79,32 @@ export function toggleAnimations() {
     localStorage.setItem(STORAGE_KEY, String(stored))
   } catch {
     /* ignore storage errors (private mode etc.) */
+  }
+  emit()
+  if (typeof window !== 'undefined') window.location.reload()
+}
+
+// Force animations off (a hard override that wins over any stored preference),
+// then reload so the running instance tears down. Use disableReducedMotion() to
+// clear it.
+export function enableReducedMotion() {
+  forcedReduced = true
+  try {
+    localStorage.setItem(REDUCED_KEY, 'true')
+  } catch {
+    /* ignore storage errors */
+  }
+  emit()
+  if (typeof window !== 'undefined') window.location.reload()
+}
+
+// Clear the forced reduced-motion override (if any), then reload.
+export function disableReducedMotion() {
+  forcedReduced = false
+  try {
+    localStorage.removeItem(REDUCED_KEY)
+  } catch {
+    /* ignore storage errors */
   }
   emit()
   if (typeof window !== 'undefined') window.location.reload()

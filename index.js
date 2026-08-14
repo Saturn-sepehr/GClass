@@ -1,4 +1,5 @@
-export { initAnimations, toggleAnimations } from './AnimToggle.js'
-export { default as initListeners } from './Listeners.js'
+export { initAnimations, toggleAnimations, enableReducedMotion, disableReducedMotion } from './AnimToggle.js'
+export { default as initListeners, registerComplete } from './Listeners.js'
 export { customAnims } from './CustomAnims.js'
+export { defaults, animations, normalize } from './Config.js'
 export * from './Animations.js'

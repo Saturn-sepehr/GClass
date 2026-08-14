@@ -13,6 +13,7 @@
     "AnimToggle.js",
     "Listeners.js",
     "Animations.js",
+    "Config.js",
     "CustomAnims.js",
     "README.md",
     "LICENSE"

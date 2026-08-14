@@ -141,6 +141,23 @@ export function expandDown (target , delay , dur , ease){
     return tl
 }
 
+export function countUp (target , delay , dur, ease){
+    const e = easeOf(ease)
+    // Extract the number from the element, ignoring any surrounding text
+    // (e.g. "$1,250 total" -> 1250). Keeps decimals so 3.14 counts to 3.14.
+    const match = (target.textContent || "0").replace(/,/g, "").match(/-?\d+(?:\.\d+)?/)
+    const end = match ? parseFloat(match[0]) : 0
+    const decimals = match?.[0].includes(".") ? (match[0].split(".")[1] || "").length : 0
+    const obj = { n: 0 }
+    return gsap.to(obj, {
+        n: end,
+        duration: dur,
+        delay,
+        ease: e,
+        onUpdate: () => { target.textContent = obj.n.toFixed(decimals) },
+    })
+}
+
 
 //Mouse animations
 
