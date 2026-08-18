@@ -57,7 +57,7 @@ export const defaults = {
   spawnDelayMultiplier: 0.2,
   spawnOffset: 20,
   clickOffset: 10,
-  clickExpandOffset: 1.5,
+  clickExpandOffset: 15,
   clickDuration: 0.2,
   ease: "back",
   effectDelay: 0.5,
@@ -104,7 +104,13 @@ export const animations = [
   // Pure clip-path reveals. `text:false` so the SplitText per-char variant is
   // skipped (these are meant for media/containers). The `from` inset is mirrored
   // in each helper so scroll/scroll-progress/appear/leave all know the hidden state.
-  { sel: ".clip-reveal", text: false, from: { clipPath: "inset(0% 0% 100% 0%)" }, play: (el, delay, dur, ease) => spawnClipReveal(el, delay, dur, ease) },
+  { sel: ".clip-reveal-up", text: false, from: { clipPath: "inset(0% 0% 100% 0%)" }, play: (el, delay, dur, ease) => spawnClipReveal(el, delay, dur, ease, "up") },
+  { sel: ".clip-reveal-down", text: false, from: { clipPath: "inset(100% 0% 0% 0%)" }, play: (el, delay, dur, ease) => spawnClipReveal(el, delay, dur, ease, "down") },
+  { sel: ".clip-reveal-left", text: false, from: { clipPath: "inset(0% 0% 0% 100%)" }, play: (el, delay, dur, ease) => spawnClipReveal(el, delay, dur, ease, "left") },
+  { sel: ".clip-reveal-right", text: false, from: { clipPath: "inset(0% 100% 0% 0%)" }, play: (el, delay, dur, ease) => spawnClipReveal(el, delay, dur, ease, "right") },
+  // Backwards-compatible alias for the original class: reveals from the bottom
+  // edge upward (same as `.clip-reveal-up`).
+  { sel: ".clip-reveal", text: false, from: { clipPath: "inset(0% 0% 100% 0%)" }, play: (el, delay, dur, ease) => spawnClipReveal(el, delay, dur, ease, "up") },
   { sel: ".curtain-horizontal", text: false, from: { clipPath: "inset(0% 50% 0% 50%)" }, play: (el, delay, dur, ease) => curtainHorizontal(el, delay, dur, ease) },
   { sel: ".curtain-vertical", text: false, from: { clipPath: "inset(50% 0% 50% 0%)" }, play: (el, delay, dur, ease) => curtainVertical(el, delay, dur, ease) },
 

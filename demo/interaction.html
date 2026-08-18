@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GClass — Interaction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="gclass-bundle.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-200">
+    <header class="border-b border-slate-800 px-8 py-6">
+      <a class="text-sm text-slate-500 hover:text-slate-300" href="index.html">&larr; index</a>
+      <h1 class="m-0 mt-2 text-xl font-semibold">Interaction (mouse)</h1>
+      <p class="m-0 mt-1 text-sm text-slate-400">
+        magnet, magnet3d, click-hover, click-expand, hover-&lt;name&gt;, click-&lt;name&gt;, css-*
+      </p>
+    </header>
+
+    <main class="grid grid-cols-1 gap-8 p-8 md:grid-cols-2 lg:grid-cols-3">
+      <!-- Hover / click / drag the elements below. No JS needed — just classes. -->
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.magnet</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">pulled toward the cursor and scales up</p>
+        <div class="magnet rounded-lg bg-cyan-600/70 p-4 text-center font-semibold">magnet</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.magnet3d</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">like .magnet but tilts in 3D to face the cursor</p>
+        <div class="magnet3d rounded-lg bg-emerald-600/70 p-4 text-center font-semibold">magnet3d</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.click-hover</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">lifts toward the cursor while pressed/hovered</p>
+        <div class="click-hover rounded-lg bg-violet-600/70 p-4 text-center font-semibold">click-hover</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.click-expand</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">scales up while pressed/hovered</p>
+        <div class="click-expand rounded-lg bg-rose-600/70 p-4 text-center font-semibold">click-expand</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">hover-bounce</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">runs loop <code>bounce</code> while hovered</p>
+        <div class="hover-bounce rounded-lg bg-amber-600/70 p-4 text-center font-semibold">hover-bounce</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">click-pulse</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">runs loop <code>pulse</code> once on mousedown</p>
+        <div class="click-pulse rounded-lg bg-sky-600/70 p-4 text-center font-semibold">click-pulse</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">css-rotate-0-8</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">ping-pong loop on <code>rotate</code> 0 → 8deg</p>
+        <div class="css-rotate-0-8 rounded-lg bg-fuchsia-600/70 p-4 text-center font-semibold">css-rotate-0-8</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">hover-css-rotate-0-8</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">ping-pongs <code>rotate</code> while hovered</p>
+        <div class="hover-css-rotate-0-8 rounded-lg bg-teal-600/70 p-4 text-center font-semibold">hover-css-rotate-0-8</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">hover-css-scale-1.15</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">holds <code>scale</code> 1.15 while hovered (no from)</p>
+        <div class="hover-css-scale-1.15 rounded-lg bg-indigo-600/70 p-4 text-center font-semibold">hover-css-scale-1.15</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">click-css-rotate-0-10</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">tweens <code>rotate</code> on mousedown</p>
+        <div class="click-css-rotate-0-10 rounded-lg bg-orange-600/70 p-4 text-center font-semibold">click-css-rotate-0-10</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.compatibility</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">lets a loop coexist with hover/click on the same element</p>
+        <div class="spin-cw compatibility rounded-lg bg-lime-700/70 p-4 text-center font-semibold">spin-cw + compatibility</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.wrapdiv</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">wraps the element in a parent used as the hover/click area</p>
+        <div class="wrapdiv click-expand rounded-lg bg-pink-700/70 p-4 text-center font-semibold">wrapdiv + click-expand</div>
+      </section>
+
+    </main>
+  </body>
+</html>

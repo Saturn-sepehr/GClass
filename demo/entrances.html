@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GClass — Entrances</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="gclass-bundle.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-200">
+    <header class="border-b border-slate-800 px-8 py-6">
+      <a class="text-sm text-slate-500 hover:text-slate-300" href="index.html">&larr; index</a>
+      <h1 class="m-0 mt-2 text-xl font-semibold">Entrances (spawn / expand)</h1>
+      <p class="m-0 mt-1 text-sm text-slate-400">
+        spawn-up, spawn-left, expand-all, clip-reveal-*, typewriter, count, ...
+      </p>
+    </header>
+
+    <main class="grid grid-cols-1 gap-8 p-8 md:grid-cols-2 lg:grid-cols-3">
+      <!--
+        Every element is animated purely by classes.
+        Each entrance demo carries .scroll so it plays when scrolled into view.
+      -->
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-down</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">slides in from above (y: -spawnOffset)</p>
+        <div class="spawn-down scroll rounded-lg bg-cyan-600/70 p-4 text-center font-semibold">spawn-down</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-up</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">slides in from below (y: +spawnOffset)</p>
+        <div class="spawn-up scroll rounded-lg bg-emerald-600/70 p-4 text-center font-semibold">spawn-up</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-left</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">slides in from the left (x: -spawnOffset)</p>
+        <div class="spawn-left scroll rounded-lg bg-violet-600/70 p-4 text-center font-semibold">spawn-left</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-right</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">slides in from the right (x: +spawnOffset)</p>
+        <div class="spawn-right scroll rounded-lg bg-rose-600/70 p-4 text-center font-semibold">spawn-right</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-cw</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">scales in + spins clockwise</p>
+        <div class="spawn-cw scroll rounded-lg bg-amber-600/70 p-4 text-center font-semibold">spawn-cw</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-ccw</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">scales in + spins counter-clockwise</p>
+        <div class="spawn-ccw scroll rounded-lg bg-sky-600/70 p-4 text-center font-semibold">spawn-ccw</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-fade</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">fades in (opacity 0 → 1)</p>
+        <div class="spawn-fade scroll rounded-lg bg-fuchsia-600/70 p-4 text-center font-semibold">spawn-fade</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-blur</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">fades in from a 20px blur</p>
+        <div class="spawn-blur scroll rounded-lg bg-teal-600/70 p-4 text-center font-semibold">spawn-blur</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-x-down</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">card front-flip downward (rotationX)</p>
+        <div class="spawn-x-down scroll rounded-lg bg-indigo-600/70 p-4 text-center font-semibold">spawn-x-down</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-x-up</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">card front-flip upward (rotationX)</p>
+        <div class="spawn-x-up scroll rounded-lg bg-orange-600/70 p-4 text-center font-semibold">spawn-x-up</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-y-right</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">card flip toward the right (rotationY)</p>
+        <div class="spawn-y-right scroll rounded-lg bg-lime-600/70 p-4 text-center font-semibold">spawn-y-right</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spawn-y-left</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">card flip toward the left (rotationY)</p>
+        <div class="spawn-y-left scroll rounded-lg bg-pink-600/70 p-4 text-center font-semibold">spawn-y-left</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.expand-vertical</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">scales up on the Y axis (scaleY 0 → 1)</p>
+        <div class="expand-vertical scroll rounded-lg bg-cyan-700/70 p-4 text-center font-semibold">expand-vertical</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.expand-horizontal</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">scales up on the X axis (scaleX 0 → 1)</p>
+        <div class="expand-horizontal scroll rounded-lg bg-emerald-700/70 p-4 text-center font-semibold">expand-horizontal</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.expand-right</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">expands left-anchored (scaleX, origin 100% 50%)</p>
+        <div class="expand-right scroll rounded-lg bg-violet-700/70 p-4 text-center font-semibold">expand-right</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.expand-left</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">expands right-anchored (scaleX, origin 0% 50%)</p>
+        <div class="expand-left scroll rounded-lg bg-rose-700/70 p-4 text-center font-semibold">expand-left</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.expand-up</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">expands bottom-anchored (scaleY, origin 50% 100%)</p>
+        <div class="expand-up scroll rounded-lg bg-amber-700/70 p-4 text-center font-semibold">expand-up</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.expand-down</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">expands top-anchored (scaleY, origin 50% 0%)</p>
+        <div class="expand-down scroll rounded-lg bg-sky-700/70 p-4 text-center font-semibold">expand-down</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.expand-all</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">scales in uniformly (scale 0 → 1)</p>
+        <div class="expand-all scroll rounded-lg bg-fuchsia-700/70 p-4 text-center font-semibold">expand-all</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.typewriter</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">types the text out with TextPlugin</p>
+        <div class="typewriter scroll rounded-lg bg-teal-700/70 p-4 font-mono text-left">typewriter - hello!</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.typewriter-split</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">types per-character via SplitText</p>
+        <div class="typewriter-split scroll rounded-lg bg-indigo-700/70 p-4 font-mono text-left">typewriter-split</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.count</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">counts a number up (see .spawn-num-N)</p>
+        <div class="count scroll rounded-lg bg-orange-700/70 p-4 text-center text-2xl font-semibold">0</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.clip-reveal-up</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">clip-path wipe, reveals bottom → top</p>
+        <div class="clip-reveal-up scroll rounded-lg bg-lime-700/70 p-4 text-center font-semibold">clip-reveal-up</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.clip-reveal-down</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">clip-path wipe, reveals top → bottom</p>
+        <div class="clip-reveal-down scroll rounded-lg bg-pink-700/70 p-4 text-center font-semibold">clip-reveal-down</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.clip-reveal-left</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">clip-path wipe, reveals right → left</p>
+        <div class="clip-reveal-left scroll rounded-lg bg-cyan-800/70 p-4 text-center font-semibold">clip-reveal-left</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.clip-reveal-right</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">clip-path wipe, reveals left → right</p>
+        <div class="clip-reveal-right scroll rounded-lg bg-emerald-800/70 p-4 text-center font-semibold">clip-reveal-right</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.clip-reveal</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">alias = .clip-reveal-up</p>
+        <div class="clip-reveal scroll rounded-lg bg-violet-800/70 p-4 text-center font-semibold">clip-reveal (alias)</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.curtain-horizontal</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">clip opens outward from the horizontal centre</p>
+        <div class="curtain-horizontal scroll rounded-lg bg-rose-800/70 p-4 text-center font-semibold">curtain-horizontal</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.curtain-vertical</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">clip opens outward from the vertical centre</p>
+        <div class="curtain-vertical scroll rounded-lg bg-amber-800/70 p-4 text-center font-semibold">curtain-vertical</div>
+      </section>
+
+    </main>
+  </body>
+</html>

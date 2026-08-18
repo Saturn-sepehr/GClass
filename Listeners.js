@@ -589,7 +589,7 @@ export default function initListeners() {
             const startClass = readClassNumber(el, "progress-start-", null)
             const endClass = readClassNumber(el, "progress-end-", null)
             const start = startClass != null ? `top ${clamp(100 - startClass)}%` : "top top"
-            const end = endClass != null ? `top ${clamp(100 - endClass)}%` : "bottom bottom"
+            const end = endClass != null ? `top ${clamp(100 - endClass)}%` : "bottom top"
             const t = ScrollTrigger.create({
                 trigger: el,
                 start,
@@ -648,16 +648,19 @@ export default function initListeners() {
             if (el.classList.contains("progress-bar") || el.classList.contains("scroll-fill")) {
                 const startClass = readClassNumber(el, "progress-start-", null)
                 const endClass = readClassNumber(el, "progress-end-", null)
+                // `.progress-reverse` runs the fill in reverse (full -> empty).
+                // GSAP's ScrollTrigger has no `reversed` config; swap the from/to
+                // so the scrub maps in the opposite direction instead.
+                const reverse = el.classList.contains("progress-reverse")
                 const t = gsap.fromTo(el,
-                    { scaleX: 0 },
+                    { scaleX: reverse ? 1 : 0 },
                     {
-                        scaleX: 1, ease: "none", transformOrigin: "left center",
+                        scaleX: reverse ? 0 : 1, ease: "none", transformOrigin: "left center",
                         scrollTrigger: {
                             trigger: el,
                             start: startClass != null ? `top ${clamp(100 - startClass)}%` : "top bottom",
                             end: endClass != null ? `top ${clamp(100 - endClass)}%` : "bottom top",
                             scrub: true,
-                            reversed: el.classList.contains("progress-reverse"),
                         },
                     }
                 )
@@ -729,6 +732,10 @@ export default function initListeners() {
                 const startClass = readClassNumber(el, "progress-start-", null)
                 const endClass = readClassNumber(el, "progress-end-", null)
                 const clamp = (n) => Math.min(100, Math.max(0, n))
+                // `.progress-reverse` runs the scrub in reverse (revealed -> hidden).
+                // GSAP's ScrollTrigger ignores a `reversed` config; swap from/to so
+                // the scrub maps in the opposite direction instead.
+                const reverse = el.classList.contains("progress-reverse")
 
                 const tl = gsap.timeline({
                     scrollTrigger: {
@@ -736,20 +743,19 @@ export default function initListeners() {
                         start: startClass != null ? `top ${clamp(100 - startClass)}%` : defaults.progressStart,
                         end: endClass != null ? `top ${clamp(100 - endClass)}%` : defaults.progressEnd,
                         scrub: true,
-                        reversed: el.classList.contains("progress-reverse"),
                     },
                 })
                 if (config.count) {
                     // Counter driven by scroll progress: count from `.spawn-num-N`
                     // to the target as the scrub advances (no opacity fade).
                     const { start, end, decimals } = countTargetVars(el)
-                    const obj = { n: start }
-                    tl.fromTo(obj, { n: start }, { n: end, ease, onUpdate: () => { el.textContent = obj.n.toFixed(decimals) } }, 0)
+                    const obj = { n: reverse ? end : start }
+                    tl.fromTo(obj, { n: reverse ? end : start }, { n: reverse ? start : end, ease, onUpdate: () => { el.textContent = obj.n.toFixed(decimals) } }, 0)
                 } else if (typewriterSplit) {
                     const parts = getParts(el, getGranularity(el))
-                    if (parts.length) tl.fromTo(parts, { opacity: 0 }, { opacity: 1, ease })
+                    if (parts.length) tl.fromTo(parts, { opacity: reverse ? 1 : 0 }, { opacity: reverse ? 0 : 1, ease })
                 } else {
-                    tl.fromTo(el, { ...from }, { ...to, ease })
+                    tl.fromTo(el, { ...(reverse ? to : from) }, { ...(reverse ? from : to), ease })
                 }
                 scrollTriggers.push(tl.scrollTrigger)
                 return
@@ -852,10 +858,11 @@ export default function initListeners() {
                         start: startClass != null ? `top ${clamp(100 - startClass)}%` : defaults.progressStart,
                         end: endClass != null ? `top ${clamp(100 - endClass)}%` : defaults.progressEnd,
                         scrub: true,
-                        reversed: el.classList.contains("progress-reverse"),
                     },
                 })
-                tl.fromTo(parts, { ...from }, { ...to, ease })
+                // `.progress-reverse` runs the split scrub in reverse; swap from/to.
+                const reverse = el.classList.contains("progress-reverse")
+                tl.fromTo(parts, { ...(reverse ? to : from) }, { ...(reverse ? from : to), ease })
                 scrollTriggers.push(tl.scrollTrigger)
             })
         })
@@ -1035,14 +1042,14 @@ export default function initListeners() {
                 const lift = readClassNumber(el, "amount-", defaults.clickExpandOffset)
                 const elEase = getEase(el)
 
-                addListener(el, "mousedown", () => { if (!touch) { pauseCompatLoops(el); expandmove(el, 1, duration, elEase).eventCallback("onComplete", () => fireOnComplete(el, "click")) } })
+                addListener(el, "mousedown", () => { if (!touch) { pauseCompatLoops(el); expandmove(el, 10, duration, elEase).eventCallback("onComplete", () => fireOnComplete(el, "click")) } })
                 addListener(el, "mouseover", () => { if (!touch) { pauseCompatLoops(el); expandmove(el, lift, duration, elEase) } })
-                addListener(el, "mouseleave", () => { if (!touch) { expandmove(el, 1, duration, elEase); resumeCompatLoops(el) } })
+                addListener(el, "mouseleave", () => { if (!touch) { expandmove(el, 10, duration, elEase); resumeCompatLoops(el) } })
                 addListener(el, "mouseup", () => { if (!touch) expandmove(el, lift, duration, elEase) })
 
                 addListener(el, "touchstart", () => { touch = true, pauseCompatLoops(el), expandmove(el, lift, duration, elEase) })
                 addListener(el, "touchend", () => {
-                    touch = true, expandmove(el, 1, duration, elEase).eventCallback("onComplete", () => fireOnComplete(el, "click")), setTimeout(() => { touch = false }, 0)
+                    touch = true, expandmove(el, 10, duration, elEase).eventCallback("onComplete", () => fireOnComplete(el, "click")), setTimeout(() => { touch = false }, 0)
                 })
             }
         }

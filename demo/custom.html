@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GClass — Custom animations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="gclass-bundle.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-200">
+    <header class="border-b border-slate-800 px-8 py-6">
+      <a class="text-sm text-slate-500 hover:text-slate-300" href="index.html">&larr; index</a>
+      <h1 class="m-0 mt-2 text-xl font-semibold">Custom animations</h1>
+      <p class="m-0 mt-1 text-sm text-slate-400">
+        Push entries (sel / from / play / build / setup) onto window.gclass.customAnims
+      </p>
+    </header>
+
+    <main class="mx-auto grid max-w-4xl gap-6 p-8">
+      <!-- Push entries onto window.gclass.customAnims before the engine boots to register your own animations. -->
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <h2 class="m-0 text-lg font-semibold text-cyan-300">Definition shape</h2>
+        <p class="m-0 mt-1 text-sm text-slate-400">
+          Push a config object onto <code>window.gclass.customAnims</code>. The engine derives a spawn
+          (entrance) and/or loop (build) from it automatically.
+        </p>
+        <pre class="mt-4 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-emerald-400">{
+  sel:  ".your-class",              // the className on elements
+  from: { opacity: 0, y: 20 },      // hidden state (optional)
+  play: (el, delay, dur, ease) =&gt; tween | timeline,  // entrance
+  build: (el, ctx) =&gt; tween | timeline,              // loop
+  key:  "storageKey",               // loop storage key
+  typewriter: true,                 // TextPlugin entry
+  typewriterSplit: true,            // per-part typed reveal
+  text: false,                      // skip the .spawn-text-* variant
+  loop: false,                      // build but no auto repeat
+  setup: (el, ctx) =&gt; void | teardown // special-abilities hook
+}</pre>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <h2 class="m-0 text-lg font-semibold text-cyan-300">Example: .whirl</h2>
+        <p class="m-0 mb-4 mt-1 text-sm text-slate-400">
+          A custom spawn that spins and fades in. The definition below is registered, and the element
+          carries the <code>.whirl scroll</code> classes so it plays when scrolled into view.
+        </p>
+        <div class="whirl scroll rounded-lg bg-fuchsia-700/70 p-6 text-center text-xl font-semibold">whirl</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <h2 class="m-0 text-lg font-semibold text-cyan-300">Registration</h2>
+        <p class="m-0 mt-1 text-sm text-slate-400">
+          Must run before <code>initAnimations()</code> boots the engine (i.e. before DOMContentLoaded in the demo bundle).
+        </p>
+        <pre class="mt-4 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-emerald-400">window.gclass.customAnims.push({
+  sel: '.whirl',
+  from: { opacity: 0, rotation: 90, scale: 0.7 },
+  play: (el, delay, dur, ease) =&gt;
+    window.gsap.fromTo(el, { opacity: 0, rotation: 90, scale: 0.7 },
+                        { opacity: 1, rotation: 0, scale: 1,
+                          duration: dur, delay, ease }),
+})</pre>
+      </section>
+
+      <script>
+        window.gclass.customAnims.push({
+          sel: '.whirl',
+          from: { opacity: 0, rotation: 90, scale: 0.7 },
+          play: (el, delay, dur, ease) =>
+            window.gsap.fromTo(el, { opacity: 0, rotation: 90, scale: 0.7 },
+                                    { opacity: 1, rotation: 0, scale: 1,
+                                      duration: dur, delay, ease }),
+        })
+      </script>
+
+    </main>
+  </body>
+</html>

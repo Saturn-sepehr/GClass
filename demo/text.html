@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GClass — Text</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="gclass-bundle.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-200">
+    <header class="border-b border-slate-800 px-8 py-6">
+      <a class="text-sm text-slate-500 hover:text-slate-300" href="index.html">&larr; index</a>
+      <h1 class="m-0 mt-2 text-xl font-semibold">Text (SplitText)</h1>
+      <p class="m-0 mt-1 text-sm text-slate-400">
+        spawn-text-&lt;name&gt;, typewriter, typewriter-split, .words/.lines/.letter, stagger-N
+      </p>
+    </header>
+
+    <main class="grid grid-cols-1 gap-8 p-8">
+      <!-- Text splits & animates purely from classes. Add .scroll so they play in view. -->
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">spawn-text-spawn-up</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">splits text and animates each part with the parent spawn's <code>from</code></p>
+        <h2 class="spawn-text-spawn-up scroll text-2xl font-semibold">Each word rises into place</h2>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">spawn-text-spawn-fade</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">per-part fade using spawn-fade</p>
+        <h2 class="spawn-text-spawn-fade scroll text-2xl font-semibold">Words fade in softly</h2>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">spawn-text-spawn-down</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">per-part drop using spawn-down</p>
+        <h2 class="spawn-text-spawn-down scroll text-2xl font-semibold">Lines drop from above</h2>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.words</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">per-word split granularity (default)</p>
+        <h2 class="spawn-text-spawn-up words scroll text-2xl font-semibold">Split by words</h2>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.letter</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">per-character split granularity</p>
+        <h2 class="spawn-text-spawn-up letter scroll text-2xl font-semibold">Split by letters</h2>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.lines</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">per-line split granularity</p>
+        <div class="lines spawn-text-spawn-up scroll text-xl font-semibold">Line one<br />Line two<br />Line three</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">stagger-0.08</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">explicit per-part stagger (seconds)</p>
+        <h2 class="spawn-text-spawn-up letter stagger-0.08 scroll text-2xl font-semibold">Slow cascade stagger</h2>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.no-revert</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">keep the split parts after the animation (no revert)</p>
+        <h2 class="spawn-text-spawn-up no-revert scroll text-2xl font-semibold">Stays split after</h2>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.reduced</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">skip animation under prefers-reduced-motion</p>
+        <h2 class="spawn-text-spawn-up reduced scroll text-2xl font-semibold">Honours reduced motion</h2>
+      </section>
+
+    </main>
+  </body>
+</html>
