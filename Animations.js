@@ -210,6 +210,17 @@ export function magnet (target , x , y , scale , dur , ease){
     return gsap.to(target , {x , y , scale , duration:dur , ease:easeOf(ease) , overwrite:"auto"})
 }
 
+export function magnet3d (target , x , y , scale , rotX , rotY , dur , ease){
+    // Like `magnet` but also tilts the element in 3D space to face the cursor:
+    // translation pulls it toward the pointer while rotationX/rotationY lean it
+    // so the face tracks the cursor. `transformOrigin:"50% 50%"` keeps the tilt
+    // pivoting around the element's centre and `transformPerspective` gives the
+    // rotation its depth (without it, rotationX/rotationY on a flat element look
+    // like a subtle skew rather than a real 3D tilt). Passing x:0, y:0, scale:1,
+    // rotX:0, rotY:0 resets it back to rest on mouseleave.
+    return gsap.to(target , {x , y , scale , rotationX:rotX , rotationY:rotY , transformOrigin:"50% 50%" , transformPerspective:600 , duration:dur , ease:easeOf(ease) , overwrite:"auto"})
+}
+
 export function reset (target , dur , ease){
     gsap.to(target, { x: 0, y: 0, scale: 1, duration: dur/2, ease: ease })
 }

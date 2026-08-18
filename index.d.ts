@@ -165,6 +165,7 @@ export function countTargetVars(target: TweenTarget): { start: number; end: numb
 export function verticalmove(target: TweenTarget, amount: number, dur: number, ease: string): any
 export function expandmove(target: TweenTarget, amount: number, dur: number, ease: string): any
 export function magnet(target: TweenTarget, x: number, y: number, scale: number, dur: number, ease: string): any
+export function magnet3d(target: TweenTarget, x: number, y: number, scale: number, rotX: number, rotY: number, dur: number, ease: string): any
 export function reset(target: TweenTarget, dur: number, ease: string): any
 export function spinCW(target: TweenTarget, delay: number, dur: number, ease: string): any
 export function spinCCW(target: TweenTarget, delay: number, dur: number, ease: string): any

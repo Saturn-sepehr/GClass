@@ -1,5 +1,5 @@
 import gsap from 'gsap'
-import { SpawnV, verticalmove, expandmove, magnet, reset, typewriter, countTargetVars } from './Animations'
+import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars } from './Animations'
 import { customAnims } from './CustomAnims'
 import { defaults, normalize } from './Config'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
@@ -938,6 +938,22 @@ export default function initListeners() {
         }
         const magnetOnLeave = (el, duration, elEase) => () => magnet(el, 0, 0, 1, duration, elEase)
 
+        // `.magnet3d` moves exactly like `.magnet` but also tilts the element to
+        // face the cursor. The tilt is proportional to the cursor's position
+        // within the element (`relX`/`relY` in -0.5..0.5), scaled by the
+        // `mtilt-` degrees class (default 12). Cursor right/left swings it around
+        // the vertical axis (rotationY), cursor up/down around the horizontal
+        // (rotationX), so the face tracks the pointer.
+        const magnet3dOnMove = (el, pull, grow, tilt, duration, elEase) => (ev) => {
+            const r = el.getBoundingClientRect()
+            const dx = ev.clientX - (r.left + r.width / 2)
+            const dy = ev.clientY - (r.top + r.height / 2)
+            const relX = r.width ? (ev.clientX - r.left) / r.width - 0.5 : 0
+            const relY = r.height ? (ev.clientY - r.top) / r.height - 0.5 : 0
+            magnet3d(el, dx * pull, dy * pull, grow, -relY * tilt, relX * tilt, duration, elEase)
+        }
+        const magnet3dOnLeave = (el, duration, elEase) => () => magnet3d(el, 0, 0, 1, 0, 0, duration, elEase)
+
         const applyMagnet = () => {
             if (!magnetQuery) return
             const touch = magnetQuery.matches
@@ -955,17 +971,22 @@ export default function initListeners() {
         }
 
         const setupMagnet = (el) => {
-            if (!el.classList.contains("magnet")) return
+            if (!el.classList.contains("magnet") && !el.classList.contains("magnet3d")) return
+            const threeD = el.classList.contains("magnet3d")
             const duration = readClassNumber(el, "mtime-", 0.4)
             const pull = readClassNumber(el, "amount-", 0.3)
             const grow = readClassNumber(el, "mgrow-", 1.1)
+            const tilt = readClassNumber(el, "mtilt-", 12)
             const elEase = getEase(el)
 
-            magnetState.push({
-                el,
-                onMove: magnetOnMove(el, pull, grow, duration, elEase),
-                onLeave: magnetOnLeave(el, duration, elEase),
-            })
+            const onMove = threeD
+                ? magnet3dOnMove(el, pull, grow, tilt, duration, elEase)
+                : magnetOnMove(el, pull, grow, duration, elEase)
+            const onLeave = threeD
+                ? magnet3dOnLeave(el, duration, elEase)
+                : magnetOnLeave(el, duration, elEase)
+
+            magnetState.push({ el, onMove, onLeave })
         }
 
         if (magnetQuery) magnetQuery.addEventListener("change", applyMagnet)
