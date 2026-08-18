@@ -3,6 +3,7 @@ import {
   spinCCW, spinCW, expandA, typewriter, bell, spawnBlur, spawnFade, spawnXDown,
   spawnXUp, spawnYRight, spawnYLeft, pulse, radiate, hover, expandRight,
   expandLeft, expandUp, expandDown, marquee, countUp,
+  spawnClipReveal, curtainHorizontal, curtainVertical,
 } from './Animations.js'
 
 // ---------------------------------------------------------------------------
@@ -93,10 +94,19 @@ export const animations = [
   { sel: ".typewriter", typewriter: true, from: { text: "" }, play: (el, delay, dur, ease) => typewriter(el, el.innerHTML, dur, delay, ease) },
   { sel: ".typewriter-split", typewriter: true, typewriterSplit: true, from: { opacity: 0 }, play: (el, delay, dur, ease) => null },
 
-  // Custom-function animation: counts from 0 up to whatever number is in the
-  // element. `play` just wraps a helper from Animations.js — nothing else is
-  // special, so it still gets order/scroll/leave/appear automatically.
-  { sel: ".count-up", from: { opacity: 0 }, play: (el, delay, dur, ease) => countUp(el, delay, dur, ease) },
+  // Custom-function animation: counts from the `.spawn-num-N` value (N = the
+  // starting number) up to whatever number is in the element (falling back to 0
+  // when no `.spawn-num-N` class is present). `play` just wraps a helper from
+  // Animations.js — nothing else is special, so it still gets
+  // order/scroll/leave/appear automatically.
+  { sel: ".count", count: true, text: false, from: { opacity: 0 }, play: (el, delay, dur, ease) => countUp(el, delay, dur, ease) },
+
+  // Pure clip-path reveals. `text:false` so the SplitText per-char variant is
+  // skipped (these are meant for media/containers). The `from` inset is mirrored
+  // in each helper so scroll/scroll-progress/appear/leave all know the hidden state.
+  { sel: ".clip-reveal", text: false, from: { clipPath: "inset(0% 0% 100% 0%)" }, play: (el, delay, dur, ease) => spawnClipReveal(el, delay, dur, ease) },
+  { sel: ".curtain-horizontal", text: false, from: { clipPath: "inset(0% 50% 0% 50%)" }, play: (el, delay, dur, ease) => curtainHorizontal(el, delay, dur, ease) },
+  { sel: ".curtain-vertical", text: false, from: { clipPath: "inset(50% 0% 50% 0%)" }, play: (el, delay, dur, ease) => curtainVertical(el, delay, dur, ease) },
 
   
   // --- Loops (build + key). Also usable via hover-<name>/click-<name> ---------
@@ -130,6 +140,7 @@ export function normalize(extra = []) {
       typewriter: a.typewriter,
       typewriterSplit: a.typewriterSplit,
       text: a.text !== false,
+      count: a.count,
     }))
   const loopConfigs = all
     .filter((a) => a.build)

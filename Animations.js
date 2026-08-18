@@ -20,7 +20,7 @@ const easeOf = (e) => e || DEFAULT_EASE;
 // value. Temporarily drop the inline opacity to read the CSS-defined one (e.g.
 // a `disabled:opacity-50`, a `.opacity-*` utility, or the default 1), then
 // restore it so the actual animation still starts from the right place.
-const finalOpacity = (target) => {
+export const finalOpacity = (target) => {
     const had = target.style.opacity
     target.style.removeProperty("opacity")
     const v = parseFloat(getComputedStyle(target).opacity)
@@ -79,6 +79,26 @@ export function spawnBlur (target , delay , dur , ease){
     const e = easeOf(ease)
     // Linger the blur slightly so the focus pull feels deliberate, not abrupt.
     return gsap.fromTo(target , {opacity:0 , filter:"blur(20px)"} , {ease:e , duration:dur , delay:delay , opacity:finalOpacity(target) , filter:"blur(0px)"})
+}
+
+// Clip-path reveal: the element's box is wiped open edge-to-edge (default: from
+// the bottom edge upward). The `from` inset is mirrored in the Config entry so
+// `.scroll`/`.scroll-progress`/`.leave` reversal and `.appear` all know the
+// hidden state. No opacity is involved — pure clip wipe.
+export function spawnClipReveal (target , delay , dur , ease){
+    return gsap.fromTo(target , {clipPath:"inset(0% 0% 100% 0%)"} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
+}
+
+// Curtain reveal: opens outward from the horizontal centre — a vertical slit in
+// the middle widens left and right until the whole box is shown.
+export function curtainHorizontal (target , delay , dur , ease){
+    return gsap.fromTo(target , {clipPath:"inset(0% 50% 0% 50%)"} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
+}
+
+// Curtain reveal: opens outward from the vertical centre — a horizontal slit in
+// the middle widens up and down until the whole box is shown.
+export function curtainVertical (target , delay , dur , ease){
+    return gsap.fromTo(target , {clipPath:"inset(50% 0% 50% 0%)"} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
 }
 
 export function spawnXUp (target , delay , dur , ease){
@@ -141,21 +161,31 @@ export function expandDown (target , delay , dur , ease){
     return tl
 }
 
-export function countUp (target , delay , dur, ease){
-    const e = easeOf(ease)
+export function countTargetVars (target){
+    // Cache on the element so the target number survives a `.scroll` reverse
+    // (which rewrites textContent back to the start value). Re-reading it from
+    // the live text each play would otherwise collapse the range to start==end.
+    if (target._countTarget) return target._countTarget
     // Extract the number from the element, ignoring any surrounding text
     // (e.g. "$1,250 total" -> 1250). Keeps decimals so 3.14 counts to 3.14.
     const match = (target.textContent || "0").replace(/,/g, "").match(/-?\d+(?:\.\d+)?/)
     const end = match ? parseFloat(match[0]) : 0
     const decimals = match?.[0].includes(".") ? (match[0].split(".")[1] || "").length : 0
-    const obj = { n: 0 }
-    return gsap.to(obj, {
-        n: end,
-        duration: dur,
-        delay,
-        ease: e,
-        onUpdate: () => { target.textContent = obj.n.toFixed(decimals) },
-    })
+    // Count FROM `.spawn-num-N` (N = the starting number) up to `end`. When the
+    // class is absent, fall back to 0.
+    const startCls = [...target.classList].find(c => c.startsWith("spawn-num-"))
+    const start = startCls ? parseFloat(startCls.slice("spawn-num-".length)) : 0
+    return target._countTarget = { start, end, decimals }
+}
+
+export function countUp (target , delay , dur, ease){
+    const e = easeOf(ease)
+    const { start, end, decimals } = countTargetVars(target)
+    const obj = { n: start }
+    // Pure counter: animates the number only, leaving opacity untouched, so it
+    // composes cleanly with `.scroll` / `.scroll-progress` / `.appear` /
+    // `.leave` without imposing a fade.
+    return gsap.timeline({ delay }).fromTo(obj , { n: start } , { n: end , duration:dur , ease:e , onUpdate: () => { target.textContent = obj.n.toFixed(decimals) } } , 0)
 }
 
 

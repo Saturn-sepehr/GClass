@@ -1,5 +1,5 @@
 import gsap from 'gsap'
-import { SpawnV, verticalmove, expandmove, magnet, reset, typewriter } from './Animations'
+import { SpawnV, verticalmove, expandmove, magnet, reset, typewriter, countTargetVars } from './Animations'
 import { customAnims } from './CustomAnims'
 import { defaults, normalize } from './Config'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
@@ -259,7 +259,13 @@ export default function initListeners() {
         // spawn transform settles), so re-attaching the leave ghost doesn't snap.
         const refreshLeaveRect = (el) => {
             const s = leaveStates.get(el)
-            if (s) s.rect = el.getBoundingClientRect()
+            if (s) {
+                s.rect = el.getBoundingClientRect()
+                // The spawn tween is created AFTER captureLeave (which runs on
+                // node-insert). Pick it up here so a later leave can reverse the
+                // real tween (fading + counting back down) instead of a bare ghost.
+                s.tween = el._spawnTween || el._scrollTween || s.tween
+            }
         }
 
         // Selector covering every spawn/expand class plus its auto-generated
@@ -336,6 +342,7 @@ export default function initListeners() {
             for (const [key] of Object.entries(from)) {
                 if (key === "opacity") to[key] = 1
                 else if (key === "filter") to[key] = "blur(0px)"
+                else if (key === "clipPath") to[key] = "inset(0% 0% 0% 0%)"
                 else to[key] = key.startsWith("scale") ? 1 : 0
             }
             return to
@@ -601,6 +608,96 @@ export default function initListeners() {
         // and lets the single ScrollTrigger.refresh() at the end reconcile layout.
         gsap.utils.toArray(".pin").forEach(setupPin)
 
+        // Scroll-driven extras — class-driven ScrollTrigger behaviours that don't
+        // fit the spawn/loop machinery (no `play`/`build`), handled like `.pin`:
+        //   .parallax-N            - element drifts relative to scroll. N is a
+        //                            speed factor: 1 = static, <1 = slower,
+        //                            >1 = faster (opposite travel direction).
+        //   .progress-bar/.scroll-fill - fill 0->100% across a scroll range
+        //                            (scaleX, anchored left). progress-start-N /
+        //                            progress-end-N / progress-reverse honored.
+        //   .scroll-fade-bg         - lerp background-position across scroll
+        //                            (needs a background larger than the box).
+        //   .scroll-horizontal      - pinned section that pans its `.scroll-track`
+        //                            child left across the pinned range.
+        // (.clip-reveal and .curtain-* are spawn classes defined in Config.js,
+        // so they flow through the normal spawn/scroll/appear/leave machinery.)
+        const setupScrollDriven = (el) => {
+            if (el.dataset?.gsapScrollDriven) return
+            el.dataset.gsapScrollDriven = "1"
+            if (isReduced(el)) return
+            const cls = [...el.classList]
+            const clamp = (n) => Math.min(100, Math.max(0, n))
+
+            const parallaxCls = cls.find((c) => c.startsWith("parallax-"))
+            if (parallaxCls) {
+                const factor = parseFloat(parallaxCls.slice("parallax-".length)) || 1
+                if (factor === 1) return
+                const amt = (factor - 1) * 50
+                const t = gsap.fromTo(el,
+                    { yPercent: -amt },
+                    {
+                        yPercent: amt, ease: "none",
+                        scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
+                    }
+                )
+                scrollTriggers.push(t.scrollTrigger)
+                return
+            }
+
+            if (el.classList.contains("progress-bar") || el.classList.contains("scroll-fill")) {
+                const startClass = readClassNumber(el, "progress-start-", null)
+                const endClass = readClassNumber(el, "progress-end-", null)
+                const t = gsap.fromTo(el,
+                    { scaleX: 0 },
+                    {
+                        scaleX: 1, ease: "none", transformOrigin: "left center",
+                        scrollTrigger: {
+                            trigger: el,
+                            start: startClass != null ? `top ${clamp(100 - startClass)}%` : "top bottom",
+                            end: endClass != null ? `top ${clamp(100 - endClass)}%` : "bottom top",
+                            scrub: true,
+                            reversed: el.classList.contains("progress-reverse"),
+                        },
+                    }
+                )
+                scrollTriggers.push(t.scrollTrigger)
+                return
+            }
+
+            if (el.classList.contains("scroll-fade-bg")) {
+                const t = gsap.fromTo(el,
+                    { backgroundPosition: "0% 0%" },
+                    {
+                        backgroundPosition: "100% 100%", ease: "none",
+                        scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
+                    }
+                )
+                scrollTriggers.push(t.scrollTrigger)
+                return
+            }
+
+            if (el.classList.contains("scroll-horizontal")) {
+                const track = el.querySelector(".scroll-track")
+                if (!track) return
+                const getAmount = () => track.scrollWidth - el.clientWidth
+                const t = gsap.to(track, {
+                    x: () => -getAmount(), ease: "none",
+                    scrollTrigger: {
+                        trigger: el,
+                        start: "top top",
+                        end: () => `+=${getAmount()}`,
+                        pin: true,
+                        scrub: 1,
+                        anticipatePin: 1,
+                        invalidateOnRefresh: true,
+                    },
+                })
+                scrollTriggers.push(t.scrollTrigger)
+            }
+        }
+        gsap.utils.toArray('[class^="parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven)
+
         // `.scroll`/`.scroll-progress` entrance animation, driven by ScrollTrigger.
         // Split out into a helper so DYNAMICALLY-added elements (e.g. pagination
         // rendered after a data fetch) get a trigger too, instead of only elements
@@ -625,6 +722,7 @@ export default function initListeners() {
                     if (key === "opacity") to[key] = 1
                     else if (key === "filter") to[key] = "blur(0px)"
                     else if (key === "text") to[key] = el.innerHTML
+                    else if (key === "clipPath") to[key] = "inset(0% 0% 0% 0%)"
                     else to[key] = key.startsWith("scale") ? 1 : 0
                 }
 
@@ -641,7 +739,13 @@ export default function initListeners() {
                         reversed: el.classList.contains("progress-reverse"),
                     },
                 })
-                if (typewriterSplit) {
+                if (config.count) {
+                    // Counter driven by scroll progress: count from `.spawn-num-N`
+                    // to the target as the scrub advances (no opacity fade).
+                    const { start, end, decimals } = countTargetVars(el)
+                    const obj = { n: start }
+                    tl.fromTo(obj, { n: start }, { n: end, ease, onUpdate: () => { el.textContent = obj.n.toFixed(decimals) } }, 0)
+                } else if (typewriterSplit) {
                     const parts = getParts(el, getGranularity(el))
                     if (parts.length) tl.fromTo(parts, { opacity: 0 }, { opacity: 1, ease })
                 } else {
@@ -669,6 +773,14 @@ export default function initListeners() {
                 el._scrollTween.eventCallback("onComplete", () => fireOnComplete(el, "spawn"))
             }
             const reverseToStart = () => {
+                if (config.count) {
+                    // A count spawn is a pure number timeline. Reversing it counts
+                    // back down to the `.spawn-num-N` start value, so re-entering
+                    // view counts up cleanly from scratch.
+                    const t = el._scrollTween
+                    if (t && t.progress() > 0 && !t.reversed()) t.reverse()
+                    return
+                }
                 el._scrollTween?.kill()
                 if (isTypewriter && !typewriterSplit) {
                     el.innerHTML = fullText
@@ -1242,6 +1354,7 @@ export default function initListeners() {
                         if (!el.classList?.contains("appear")) return
                         animateAppear(el)
                         setupScroll(el)
+                        setupScrollDriven(el)
                         if (el.dataset?.gsapSetup) return
                         el.dataset.gsapSetup = "1"
                         setupClicks(el)

@@ -1,4 +1,4 @@
-import initListeners from './Listeners'
+  import initListeners from './Listeners'
 
 // localStorage key controlling whether the GSAP animation system is mounted.
 const STORAGE_KEY = 'funbyte-animations-enabled'

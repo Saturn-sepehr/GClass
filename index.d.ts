@@ -160,6 +160,8 @@ export function expandLeft(target: TweenTarget, delay: number, dur: number, ease
 export function expandUp(target: TweenTarget, delay: number, dur: number, ease: string): any
 export function expandDown(target: TweenTarget, delay: number, dur: number, ease: string): any
 export function countUp(target: TweenTarget, delay: number, dur: number, ease: string): any
+/** Reads a count element's start (`.spawn-num-N`, else 0), target number, and decimals. */
+export function countTargetVars(target: TweenTarget): { start: number; end: number; decimals: number }
 export function verticalmove(target: TweenTarget, amount: number, dur: number, ease: string): any
 export function expandmove(target: TweenTarget, amount: number, dur: number, ease: string): any
 export function magnet(target: TweenTarget, x: number, y: number, scale: number, dur: number, ease: string): any
