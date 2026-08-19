@@ -10000,7 +10000,7 @@
     flipObserver.observe(document.body, { childList: true, subtree: true });
     const animateAppear = (el) => {
       if (!el.classList.contains("appear") || el._appeared) return;
-      if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return;
+      if (!isTextElement(el) && (el.classList.contains("scroll") || el.classList.contains("scroll-progress"))) return;
       if (isReduced(el)) return;
       el._appeared = true;
       const { delay, duration, ease } = readTiming(el);

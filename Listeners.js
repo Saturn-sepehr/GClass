@@ -1341,8 +1341,10 @@ export default function initListeners() {
             if (!el.classList.contains("appear") || el._appeared) return
             // A `.scroll`/`.scroll-progress` element is owned by its ScrollTrigger
             // (see setupScroll); `.appear` must not also fire, or it plays on mount
-            // AND again on scroll-enter.
-            if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
+            // AND again on scroll-enter. Text elements are the exception: their
+            // `.scroll` triggers are wired once at init, so a re-added (reset) text
+            // element has no trigger to conflict with and must animate via `.appear`.
+            if (!isTextElement(el) && (el.classList.contains("scroll") || el.classList.contains("scroll-progress"))) return
             if (isReduced(el)) return
             el._appeared = true
             const { delay, duration, ease } = readTiming(el)
