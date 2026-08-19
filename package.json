@@ -34,6 +34,12 @@
     "css-classes"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Saturn-sepehr/GClass.git",
+    "directory": "/"
+  },
+  "homepage": "https://github.com/Saturn-sepehr/GClass#readme",
   "dependencies": {
     "gsap": "^3.15.0"
   },

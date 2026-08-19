@@ -1,7 +1,6 @@
 # GClass
 
-A Tailwind-style utility layer on top of GSAP. Drop a few CSS classes onto any
-element and it gets animated — no JavaScript configuration required.
+A Tailwind-style utility layer on top of GSAP which I started developing for fun but it got WAY out of hand
 
 Framework-agnostic: works in vanilla JS, React, Vue, Svelte, or any bundler.
 
