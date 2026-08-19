@@ -4,6 +4,10 @@ A Tailwind-style utility layer on top of GSAP which I started developing for fun
 
 Framework-agnostic: works in vanilla JS, React, Vue, Svelte, or any bundler.
 
+## Live demo
+
+https://saturn-sepehr.github.io/GClass/demo/index.html
+
 ## Installation
 
 ```
