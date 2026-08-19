@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GClass — OnComplete</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="reset.js"></script>
+    <script src="gclass-bundle.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-200">
+    <header class="border-b border-slate-800 px-8 py-6">
+      <a class="text-sm text-slate-500 hover:text-slate-300" href="index.html">&larr; index</a>
+      <h1 class="m-0 mt-2 text-xl font-semibold">OnComplete system</h1>
+      <p class="m-0 mt-1 text-sm text-slate-400">
+        on-&lt;kind&gt;-complete-&lt;fn&gt;, on-&lt;kind&gt;-complete-anim-&lt;name&gt;,
+        complete-time-N, complete-delay-N
+      </p>
+    </header>
+
+    <main class="grid grid-cols-1 gap-8 p-8 md:grid-cols-2">
+      <!-- Handlers are registered via window.gclass.registerComplete(...) then triggered by classes. -->
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">on-spawn-complete-onSpawnDone</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">calls handler <code>onSpawnDone</code> when the spawn completes</p>
+        <div class="spawn-up scroll on-spawn-complete-onSpawnDone rounded-lg bg-cyan-700/70 p-4 text-center font-semibold">spawn → onSpawnDone</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">on-spawn-complete-anim-bounce</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">plays animation <code>bounce</code> when the spawn ends</p>
+        <div class="spawn-left scroll on-spawn-complete-anim-bounce rounded-lg bg-emerald-700/70 p-4 text-center font-semibold">spawn → bounce</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">on-spawn-complete-anim-bounce + complete-delay-0.3</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">delay override for the triggered anim</p>
+        <div class="spawn-right scroll on-spawn-complete-anim-bounce complete-delay-0.3 rounded-lg bg-violet-700/70 p-4 text-center font-semibold">spawn → bounce (delayed)</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">on-click-complete-onClickDone</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">calls <code>onClickDone</code> when a click tween completes</p>
+        <div class="click-pulse on-click-complete-onClickDone rounded-lg bg-rose-700/70 p-4 text-center font-semibold">click → onClickDone</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">on-loop-complete-onLoopCycle</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">calls <code>onLoopCycle</code> each loop cycle</p>
+        <div class="pulse on-loop-complete-onLoopCycle rounded-lg bg-amber-700/70 p-4 text-center font-semibold">pulse → onLoopCycle</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6 md:col-span-2">
+        <code class="text-sm text-cyan-300">Event log</code>
+        <p class="m-0 mb-2 mt-1 text-xs text-slate-400">handlers push messages here</p>
+        <pre id="log" class="h-40 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-emerald-400"></pre>
+      </section>
+
+      <script>
+        const log = document.getElementById('log')
+        const push = (msg) => {
+          log.textContent = new Date().toLocaleTimeString() + '  ' + msg + '\n' + log.textContent
+        }
+        window.gclass.registerComplete('onSpawnDone', (el) => push('onSpawnDone fired'))
+        window.gclass.registerComplete('onClickDone', (el) => push('onClickDone fired'))
+        window.gclass.registerComplete('onLoopCycle', (el) => push('onLoopCycle fired'))
+      </script>
+
+    </main>
+  </body>
+</html>

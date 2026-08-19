@@ -1,6 +1,12 @@
 # Dependencies
 node_modules/
 
+# Dev playground
+dev/
+
+#Checklist
+CHECKLIST.txt
+
 # Build output
 dist/
 build/

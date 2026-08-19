@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GClass — Scroll</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="reset.js"></script>
+    <script src="gclass-bundle.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-200">
+    <header class="border-b border-slate-800 px-8 py-6">
+      <a class="text-sm text-slate-500 hover:text-slate-300" href="index.html">&larr; index</a>
+      <h1 class="m-0 mt-2 text-xl font-semibold">Scroll / ScrollTrigger</h1>
+      <p class="m-0 mt-1 text-sm text-slate-400">
+        .scroll, .scroll-progress, parallax-N, progress-bar, scroll-fill,
+        scroll-fade-bg, scroll-horizontal, pin
+      </p>
+    </header>
+
+    <main class="grid grid-cols-1 gap-8 p-8 md:grid-cols-2 lg:grid-cols-3">
+      <!-- Scroll the page to trigger these. Spawn-based ones already carry .scroll. -->
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.scroll</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">entrance plays on viewport entry, reverses on leave</p>
+        <div class="spawn-up scroll rounded-lg bg-cyan-600/70 p-4 text-center font-semibold">scroll + spawn-up</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.scroll-progress</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">entrance is scrubbed with scroll position</p>
+        <div class="spawn-left scroll-progress rounded-lg bg-emerald-600/70 p-4 text-center font-semibold">scroll-progress + spawn-left</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.parallax-1.5</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">drifts relative to scroll; 1.5 = faster</p>
+        <div class="parallax-1.5 rounded-lg bg-violet-600/70 p-4 text-center font-semibold">parallax-1.5</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.progress-bar</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">fills 0 → 100% across a scroll range (scaleX)</p>
+        <div class="progress-bar scroll-fill h-4 w-full origin-left rounded bg-rose-500"></div>
+        <p class="m-0 mt-2 text-xs text-slate-400">scroll to see it fill</p>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.scroll-fade-bg</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">lerps background-position across scroll</p>
+        <div class="scroll-fade-bg h-24 rounded-lg" style="background-image:linear-gradient(90deg,#f59e0b,#ec4899,#8b5cf6);background-size:200% 100%;"></div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6 md:col-span-2 lg:col-span-3">
+        <code class="text-sm text-cyan-300">.pin</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">pins the element across a scroll range (keep scrolling)</p>
+        <div class="pin flex h-40 items-center justify-center rounded-lg bg-indigo-700/70 p-4 text-center font-semibold">pinned while scrolling</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6 md:col-span-2 lg:col-span-3">
+        <code class="text-sm text-cyan-300">.scroll-horizontal + .scroll-track</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">pinned section that pans its <code>.scroll-track</code> child left</p>
+        <div class="scroll-horizontal h-48 overflow-hidden rounded-lg">
+          <div class="scroll-track flex w-max gap-4 p-4">
+            <div class="w-64 shrink-0 rounded-lg bg-sky-700/70 p-8 text-center text-lg font-semibold">panel 1</div>
+            <div class="w-64 shrink-0 rounded-lg bg-sky-700/70 p-8 text-center text-lg font-semibold">panel 2</div>
+            <div class="w-64 shrink-0 rounded-lg bg-sky-700/70 p-8 text-center text-lg font-semibold">panel 3</div>
+            <div class="w-64 shrink-0 rounded-lg bg-sky-700/70 p-8 text-center text-lg font-semibold">panel 4</div>
+            <div class="w-64 shrink-0 rounded-lg bg-sky-700/70 p-8 text-center text-lg font-semibold">panel 5</div>
+            <div class="w-64 shrink-0 rounded-lg bg-sky-700/70 p-8 text-center text-lg font-semibold">panel 6</div>
+            <div class="w-64 shrink-0 rounded-lg bg-sky-700/70 p-8 text-center text-lg font-semibold">panel 7</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.progress-reverse</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">runs a scroll-progress animation in reverse</p>
+        <div class="progress-bar scroll-fill progress-reverse h-4 w-full origin-right rounded bg-fuchsia-500"></div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.progress-start-N / .progress-end-N</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">% into view when the scrub range starts/ends</p>
+        <div class="progress-bar scroll-fill progress-start-40 progress-end-80 h-4 w-full origin-left rounded bg-teal-500"></div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.marquee-no-repeat</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">minimal 2-copy marquee (single seam)</p>
+        <div class="marquee-no-repeat overflow-hidden rounded-lg">
+          <div class="flex w-max whitespace-nowrap px-4 font-semibold">
+            <span class="mx-3 rounded-lg bg-orange-700/70 px-6 py-3">no-repeat</span>
+            <span class="mx-3 rounded-lg bg-orange-700/70 px-6 py-3">no-repeat</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Extra scroll room so the .pin / .scroll-horizontal / progress triggers
+           have a full range to travel through before the page ends. -->
+      <div class="col-span-1 h-[160vh] md:col-span-2 lg:col-span-3"></div>
+
+    </main>
+  </body>
+</html>

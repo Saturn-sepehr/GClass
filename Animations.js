@@ -10,9 +10,9 @@ gsap.registerPlugin(TextPlugin)
 const DEFAULT_EASE = "power3.out";
 const easeOf = (e) => e || DEFAULT_EASE;
 
-// These animations treat `amount` as a scale multiplier: the value of the
-// `amount-N` class is used directly as the target scale. Pass decimal values
-// like amount-1.5 rather than pixel-style numbers.
+// These animations treat `amount` as a scale multiplier, but dampened by a
+// factor of 10: `amount-20` scales to 2x rather than 20x. The target scale is
+// `amount / 10`, so use `amount-N` as a percentage-style number.
 
 // The resting opacity the element should settle on. GSAP sets the spawn's
 // `from` state (opacity 0) on the element before the tween is built, so
@@ -20,7 +20,7 @@ const easeOf = (e) => e || DEFAULT_EASE;
 // value. Temporarily drop the inline opacity to read the CSS-defined one (e.g.
 // a `disabled:opacity-50`, a `.opacity-*` utility, or the default 1), then
 // restore it so the actual animation still starts from the right place.
-const finalOpacity = (target) => {
+export const finalOpacity = (target) => {
     const had = target.style.opacity
     target.style.removeProperty("opacity")
     const v = parseFloat(getComputedStyle(target).opacity)
@@ -79,6 +79,39 @@ export function spawnBlur (target , delay , dur , ease){
     const e = easeOf(ease)
     // Linger the blur slightly so the focus pull feels deliberate, not abrupt.
     return gsap.fromTo(target , {opacity:0 , filter:"blur(20px)"} , {ease:e , duration:dur , delay:delay , opacity:finalOpacity(target) , filter:"blur(0px)"})
+}
+
+// Clip-path reveal: the element's box is wiped open from a chosen edge. `dir`
+// is one of up/down/left/right and picks which inset collapses to zero so the
+// wipe travels from that edge:
+//   up    - hidden at the bottom, wipes open upward (bottom -> top)
+//   down  - hidden at the top, wipes open downward (top -> bottom)
+//   left  - hidden on the right, wipes open leftward (right -> left)
+//   right - hidden on the left, wipes open rightward (left -> right)
+// The `from` inset is mirrored in the Config entry so
+// `.scroll`/`.scroll-progress`/`.leave` reversal and `.appear` all know the
+// hidden state. No opacity is involved — pure clip wipe.
+const CLIP_FROM = {
+    up: "inset(0% 0% 100% 0%)",
+    down: "inset(100% 0% 0% 0%)",
+    left: "inset(0% 0% 0% 100%)",
+    right: "inset(0% 100% 0% 0%)",
+}
+export function spawnClipReveal (target , delay , dur , ease , dir = "up"){
+    const from = CLIP_FROM[dir] || CLIP_FROM.up
+    return gsap.fromTo(target , {clipPath: from} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
+}
+
+// Curtain reveal: opens outward from the horizontal centre — a vertical slit in
+// the middle widens left and right until the whole box is shown.
+export function curtainHorizontal (target , delay , dur , ease){
+    return gsap.fromTo(target , {clipPath:"inset(0% 50% 0% 50%)"} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
+}
+
+// Curtain reveal: opens outward from the vertical centre — a horizontal slit in
+// the middle widens up and down until the whole box is shown.
+export function curtainVertical (target , delay , dur , ease){
+    return gsap.fromTo(target , {clipPath:"inset(50% 0% 50% 0%)"} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
 }
 
 export function spawnXUp (target , delay , dur , ease){
@@ -141,6 +174,33 @@ export function expandDown (target , delay , dur , ease){
     return tl
 }
 
+export function countTargetVars (target){
+    // Cache on the element so the target number survives a `.scroll` reverse
+    // (which rewrites textContent back to the start value). Re-reading it from
+    // the live text each play would otherwise collapse the range to start==end.
+    if (target._countTarget) return target._countTarget
+    // Extract the number from the element, ignoring any surrounding text
+    // (e.g. "$1,250 total" -> 1250). Keeps decimals so 3.14 counts to 3.14.
+    const match = (target.textContent || "0").replace(/,/g, "").match(/-?\d+(?:\.\d+)?/)
+    const end = match ? parseFloat(match[0]) : 0
+    const decimals = match?.[0].includes(".") ? (match[0].split(".")[1] || "").length : 0
+    // Count FROM `.spawn-num-N` (N = the starting number) up to `end`. When the
+    // class is absent, fall back to 0.
+    const startCls = [...target.classList].find(c => c.startsWith("spawn-num-"))
+    const start = startCls ? parseFloat(startCls.slice("spawn-num-".length)) : 0
+    return target._countTarget = { start, end, decimals }
+}
+
+export function countUp (target , delay , dur, ease){
+    const e = easeOf(ease)
+    const { start, end, decimals } = countTargetVars(target)
+    const obj = { n: start }
+    // Pure counter: animates the number only, leaving opacity untouched, so it
+    // composes cleanly with `.scroll` / `.scroll-progress` / `.appear` /
+    // `.leave` without imposing a fade.
+    return gsap.timeline({ delay }).fromTo(obj , { n: start } , { n: end , duration:dur , ease:e , onUpdate: () => { target.textContent = obj.n.toFixed(decimals) } } , 0)
+}
+
 
 //Mouse animations
 
@@ -152,7 +212,9 @@ export function verticalmove (target , amount , dur , ease){
 }
 
 export function expandmove (target , amount , dur , ease){
-    return gsap.to(target , {scale:amount , duration:dur , ease:easeOf(ease)})
+    // `amount` uses the dampened `amount-N` scale system: the target scale is
+    // `amount / 10`. Rest state (scale 1) is therefore amount = 10.
+    return gsap.to(target , {scale:amount / 10 , duration:dur , ease:easeOf(ease)})
 }
 
 export function magnet (target , x , y , scale , dur , ease){
@@ -161,6 +223,17 @@ export function magnet (target , x , y , scale , dur , ease){
     // mousemove so motion stays snappy instead of queuing up behind itself.
     // Passing x:0, y:0, scale:1 resets it back to rest on mouseleave.
     return gsap.to(target , {x , y , scale , duration:dur , ease:easeOf(ease) , overwrite:"auto"})
+}
+
+export function magnet3d (target , x , y , scale , rotX , rotY , dur , ease){
+    // Like `magnet` but also tilts the element in 3D space to face the cursor:
+    // translation pulls it toward the pointer while rotationX/rotationY lean it
+    // so the face tracks the cursor. `transformOrigin:"50% 50%"` keeps the tilt
+    // pivoting around the element's centre and `transformPerspective` gives the
+    // rotation its depth (without it, rotationX/rotationY on a flat element look
+    // like a subtle skew rather than a real 3D tilt). Passing x:0, y:0, scale:1,
+    // rotX:0, rotY:0 resets it back to rest on mouseleave.
+    return gsap.to(target , {x , y , scale , rotationX:rotX , rotationY:rotY , transformOrigin:"50% 50%" , transformPerspective:600 , duration:dur , ease:easeOf(ease) , overwrite:"auto"})
 }
 
 export function reset (target , dur , ease){
@@ -239,7 +312,7 @@ export function pulse (delay , target , amount , dur , ease){
     const tl = gsap.timeline()
     // Overshoot a touch past the target then fall back, so the pulse has a
     // lively beat rather than a flat up-and-down.
-    tl.to(target , {scale:amount * 1.05 , duration:dur * 0.35 , ease:"power2.out"})
+    tl.to(target , {scale:(amount / 10) * 1.05 , duration:dur * 0.35 , ease:"power2.out"})
     .to(target , {scale:1 , duration:dur * 0.45 , ease:e})
 
     .to(target , {scale:1 , duration:delay})
@@ -275,7 +348,7 @@ export function radiate (delay , target , amount , dur , ease , zIndex){
     window.addEventListener("resize", schedule, { passive: true })
 
     return gsap.fromTo(clone , {scale:1 , opacity:1} , {
-        scale:amount ,
+        scale:amount / 10 ,
         opacity:0 ,
         duration:dur ,
         delay:delay ,
@@ -314,6 +387,16 @@ export function marquee (target , dir , duration , xOffset = 0 , yOffset = 0 , n
     track.style.cssText = `position:absolute;top:${yOffset}px;left:${xOffset}px;display:flex;flex-direction:${horizontal ? "row" : "column"};width:max-content;will-change:transform;`
     while (target.firstChild) track.appendChild(target.firstChild)
     target.appendChild(track)
+
+    // The track is absolutely positioned, so once its content moves in, the host
+    // has no in-flow children left and can collapse to zero height. With the
+    // `overflow:hidden` set above that clips the track away entirely (e.g. a
+    // bare-text `<h1 class="marquee-left">` disappears). Preserve the content's
+    // height on the host when that happens so the marquee stays visible. Hosts
+    // with their own height (flex cards etc.) are left untouched.
+    if (target.offsetHeight === 0 && track.offsetHeight > 0) {
+        target.style.height = track.offsetHeight + "px"
+    }
 
     const first = track.children[0]
     if (!first) return gsap.fromTo(track, {}, { duration: 0 })

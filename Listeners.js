@@ -1,6 +1,7 @@
 import gsap from 'gsap'
-import { bounce, expandH, expandV, shake, SpawnH, SpawnV, spawnSpinCCW, spawnSpinCW, spinCCW, spinCW, verticalmove, expandA, expandmove, typewriter, bell, spawnBlur, spawnFade, spawnXDown, spawnXUp, spawnYRight, spawnYLeft, pulse, radiate, hover, expandRight, expandLeft, expandUp, expandDown, marquee, magnet, reset } from './Animations'
+import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars } from './Animations'
 import { customAnims } from './CustomAnims'
+import { defaults, normalize } from './Config'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
 
 // Prefix for SplitText text-reveal classes. Distinct from the raw `text-*`
@@ -8,28 +9,32 @@ import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
 const TEXT_PREFIX = "spawn-text-"
 const TEXT_PREFIX_LEN = TEXT_PREFIX.length
 
-const defaults = {
-    orderDivide: 5,
-    spawnDelayMultiplier: 0.2,
-    spawnOffset: 20,
-    clickOffset: 10,
-    clickExpandOffset: 1.5,
-    clickDuration: 0.2,
-    ease: "back",
-    effectDelay: 0.5,
-    effectDuration: 1,
-    effectOffset: 20,
-    progressStart: "top bottom",
-    progressEnd: "center center",
-    textStagger: 0.03,
-    typewriterSplitCharDuration: 0.05,
-    minTextPartDuration: 0.3,
+// The engine is fully config-driven. All animation definitions live in
+// Config.js; here we just normalise them into the two internal views the
+// machinery consumes (spawn/entrance + loop) plus the raw `all` list.
+const { all: animAll, spawnConfigs, loopConfigs } = normalize(customAnims)
+
+// --- Named onComplete handler registry -------------------------------------
+// `on-<kind>-complete-<name>` classes resolve `<name>` to a function here
+// (preferred) or to a global `window[<name>]` as a fallback. Register your
+// handlers with `registerComplete(name, fn)` so the engine can find them
+// without polluting the global scope.
+const completeHandlers = new Map()
+export function registerComplete(name, fn) {
+    if (typeof fn === "function") completeHandlers.set(name, fn)
+    return fn
+}
+export function resolveHandler(name) {
+    if (completeHandlers.has(name)) return completeHandlers.get(name)
+    if (typeof window !== "undefined" && typeof window[name] === "function") return window[name]
+    return null
 }
 
 export default function initListeners() {
     gsap.registerPlugin(TextPlugin, ScrollTrigger, SplitText)
 
     const registeredListeners = []
+        const onCompleteTweens = []
         const addListener = (el, type, fn) => {
             el.addEventListener(type, fn)
             registeredListeners.push({ el, type, fn })
@@ -42,6 +47,13 @@ export default function initListeners() {
             const match = [...el.classList].find(c => c.startsWith("ease-"))
             return match ? match.split("-")[1] : defaults.ease
         }
+
+        // Reduced-motion support. `.reduced` is a per-element opt-out: when the
+        // OS has "reduce motion" enabled, any element carrying `.reduced` is left
+        // completely un-animated (its spawn/loop/click/scroll/setup all skip).
+        const reducedMotion = () =>
+            (typeof window !== "undefined" && window.matchMedia?.(`(prefers-reduced-motion: reduce)`)?.matches) ?? false
+        const isReduced = (el) => reducedMotion() && el.classList.contains("reduced")
 
         // `.preserve` keeps an already-rendered element (e.g. one that persists
         // in a shared layout across route changes) from being re-animated when
@@ -59,31 +71,9 @@ export default function initListeners() {
         }
         const markPreserved = (el) => { if (el.classList.contains("preserve")) el.dataset.gsapPreserved = "1" }
 
-        const spawnConfigs = [            { sel: ".spawn-down", from: { opacity: 0, y: -defaults.spawnOffset }, play: (el, delay, dur, ease) => SpawnV(el, delay, -defaults.spawnOffset, dur, ease) },
-            { sel: ".spawn-up", from: { opacity: 0, y: defaults.spawnOffset }, play: (el, delay, dur, ease) => SpawnV(el, delay, defaults.spawnOffset, dur, ease) },
-            { sel: ".spawn-left", from: { opacity: 0, x: -defaults.spawnOffset }, play: (el, delay, dur, ease) => SpawnH(el, delay, -defaults.spawnOffset, dur, ease) },
-            { sel: ".spawn-right", from: { opacity: 0, x: defaults.spawnOffset }, play: (el, delay, dur, ease) => SpawnH(el, delay, defaults.spawnOffset, dur, ease) },
-            { sel: ".spawn-cw", from: { scale: 0, rotation: -360 }, play: (el, delay, dur, ease) => spawnSpinCW(el, delay, dur, ease) },
-            { sel: ".spawn-ccw", from: { scale: 0, rotation: 360 }, play: (el, delay, dur, ease) => spawnSpinCCW(el, delay, dur, ease) },
-            { sel: ".spawn-fade", from: { opacity: 0 }, play: (el, delay, dur, ease) => spawnFade(el, delay, dur, ease) },
-            { sel: ".spawn-blur", from: { opacity: 0, filter: "blur(20px)" }, play: (el, delay, dur, ease) => spawnBlur(el, delay, dur, ease) },
-           
-            { sel: ".spawn-x-down", from: { scale: 0, rotationX: -360 }, play: (el, delay, dur, ease) => spawnXDown(el, delay, dur, ease) },
-            { sel: ".spawn-x-up", from: { scale: 0, rotationX: 360 }, play: (el, delay, dur, ease) => spawnXUp(el, delay, dur, ease) },
-         
-            { sel: ".spawn-y-right", from: { scale: 0, rotationY: -360 }, play: (el, delay, dur, ease) => spawnYRight(el, delay, dur, ease) },
-            { sel: ".spawn-y-left", from: { scale: 0, rotationY: 360 }, play: (el, delay, dur, ease) => spawnYLeft(el, delay, dur, ease) },
-         
-            { sel: ".expand-vertical", from: { opacity: 0, scaleY: 0 }, play: (el, delay, dur, ease) => expandV(el, delay, dur, ease) },
-            { sel: ".expand-horizontal", from: { opacity: 0, scaleX: 0 }, play: (el, delay, dur, ease) => expandH(el, delay, dur, ease) },
-            { sel: ".expand-right", from: { opacity: 0, scaleX: 0 }, play: (el, delay, dur, ease) => expandRight(el, delay, dur, ease) },
-            { sel: ".expand-left", from: { opacity: 0, scaleX: 0 }, play: (el, delay, dur, ease) => expandLeft(el, delay, dur, ease) },
-            { sel: ".expand-up", from: { opacity: 0, scaleY: 0 }, play: (el, delay, dur, ease) => expandUp(el, delay, dur, ease) },
-            { sel: ".expand-down", from: { opacity: 0, scaleY: 0 }, play: (el, delay, dur, ease) => expandDown(el, delay, dur, ease) },
-            { sel: ".expand-all", from: { opacity: 0, scale: 0 }, play: (el, delay, dur, ease) => expandA(el, delay, dur, ease) },
-            { sel: ".typewriter", typewriter: true, from: { text: "" }, play: (el, delay, dur, ease) => typewriter(el, el.innerHTML, dur, delay, ease) },
-            { sel: ".typewriter-split", typewriter: true, typewriterSplit: true, from: { opacity: 0 }, play: (el, delay, dur, ease) => playTypewriterSplit(el, delay, dur, ease) },
-        ].concat(customAnims)
+        // `spawnConfigs` is derived from the config in Config.js (see top of
+        // file). Adding/removing an entry there automatically re-wires every
+        // spawn feature below: order, scroll, leave, appear and text variants.
 
         // Leave animations derive from spawnConfigs so adding an entry here
         // automatically enables its leave/exit reverse too (single source of truth).
@@ -269,7 +259,13 @@ export default function initListeners() {
         // spawn transform settles), so re-attaching the leave ghost doesn't snap.
         const refreshLeaveRect = (el) => {
             const s = leaveStates.get(el)
-            if (s) s.rect = el.getBoundingClientRect()
+            if (s) {
+                s.rect = el.getBoundingClientRect()
+                // The spawn tween is created AFTER captureLeave (which runs on
+                // node-insert). Pick it up here so a later leave can reverse the
+                // real tween (fading + counting back down) instead of a bare ghost.
+                s.tween = el._spawnTween || el._scrollTween || s.tween
+            }
         }
 
         // Selector covering every spawn/expand class plus its auto-generated
@@ -305,12 +301,48 @@ export default function initListeners() {
             }
         }
 
+        // --- on-<kind>-complete-* handling ------------------------------------
+        // Triggered when a spawn / loop / click tween finishes. The class names a
+        // function to call, or (via `-anim-<name>`) an animation to play once.
+        //   on-spawn-complete-<fn>          on-spawn-complete-anim-<anim>
+        //   on-loop-complete-<fn>           on-loop-complete-anim-<anim>
+        //   on-click-complete-<fn>          on-click-complete-anim-<anim>
+        const playNamed = (el, name) => {
+            const entry = animAll.find((a) => a.sel === "." + name)
+            if (!entry) return
+            // `.complete-time-N` / `.complete-delay-N` override the triggered
+            // animation's duration / delay. They apply to spawn-style entries
+            // (passed into `play`); loop entries define their own duration, so
+            // only the delay is applied to them.
+            const delay = readClassNumber(el, "complete-delay-", 0)
+            const dur = readClassNumber(el, "complete-time-", 1)
+            const tween = entry.play
+                ? entry.play(el, delay, dur, getEase(el))
+                : entry.build(el, readLoopCtx(el))
+            if (!tween) return
+            if (!entry.play) tween.delay(delay)
+            el[name] = tween
+            onCompleteTweens.push(tween)
+        }
+        const fireOnComplete = (el, kind) => {
+            const prefix = `on-${kind}-complete-`
+            const cls = [...el.classList].find((c) => c.startsWith(prefix))
+            if (!cls) return
+            const val = cls.slice(prefix.length)
+            if (val.startsWith("anim-")) playNamed(el, val.slice(5))
+            else {
+                const fn = resolveHandler(val)
+                if (fn) fn(el)
+            }
+        }
+
         const scrollTriggers = []
         const computeTo = (from) => {
             const to = {}
             for (const [key] of Object.entries(from)) {
                 if (key === "opacity") to[key] = 1
                 else if (key === "filter") to[key] = "blur(0px)"
+                else if (key === "clipPath") to[key] = "inset(0% 0% 0% 0%)"
                 else to[key] = key.startsWith("scale") ? 1 : 0
             }
             return to
@@ -518,6 +550,7 @@ export default function initListeners() {
                 onComplete: () => {
                     if (el.classList.contains("leave")) refreshLeaveRect(el)
                     revertSplit(el)
+                    fireOnComplete(el, "spawn")
                 },
             })
         }
@@ -556,7 +589,7 @@ export default function initListeners() {
             const startClass = readClassNumber(el, "progress-start-", null)
             const endClass = readClassNumber(el, "progress-end-", null)
             const start = startClass != null ? `top ${clamp(100 - startClass)}%` : "top top"
-            const end = endClass != null ? `top ${clamp(100 - endClass)}%` : "bottom bottom"
+            const end = endClass != null ? `top ${clamp(100 - endClass)}%` : "bottom top"
             const t = ScrollTrigger.create({
                 trigger: el,
                 start,
@@ -575,6 +608,99 @@ export default function initListeners() {
         // and lets the single ScrollTrigger.refresh() at the end reconcile layout.
         gsap.utils.toArray(".pin").forEach(setupPin)
 
+        // Scroll-driven extras — class-driven ScrollTrigger behaviours that don't
+        // fit the spawn/loop machinery (no `play`/`build`), handled like `.pin`:
+        //   .parallax-N            - element drifts relative to scroll. N is a
+        //                            speed factor: 1 = static, <1 = slower,
+        //                            >1 = faster (opposite travel direction).
+        //   .progress-bar/.scroll-fill - fill 0->100% across a scroll range
+        //                            (scaleX, anchored left). progress-start-N /
+        //                            progress-end-N / progress-reverse honored.
+        //   .scroll-fade-bg         - lerp background-position across scroll
+        //                            (needs a background larger than the box).
+        //   .scroll-horizontal      - pinned section that pans its `.scroll-track`
+        //                            child left across the pinned range.
+        // (.clip-reveal and .curtain-* are spawn classes defined in Config.js,
+        // so they flow through the normal spawn/scroll/appear/leave machinery.)
+        const setupScrollDriven = (el) => {
+            if (el.dataset?.gsapScrollDriven) return
+            el.dataset.gsapScrollDriven = "1"
+            if (isReduced(el)) return
+            const cls = [...el.classList]
+            const clamp = (n) => Math.min(100, Math.max(0, n))
+
+            const parallaxCls = cls.find((c) => c.startsWith("parallax-"))
+            if (parallaxCls) {
+                const factor = parseFloat(parallaxCls.slice("parallax-".length)) || 1
+                if (factor === 1) return
+                const amt = (factor - 1) * 50
+                const t = gsap.fromTo(el,
+                    { yPercent: -amt },
+                    {
+                        yPercent: amt, ease: "none",
+                        scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
+                    }
+                )
+                scrollTriggers.push(t.scrollTrigger)
+                return
+            }
+
+            if (el.classList.contains("progress-bar") || el.classList.contains("scroll-fill")) {
+                const startClass = readClassNumber(el, "progress-start-", null)
+                const endClass = readClassNumber(el, "progress-end-", null)
+                // `.progress-reverse` runs the fill in reverse (full -> empty).
+                // GSAP's ScrollTrigger has no `reversed` config; swap the from/to
+                // so the scrub maps in the opposite direction instead.
+                const reverse = el.classList.contains("progress-reverse")
+                const t = gsap.fromTo(el,
+                    { scaleX: reverse ? 1 : 0 },
+                    {
+                        scaleX: reverse ? 0 : 1, ease: "none", transformOrigin: "left center",
+                        scrollTrigger: {
+                            trigger: el,
+                            start: startClass != null ? `top ${clamp(100 - startClass)}%` : "top bottom",
+                            end: endClass != null ? `top ${clamp(100 - endClass)}%` : "bottom top",
+                            scrub: true,
+                        },
+                    }
+                )
+                scrollTriggers.push(t.scrollTrigger)
+                return
+            }
+
+            if (el.classList.contains("scroll-fade-bg")) {
+                const t = gsap.fromTo(el,
+                    { backgroundPosition: "0% 0%" },
+                    {
+                        backgroundPosition: "100% 100%", ease: "none",
+                        scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
+                    }
+                )
+                scrollTriggers.push(t.scrollTrigger)
+                return
+            }
+
+            if (el.classList.contains("scroll-horizontal")) {
+                const track = el.querySelector(".scroll-track")
+                if (!track) return
+                const getAmount = () => track.scrollWidth - el.clientWidth
+                const t = gsap.to(track, {
+                    x: () => -getAmount(), ease: "none",
+                    scrollTrigger: {
+                        trigger: el,
+                        start: "top top",
+                        end: () => `+=${getAmount()}`,
+                        pin: true,
+                        scrub: 1,
+                        anticipatePin: 1,
+                        invalidateOnRefresh: true,
+                    },
+                })
+                scrollTriggers.push(t.scrollTrigger)
+            }
+        }
+        gsap.utils.toArray('[class^="parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven)
+
         // `.scroll`/`.scroll-progress` entrance animation, driven by ScrollTrigger.
         // Split out into a helper so DYNAMICALLY-added elements (e.g. pagination
         // rendered after a data fetch) get a trigger too, instead of only elements
@@ -583,6 +709,7 @@ export default function initListeners() {
         const setupScroll = (el) => {
             if (el.dataset?.gsapScroll) return
             if (isTextElement(el)) return
+            if (isReduced(el)) return
             el.dataset.gsapScroll = "1"
             const config = findSpawn(el)
             if (!config) return
@@ -598,12 +725,17 @@ export default function initListeners() {
                     if (key === "opacity") to[key] = 1
                     else if (key === "filter") to[key] = "blur(0px)"
                     else if (key === "text") to[key] = el.innerHTML
+                    else if (key === "clipPath") to[key] = "inset(0% 0% 0% 0%)"
                     else to[key] = key.startsWith("scale") ? 1 : 0
                 }
 
                 const startClass = readClassNumber(el, "progress-start-", null)
                 const endClass = readClassNumber(el, "progress-end-", null)
                 const clamp = (n) => Math.min(100, Math.max(0, n))
+                // `.progress-reverse` runs the scrub in reverse (revealed -> hidden).
+                // GSAP's ScrollTrigger ignores a `reversed` config; swap from/to so
+                // the scrub maps in the opposite direction instead.
+                const reverse = el.classList.contains("progress-reverse")
 
                 const tl = gsap.timeline({
                     scrollTrigger: {
@@ -611,14 +743,19 @@ export default function initListeners() {
                         start: startClass != null ? `top ${clamp(100 - startClass)}%` : defaults.progressStart,
                         end: endClass != null ? `top ${clamp(100 - endClass)}%` : defaults.progressEnd,
                         scrub: true,
-                        reversed: el.classList.contains("progress-reverse"),
                     },
                 })
-                if (typewriterSplit) {
+                if (config.count) {
+                    // Counter driven by scroll progress: count from `.spawn-num-N`
+                    // to the target as the scrub advances (no opacity fade).
+                    const { start, end, decimals } = countTargetVars(el)
+                    const obj = { n: reverse ? end : start }
+                    tl.fromTo(obj, { n: reverse ? end : start }, { n: reverse ? start : end, ease, onUpdate: () => { el.textContent = obj.n.toFixed(decimals) } }, 0)
+                } else if (typewriterSplit) {
                     const parts = getParts(el, getGranularity(el))
-                    if (parts.length) tl.fromTo(parts, { opacity: 0 }, { opacity: 1, ease })
+                    if (parts.length) tl.fromTo(parts, { opacity: reverse ? 1 : 0 }, { opacity: reverse ? 0 : 1, ease })
                 } else {
-                    tl.fromTo(el, { ...from }, { ...to, ease })
+                    tl.fromTo(el, { ...(reverse ? to : from) }, { ...(reverse ? from : to), ease })
                 }
                 scrollTriggers.push(tl.scrollTrigger)
                 return
@@ -639,8 +776,17 @@ export default function initListeners() {
                         ? playTypewriterSplit(el, delay, duration, ease)
                         : typewriter(el, fullText, duration, delay, ease))
                     : play(el, delay, duration, ease)
+                el._scrollTween.eventCallback("onComplete", () => fireOnComplete(el, "spawn"))
             }
             const reverseToStart = () => {
+                if (config.count) {
+                    // A count spawn is a pure number timeline. Reversing it counts
+                    // back down to the `.spawn-num-N` start value, so re-entering
+                    // view counts up cleanly from scratch.
+                    const t = el._scrollTween
+                    if (t && t.progress() > 0 && !t.reversed()) t.reverse()
+                    return
+                }
                 el._scrollTween?.kill()
                 if (isTypewriter && !typewriterSplit) {
                     el.innerHTML = fullText
@@ -669,11 +815,12 @@ export default function initListeners() {
 
         // SplitText scroll variants: `.spawn-text-<spawn>.scroll` plays the per-part
         // tween when the element enters the viewport and reverses on exit.
-        spawnConfigs.forEach(({ sel, from, typewriter: isTypewriter }) => {
-            if (isTypewriter) return
+        spawnConfigs.forEach(({ sel, from, typewriter: isTypewriter, text }) => {
+            if (isTypewriter || text === false) return
             const tSel = "." + TEXT_PREFIX + sel.slice(1)
 
             gsap.utils.toArray(tSel + ".scroll:not(.scroll-progress)").forEach((el) => {
+                if (isReduced(el)) return
                 const { delay, duration } = readTiming(el)
                 const ease = getEase(el)
                 const enter = () => {
@@ -697,6 +844,7 @@ export default function initListeners() {
             })
 
             gsap.utils.toArray(tSel + ".scroll-progress").forEach((el) => {
+                if (isReduced(el)) return
                 const ease = getEase(el)
                 const parts = getParts(el, getGranularity(el))
                 if (!parts.length) return
@@ -710,10 +858,11 @@ export default function initListeners() {
                         start: startClass != null ? `top ${clamp(100 - startClass)}%` : defaults.progressStart,
                         end: endClass != null ? `top ${clamp(100 - endClass)}%` : defaults.progressEnd,
                         scrub: true,
-                        reversed: el.classList.contains("progress-reverse"),
                     },
                 })
-                tl.fromTo(parts, { ...from }, { ...to, ease })
+                // `.progress-reverse` runs the split scrub in reverse; swap from/to.
+                const reverse = el.classList.contains("progress-reverse")
+                tl.fromTo(parts, { ...(reverse ? to : from) }, { ...(reverse ? from : to), ease })
                 scrollTriggers.push(tl.scrollTrigger)
             })
         })
@@ -744,6 +893,7 @@ export default function initListeners() {
             gsap.utils.toArray(sel).forEach((el) => {
                 if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
                 if (isPreserved(el)) return
+                if (isReduced(el)) return
                 const { delay, duration } = readTiming(el)
                 if (isTypewriter) {
                     const easeClass = [...el.classList].find(c => c.startsWith("ease-"))
@@ -761,6 +911,7 @@ export default function initListeners() {
                         if (el.classList.contains("flip")) captureFlip(el)
                         if (isCompatibility(el)) resumeCompatLoops(el)
                         scheduleRefresh()
+                        fireOnComplete(el, "spawn")
                     })
                 }
                 markPreserved(el)
@@ -770,12 +921,13 @@ export default function initListeners() {
         // SplitText static pass: `.spawn-text-<spawn>` plays the per-part tween on
         // load (no scroll/appear). Derived from spawnConfigs so any new spawn
         // class automatically gets a `.spawn-text-` variant.
-        spawnConfigs.forEach(({ sel, from, typewriter: isTypewriter }) => {
-            if (isTypewriter) return
+        spawnConfigs.forEach(({ sel, from, typewriter: isTypewriter, text }) => {
+            if (isTypewriter || text === false) return
             const tSel = "." + TEXT_PREFIX + sel.slice(1)
             gsap.utils.toArray(tSel).forEach((el) => {
                 if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
                 if (isPreserved(el)) return
+                if (isReduced(el)) return
                 const { delay, duration } = readTiming(el)
                 el._spawnTween = playText(el, from, delay, duration, getEase(el))
                 markPreserved(el)
@@ -792,6 +944,22 @@ export default function initListeners() {
             magnet(el, dx * pull, dy * pull, grow, duration, elEase)
         }
         const magnetOnLeave = (el, duration, elEase) => () => magnet(el, 0, 0, 1, duration, elEase)
+
+        // `.magnet3d` moves exactly like `.magnet` but also tilts the element to
+        // face the cursor. The tilt is proportional to the cursor's position
+        // within the element (`relX`/`relY` in -0.5..0.5), scaled by the
+        // `mtilt-` degrees class (default 12). Cursor right/left swings it around
+        // the vertical axis (rotationY), cursor up/down around the horizontal
+        // (rotationX), so the face tracks the pointer.
+        const magnet3dOnMove = (el, pull, grow, tilt, duration, elEase) => (ev) => {
+            const r = el.getBoundingClientRect()
+            const dx = ev.clientX - (r.left + r.width / 2)
+            const dy = ev.clientY - (r.top + r.height / 2)
+            const relX = r.width ? (ev.clientX - r.left) / r.width - 0.5 : 0
+            const relY = r.height ? (ev.clientY - r.top) / r.height - 0.5 : 0
+            magnet3d(el, dx * pull, dy * pull, grow, -relY * tilt, relX * tilt, duration, elEase)
+        }
+        const magnet3dOnLeave = (el, duration, elEase) => () => magnet3d(el, 0, 0, 1, 0, 0, duration, elEase)
 
         const applyMagnet = () => {
             if (!magnetQuery) return
@@ -810,17 +978,22 @@ export default function initListeners() {
         }
 
         const setupMagnet = (el) => {
-            if (!el.classList.contains("magnet")) return
+            if (!el.classList.contains("magnet") && !el.classList.contains("magnet3d")) return
+            const threeD = el.classList.contains("magnet3d")
             const duration = readClassNumber(el, "mtime-", 0.4)
             const pull = readClassNumber(el, "amount-", 0.3)
             const grow = readClassNumber(el, "mgrow-", 1.1)
+            const tilt = readClassNumber(el, "mtilt-", 12)
             const elEase = getEase(el)
 
-            magnetState.push({
-                el,
-                onMove: magnetOnMove(el, pull, grow, duration, elEase),
-                onLeave: magnetOnLeave(el, duration, elEase),
-            })
+            const onMove = threeD
+                ? magnet3dOnMove(el, pull, grow, tilt, duration, elEase)
+                : magnetOnMove(el, pull, grow, duration, elEase)
+            const onLeave = threeD
+                ? magnet3dOnLeave(el, duration, elEase)
+                : magnetOnLeave(el, duration, elEase)
+
+            magnetState.push({ el, onMove, onLeave })
         }
 
         if (magnetQuery) magnetQuery.addEventListener("change", applyMagnet)
@@ -844,6 +1017,7 @@ export default function initListeners() {
         const resumeCompatLoops = (el) => compatLoopsOf(el).forEach((t) => t.resume())
 
         const setupClicks = (el) => {
+            if (isReduced(el)) return
             setupMagnet(el)
             if (el.classList.contains("click-hover")) {
                 const area = wrapTarget(el)
@@ -868,39 +1042,45 @@ export default function initListeners() {
                 const lift = readClassNumber(el, "amount-", defaults.clickExpandOffset)
                 const elEase = getEase(el)
 
-                addListener(el, "mousedown", () => { if (!touch) { pauseCompatLoops(el); expandmove(el, 1, duration, elEase) } })
+                addListener(el, "mousedown", () => { if (!touch) { pauseCompatLoops(el); expandmove(el, 10, duration, elEase).eventCallback("onComplete", () => fireOnComplete(el, "click")) } })
                 addListener(el, "mouseover", () => { if (!touch) { pauseCompatLoops(el); expandmove(el, lift, duration, elEase) } })
-                addListener(el, "mouseleave", () => { if (!touch) { expandmove(el, 1, duration, elEase); resumeCompatLoops(el) } })
+                addListener(el, "mouseleave", () => { if (!touch) { expandmove(el, 10, duration, elEase); resumeCompatLoops(el) } })
                 addListener(el, "mouseup", () => { if (!touch) expandmove(el, lift, duration, elEase) })
 
                 addListener(el, "touchstart", () => { touch = true, pauseCompatLoops(el), expandmove(el, lift, duration, elEase) })
                 addListener(el, "touchend", () => {
-                    touch = true, expandmove(el, 1, duration, elEase), setTimeout(() => { touch = false }, 0)
+                    touch = true, expandmove(el, 10, duration, elEase).eventCallback("onComplete", () => fireOnComplete(el, "click")), setTimeout(() => { touch = false }, 0)
                 })
             }
         }
 
-        const loopConfigs = [
-            { sel: ".shake", build: (el) => shake(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "shakeanim" },
-            { sel: ".spin-cw", build: (el) => spinCW(el, readClassNumber(el, "edelay-", defaults.effectDelay), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "spinCW" },
-            { sel: ".spin-ccw", build: (el) => spinCCW(el, readClassNumber(el, "edelay-", defaults.effectDelay), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "spinCW" },
-            { sel: ".bounce", build: (el) => bounce(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "bounce" },
-            { sel: ".bell", build: (el) => bell(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "bell" },
-            { sel: ".pulse", build: (el) => pulse(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "pulse" },
-            { sel: ".radiate", build: (el) => radiate(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el), readClassNumber(el, "radiate-z-", null)), key: "radiate" },
-            { sel: ".float", build: (el) => hover(readClassNumber(el, "edelay-", defaults.effectDelay), el, readClassNumber(el, "amount-", defaults.effectOffset), readClassNumber(el, "etime-", defaults.effectDuration), getEase(el)), key: "float" },
-            { sel: ".marquee-left", build: (el) => marquee(el, "left", readClassNumber(el, "time-", 20), readClassNumber(el, "marquee-horizontal-offset-", 0), readClassNumber(el, "marquee-vertical-offset-", 0), el.classList.contains("marquee-no-repeat")), key: "marquee" },
-            { sel: ".marquee-right", build: (el) => marquee(el, "right", readClassNumber(el, "time-", 20), readClassNumber(el, "marquee-horizontal-offset-", 0), readClassNumber(el, "marquee-vertical-offset-", 0), el.classList.contains("marquee-no-repeat")), key: "marquee" },
-            { sel: ".marquee-up", build: (el) => marquee(el, "up", readClassNumber(el, "time-", 20), readClassNumber(el, "marquee-horizontal-offset-", 0), readClassNumber(el, "marquee-vertical-offset-", 0), el.classList.contains("marquee-no-repeat")), key: "marquee" },
-            { sel: ".marquee-down", build: (el) => marquee(el, "down", readClassNumber(el, "time-", 20), readClassNumber(el, "marquee-horizontal-offset-", 0), readClassNumber(el, "marquee-vertical-offset-", 0), el.classList.contains("marquee-no-repeat")), key: "marquee" },
-]
+        // `loopConfigs` is derived from the config in Config.js (see top of file).
+        // A shared ctx object bundles the per-element timing/ease classes so each
+        // entry's `build(el, ctx)` stays simple and declarative.
+        const readLoopCtx = (el) => ({
+            edelay: readClassNumber(el, "edelay-", defaults.effectDelay),
+            amount: readClassNumber(el, "amount-", defaults.effectOffset),
+            etime: readClassNumber(el, "etime-", defaults.effectDuration),
+            ease: getEase(el),
+            time: readClassNumber(el, "time-", 20),
+            mH: readClassNumber(el, "marquee-horizontal-offset-", 0),
+            mV: readClassNumber(el, "marquee-vertical-offset-", 0),
+            radiateZ: readClassNumber(el, "radiate-z-", null),
+        })
 
         const loopEls = []
         const buildLoops = (el) => {
-            loopConfigs.forEach(({ sel, build, key }) => {
+            if (isReduced(el)) return
+            const ctx = readLoopCtx(el)
+            loopConfigs.forEach(({ sel, build, key, loop }) => {
                 if (el.matches(sel)) {
                     el[key]?.kill()
-                    el[key] = trackCompatLoop(el, build(el).repeat(-1))
+                    el[key] = trackCompatLoop(el, build(el, ctx))
+                    if (loop) el[key].repeat(-1)
+                    // Infinite loops never truly complete, so fire on each cycle
+                    // (onRepeat); finite ones fire on their real completion.
+                    el[key].eventCallback(el[key].repeat() === -1 ? "onRepeat" : "onComplete",
+                        () => fireOnComplete(el, "loop"))
                 }
             })
         }
@@ -955,6 +1135,8 @@ export default function initListeners() {
         }
 
         const setupHoverClick = (el) => {
+            if (isReduced(el)) return
+            const ctx = readLoopCtx(el)
             loopConfigs.forEach(({ sel, build, key }) => {
                 if (sel.startsWith(".marquee")) return
                 const name = sel.slice(1)
@@ -963,7 +1145,8 @@ export default function initListeners() {
                     addListener(area, "mouseenter", () => {
                         pauseCompatLoops(el)
                         el[key]?.kill()
-                        el[key] = build(el).repeat(-1)
+                        el[key] = build(el, ctx).repeat(-1)
+                        el[key].eventCallback("onRepeat", () => fireOnComplete(el, "loop"))
                     })
                     addListener(area, "mouseleave", () => {
                         el[key]?.kill()
@@ -975,7 +1158,8 @@ export default function initListeners() {
                     addListener(area, "mousedown", () => {
                         pauseCompatLoops(el)
                         el[key]?.kill()
-                        el[key] = build(el)
+                        el[key] = build(el, ctx)
+                        el[key].eventCallback("onComplete", () => fireOnComplete(el, "click"))
                     })
                     addListener(area, "mouseleave", () => {
                         resumeCompatLoops(el)
@@ -1009,6 +1193,7 @@ export default function initListeners() {
         }
         const cssTweens = []
         const setupCssAnims = (el) => {
+            if (isReduced(el)) return
             const anim = parseCssAnim(el)
             if (!anim) return
             const dur = readClassNumber(el, "time-", 1)
@@ -1061,6 +1246,7 @@ export default function initListeners() {
                     addListener(area, "mousedown", () => {
                         el[key]?.kill()
                         el[key] = gsap.to(el, { [anim.prop]: anim.to, duration: dur, ease })
+                        el[key].eventCallback("onComplete", () => fireOnComplete(el, "click"))
                         cssTweens.push(el[key])
                     })
                     addListener(area, "mouseup", () => {
@@ -1072,10 +1258,29 @@ export default function initListeners() {
                     addListener(area, "mousedown", () => {
                         el[key]?.kill()
                         el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: 1 })
+                        el[key].eventCallback("onComplete", () => fireOnComplete(el, "click"))
                         cssTweens.push(el[key])
                     })
                 }
             }
+        }
+
+        // Per-entry `setup` hook: a "special abilities" extension point. Any
+        // config entry with a `setup(el, ctx)` function runs it once for every
+        // matching element at wiring time — for behaviour that doesn't fit the
+        // scroll/order/loop machinery. If it RETURNS a function, that's treated
+        // as a teardown and invoked when the whole engine is torn down, so
+        // side-effects (listeners, observers, timers) can be cleaned up.
+        const setupTeardowns = []
+        const runSetup = (el) => {
+            if (isReduced(el)) return
+            const ctx = readLoopCtx(el)
+            animAll.forEach((a) => {
+                if (a.setup && el.matches?.(a.sel)) {
+                    const teardown = a.setup(el, ctx)
+                    if (typeof teardown === "function") setupTeardowns.push(teardown)
+                }
+            })
         }
 
         // Bind click + loop animations to every element present at load, tagging
@@ -1087,6 +1292,7 @@ export default function initListeners() {
             setupLoops(el)
             setupHoverClick(el)
             setupCssAnims(el)
+            runSetup(el)
         })
         applyMagnet()
 
@@ -1135,8 +1341,11 @@ export default function initListeners() {
             if (!el.classList.contains("appear") || el._appeared) return
             // A `.scroll`/`.scroll-progress` element is owned by its ScrollTrigger
             // (see setupScroll); `.appear` must not also fire, or it plays on mount
-            // AND again on scroll-enter.
-            if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
+            // AND again on scroll-enter. Text elements are the exception: their
+            // `.scroll` triggers are wired once at init, so a re-added (reset) text
+            // element has no trigger to conflict with and must animate via `.appear`.
+            if (!isTextElement(el) && (el.classList.contains("scroll") || el.classList.contains("scroll-progress"))) return
+            if (isReduced(el)) return
             el._appeared = true
             const { delay, duration, ease } = readTiming(el)
 
@@ -1158,6 +1367,7 @@ export default function initListeners() {
                 el._spawnTween.eventCallback("onComplete", () => {
                     if (el.classList.contains("leave")) refreshLeaveRect(el)
                     if (el.classList.contains("flip")) captureFlip(el)
+                    fireOnComplete(el, "spawn")
                 })
             }
         }
@@ -1174,12 +1384,14 @@ export default function initListeners() {
                         if (!el.classList?.contains("appear")) return
                         animateAppear(el)
                         setupScroll(el)
+                        setupScrollDriven(el)
                         if (el.dataset?.gsapSetup) return
                         el.dataset.gsapSetup = "1"
                         setupClicks(el)
                         setupLoops(el)
                         setupHoverClick(el)
                         setupCssAnims(el)
+                        runSetup(el)
                         const wasPinned = el.dataset.gsapPinned
                         setupPin(el)
                         if (!wasPinned && el.dataset.gsapPinned) pinned = true
@@ -1244,5 +1456,9 @@ export default function initListeners() {
         gsap.utils.toArray(".typewriter").forEach(el => el.typewriter?.kill())
         textSplits.forEach((s) => s.revert())
         textSplits.length = 0
+        onCompleteTweens.forEach((t) => t?.kill())
+        onCompleteTweens.length = 0
+        setupTeardowns.forEach((fn) => { try { fn() } catch { /* ignore */ } })
+        setupTeardowns.length = 0
     }
 }

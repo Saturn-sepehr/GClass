@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GClass — Loops</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="reset.js"></script>
+    <script src="gclass-bundle.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-200">
+    <header class="border-b border-slate-800 px-8 py-6">
+      <a class="text-sm text-slate-500 hover:text-slate-300" href="index.html">&larr; index</a>
+      <h1 class="m-0 mt-2 text-xl font-semibold">Loops</h1>
+      <p class="m-0 mt-1 text-sm text-slate-400">
+        shake, spin-cw, spin-ccw, bounce, bell, pulse, radiate, float, marquee-*
+      </p>
+    </header>
+
+    <main class="grid grid-cols-1 gap-8 p-8 md:grid-cols-2 lg:grid-cols-3">
+      <!-- Loops run continuously on load; they are visible wherever you scroll to. -->
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.shake</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">damped horizontal shake</p>
+        <div class="shake rounded-lg bg-cyan-600/70 p-4 text-center font-semibold">shake</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spin-cw</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">spins 360° clockwise</p>
+        <div class="spin-cw rounded-lg bg-emerald-600/70 p-4 text-center font-semibold">spin-cw</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.spin-ccw</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">spins 360° counter-clockwise</p>
+        <div class="spin-ccw rounded-lg bg-violet-600/70 p-4 text-center font-semibold">spin-ccw</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.bounce</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">a punchy hop with squash &amp; settle</p>
+        <div class="bounce rounded-lg bg-rose-600/70 p-4 text-center font-semibold">bounce</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.bell</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">a toll that overshoots and damps (rotate)</p>
+        <div class="bell rounded-lg bg-amber-600/70 p-4 text-center font-semibold">bell</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.pulse</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">scales up then back to 1</p>
+        <div class="pulse rounded-lg bg-sky-600/70 p-4 text-center font-semibold">pulse</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.radiate</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">emits a scaling, fading clone ripple</p>
+        <div class="radiate rounded-lg bg-fuchsia-600/70 p-4 text-center font-semibold">radiate</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.float</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">floats up and down (also used by hover-*)</p>
+        <div class="float rounded-lg bg-teal-600/70 p-4 text-center font-semibold">float</div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6 md:col-span-2 lg:col-span-3">
+        <code class="text-sm text-cyan-300">.marquee-left</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">horizontally pans a repeated strip left</p>
+        <div class="marquee-left overflow-hidden rounded-lg">
+          <div class="flex w-max whitespace-nowrap px-4 text-center font-semibold">
+            <span class="mx-4 rounded-lg bg-cyan-700/70 px-6 py-3">marquee-left</span>
+            <span class="mx-4 rounded-lg bg-cyan-700/70 px-6 py-3">marquee-left</span>
+            <span class="mx-4 rounded-lg bg-cyan-700/70 px-6 py-3">marquee-left</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6 md:col-span-2 lg:col-span-3">
+        <code class="text-sm text-cyan-300">.marquee-right</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">horizontally pans a repeated strip right</p>
+        <div class="marquee-right overflow-hidden rounded-lg">
+          <div class="flex w-max whitespace-nowrap px-4 text-center font-semibold">
+            <span class="mx-4 rounded-lg bg-emerald-700/70 px-6 py-3">marquee-right</span>
+            <span class="mx-4 rounded-lg bg-emerald-700/70 px-6 py-3">marquee-right</span>
+            <span class="mx-4 rounded-lg bg-emerald-700/70 px-6 py-3">marquee-right</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.marquee-up</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">vertically pans a repeated strip up</p>
+        <div class="marquee-up h-24 overflow-hidden rounded-lg">
+          <div class="flex h-max flex-col whitespace-nowrap p-4 text-center font-semibold">
+            <span class="my-2 rounded-lg bg-rose-700/70 px-6 py-3">marquee-up</span>
+            <span class="my-2 rounded-lg bg-rose-700/70 px-6 py-3">marquee-up</span>
+            <span class="my-2 rounded-lg bg-rose-700/70 px-6 py-3">marquee-up</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <code class="text-sm text-cyan-300">.marquee-down</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">vertically pans a repeated strip down</p>
+        <div class="marquee-down h-24 overflow-hidden rounded-lg">
+          <div class="flex h-max flex-col whitespace-nowrap p-4 text-center font-semibold">
+            <span class="my-2 rounded-lg bg-amber-700/70 px-6 py-3">marquee-down</span>
+            <span class="my-2 rounded-lg bg-amber-700/70 px-6 py-3">marquee-down</span>
+            <span class="my-2 rounded-lg bg-amber-700/70 px-6 py-3">marquee-down</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </body>
+</html>

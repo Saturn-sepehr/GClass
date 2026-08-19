@@ -5,14 +5,21 @@
   "type": "module",
   "main": "index.js",
   "module": "index.js",
+  "types": "index.d.ts",
   "exports": {
-    ".": "./index.js"
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "default": "./index.js"
+    }
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "AnimToggle.js",
     "Listeners.js",
     "Animations.js",
+    "Config.js",
     "CustomAnims.js",
     "README.md",
     "LICENSE"
