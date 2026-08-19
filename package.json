@@ -1,6 +1,6 @@
 {
   "name": "gclass",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.1",
   "description": "A Tailwind-style utility layer on top of GSAP. Framework-agnostic — works in vanilla JS, React, Vue, Svelte, or any bundler.",
   "type": "module",
   "main": "index.js",
