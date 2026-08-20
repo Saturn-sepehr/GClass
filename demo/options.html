@@ -33,6 +33,41 @@
         <div class="spawn-up ease-expo scroll rounded-lg bg-emerald-700/70 p-4 text-center font-semibold">expo ease</div>
       </section>
 
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6 md:col-span-2 lg:col-span-3">
+        <code class="text-sm text-cyan-300">.ease-&lt;name&gt;</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">
+          The <code class="text-cyan-300">.ease-N</code> class passes its value straight
+          through to GSAP, so any built-in GSAP ease works (default "back").
+          Common ones:
+        </p>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">power1.in</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">power1.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">power1.inOut</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">power2.inOut</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">power3.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">power4.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">back.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">elastic.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">bounce.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">circ.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">sine.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">expo.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">quad.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">cubic.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">quart.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">quint.out</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">linear</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">steps(12)</span>
+          <span class="rounded bg-slate-800 px-2 py-1 text-cyan-300">none</span>
+        </div>
+        <p class="m-0 mt-3 text-xs text-slate-500">
+          Because <code class="text-cyan-300">ease-</code> splits on <code class="text-cyan-300">-</code>,
+          the dots in a custom ease like <code class="text-cyan-300">power1.inOut</code> are read as-is;
+          only the first hyphen-separated segment is used as the name.
+        </p>
+      </section>
+
       <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
         <code class="text-sm text-cyan-300">.etime-0.6</code>
         <p class="m-0 mb-4 mt-1 text-xs text-slate-400">duration for loop effects (default 1)</p>
@@ -121,6 +156,17 @@
             <span class="mx-3 rounded-lg bg-emerald-800/70 px-6 py-3">offset marquee</span>
             <span class="mx-3 rounded-lg bg-emerald-800/70 px-6 py-3">offset marquee</span>
             <span class="mx-3 rounded-lg bg-emerald-800/70 px-6 py-3">offset marquee</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6 md:col-span-2 lg:col-span-3">
+        <code class="text-sm text-cyan-300">.marquee-vertical-offset-12</code>
+        <p class="m-0 mb-4 mt-1 text-xs text-slate-400">marquee track top offset</p>
+        <div class="marquee-up marquee-vertical-offset-12 h-24 overflow-hidden rounded-lg">
+          <div class="flex h-max flex-col whitespace-nowrap p-4 font-semibold">
+            <span class="my-3 rounded-lg bg-cyan-800/70 px-6 py-3">offset marquee up</span>
+            <span class="my-3 rounded-lg bg-cyan-800/70 px-6 py-3">offset marquee up</span>
           </div>
         </div>
       </section>

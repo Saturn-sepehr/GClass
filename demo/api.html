@@ -14,7 +14,8 @@
       <h1 class="m-0 mt-2 text-xl font-semibold">Programmatic API</h1>
       <p class="m-0 mt-1 text-sm text-slate-400">
         initAnimations, initListeners, toggleAnimations, enableReducedMotion,
-        disableReducedMotion, registerComplete, defaults
+        disableReducedMotion, registerComplete, resolveHandler, defaults,
+        animations, normalize, and the raw animation helpers
       </p>
     </header>
 
@@ -53,6 +54,15 @@ window.gclass.disableReducedMotion()</pre>
       </section>
 
       <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <h2 class="m-0 text-lg font-semibold text-cyan-300">resolveHandler(name)</h2>
+        <p class="m-0 mt-1 text-sm text-slate-400">
+          Look up an onComplete handler by name. Checks the registry first, then
+          falls back to <code>window[name]</code>. Returns <code>null</code> if neither exists.
+        </p>
+        <pre class="mt-4 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-emerald-400">window.gclass.resolveHandler('onSpawnDone') // fn | null</pre>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
         <h2 class="m-0 text-lg font-semibold text-cyan-300">customAnims</h2>
         <p class="m-0 mt-1 text-sm text-slate-400">Array to push your own animation definitions (see custom.html).</p>
         <pre class="mt-4 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-emerald-400">window.gclass.customAnims.push({ sel: '.whirl', from: { opacity: 0 }, play: (el) =&gt; ... })</pre>
@@ -74,6 +84,39 @@ window.gclass.disableReducedMotion()</pre>
         <h2 class="m-0 text-lg font-semibold text-cyan-300">normalize(extra?)</h2>
         <p class="m-0 mt-1 text-sm text-slate-400">Derive spawn / loop views of the config; optional extra definitions.</p>
         <pre class="mt-4 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-emerald-400">const views = window.gclass.normalize()</pre>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <h2 class="m-0 text-lg font-semibold text-cyan-300">Animation helpers</h2>
+        <p class="m-0 mt-1 text-sm text-slate-400">
+          The raw GSAP tween builders behind the utility classes are all exposed.
+          Call them directly for one-off animations. Each returns a GSAP tween or
+          timeline; most share a <code>(target, delay, dur, ease)</code> signature.
+        </p>
+        <pre class="mt-4 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-emerald-400">// spawns (entrance)
+SpawnV, SpawnH, spawnFade, spawnBlur, spawnSpinCW, spawnSpinCCW,
+spawnXUp, spawnXDown, spawnYRight, spawnYLeft,
+expandV, expandH, expandA, expandRight, expandLeft, expandUp, expandDown,
+spawnClipReveal, curtainHorizontal, curtainVertical,
+typewriter, countUp, countTargetVars
+
+// loops
+spinCW, spinCCW, bounce, shake, bell, pulse, radiate, hover, marquee
+
+// mouse
+verticalmove, expandmove, magnet, magnet3d, reset
+
+// extras
+flip, animatecss, finalOpacity</pre>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <h2 class="m-0 text-lg font-semibold text-cyan-300">Example(target, vars)</h2>
+        <p class="m-0 mt-1 text-sm text-slate-400">
+          A trivial helper demonstrating how to write your own: just a thin
+          wrapper around <code>gsap.to()</code>.
+        </p>
+        <pre class="mt-4 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-emerald-400">window.gclass.Example('.box', { x: 100, duration: 1 })</pre>
       </section>
 
     </main>
