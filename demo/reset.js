@@ -82,9 +82,12 @@
     // Individual elements: one button each. The button always sits directly
     // after its element, so reset the element that currently precedes it — that
     // way repeated resets keep targeting the live element after replacements.
+    // Sections marked `data-no-reset` (or a matching `.no-reset` element) are
+    // exempt: their demos still animate, just without a reset button.
     demos.forEach((el) => {
       register(el)
       if (groupMembers.has(el)) return
+      if (el.closest("[data-no-reset]") || el.classList.contains("no-reset")) return
       const btn = makeButton("↻ reset", () => {
         const current = btn.previousElementSibling
         if (current) resetOne(current)
@@ -95,6 +98,7 @@
     // Order groups: one shared button per group.
     orderGroups.forEach((group) => {
       const last = group.members[group.members.length - 1]
+      if (last.closest("[data-no-reset]")) return
       last.insertAdjacentElement("afterend", makeButton("↻ reset group", () => resetGroup(group)))
     })
   })

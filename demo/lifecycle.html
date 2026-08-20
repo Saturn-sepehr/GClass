@@ -8,7 +8,7 @@
     <script src="reset.js"></script>
     <script src="gclass-bundle.js"></script>
   </head>
-  <body class="min-h-screen bg-slate-950 text-slate-200">
+  <body class="min-h-screen bg-slate-950 text-slate-200 select-none">
     <header class="border-b border-slate-800 px-8 py-6">
       <a class="text-sm text-slate-500 hover:text-slate-300" href="index.html">&larr; index</a>
       <h1 class="m-0 mt-2 text-xl font-semibold">Dynamic DOM / Lifecycle</h1>
@@ -35,7 +35,7 @@
         <div id="leave-box" class="flex flex-col gap-2"></div>
       </section>
 
-      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+      <section class="rounded-xl border border-slate-800 bg-slate-900 p-6" data-no-reset>
         <code class="text-sm text-cyan-300">.flip</code>
         <p class="m-0 mb-4 mt-1 text-xs text-slate-400">FLIP-morphs the element when its layout position changes</p>
         <button id="flip-shuffle" class="mb-4 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold hover:bg-violet-500">Shuffle</button>
