@@ -1,4 +1,10 @@
 (() => {
+  var __defProp = Object.defineProperty;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+
   // node_modules/gsap/gsap-core.js
   function _assertThisInitialized(self) {
     if (self === void 0) {
@@ -4275,6 +4281,51 @@
   var gsapWithCSS = gsap.registerPlugin(CSSPlugin) || gsap;
   var TweenMaxWithCSS = gsapWithCSS.core.Tween;
 
+  // Animations.js
+  var Animations_exports = {};
+  __export(Animations_exports, {
+    SpawnH: () => SpawnH,
+    SpawnV: () => SpawnV,
+    animatecss: () => animatecss,
+    bell: () => bell,
+    bounce: () => bounce,
+    countTargetVars: () => countTargetVars,
+    countUp: () => countUp,
+    curtainHorizontal: () => curtainHorizontal,
+    curtainVertical: () => curtainVertical,
+    expandA: () => expandA,
+    expandDown: () => expandDown,
+    expandH: () => expandH,
+    expandLeft: () => expandLeft,
+    expandRight: () => expandRight,
+    expandUp: () => expandUp,
+    expandV: () => expandV,
+    expandmove: () => expandmove,
+    finalOpacity: () => finalOpacity,
+    flip: () => flip,
+    hover: () => hover,
+    magnet: () => magnet,
+    magnet3d: () => magnet3d,
+    marquee: () => marquee,
+    pulse: () => pulse,
+    radiate: () => radiate,
+    reset: () => reset,
+    shake: () => shake,
+    spawnBlur: () => spawnBlur,
+    spawnClipReveal: () => spawnClipReveal,
+    spawnFade: () => spawnFade,
+    spawnSpinCCW: () => spawnSpinCCW,
+    spawnSpinCW: () => spawnSpinCW,
+    spawnXDown: () => spawnXDown,
+    spawnXUp: () => spawnXUp,
+    spawnYLeft: () => spawnYLeft,
+    spawnYRight: () => spawnYRight,
+    spinCCW: () => spinCCW,
+    spinCW: () => spinCW,
+    typewriter: () => typewriter,
+    verticalmove: () => verticalmove
+  });
+
   // node_modules/gsap/utils/matrix.js
   var _doc3;
   var _win3;
@@ -8202,7 +8253,7 @@
   // node_modules/gsap/SplitText.js
   var gsap6;
   var _fonts;
-  var _splitProp = typeof Symbol === "function" ? /* @__PURE__ */ Symbol() : "_split";
+  var _splitProp = typeof Symbol === "function" ? Symbol() : "_split";
   var _coreInitted4;
   var _initIfNecessary = () => _coreInitted4 || SplitText.register(window.gsap);
   var _charSegmenter = typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter() : 0;
@@ -8285,7 +8336,7 @@
     };
   };
   var _splitWordsAndCharsRecursively = (element, config3, wordWrapper, charWrapper, prepForCharsOnly, deepSlice, ignore, charSplitRegEx, specialCharsRegEx, isNested) => {
-    var _a2;
+    var _a;
     let nodes = Array.from(element.childNodes), i = 0, { wordDelimiter, reduceWhiteSpace = true, prepareText } = config3, elementBounds = element.getBoundingClientRect(), lastBounds = elementBounds, isPreformatted = !reduceWhiteSpace && window.getComputedStyle(element).whiteSpace.substring(0, 3) === "pre", ignoredPreviousSibling = 0, wordsCollection = wordWrapper.collection, wordDelimIsNotSpace, wordDelimString, wordDelimSplitter, curNode, words, curWordEl, startsWithSpace, endsWithSpace, j, bounds, curWordChars, clonedNode, curSubNode, tempSubNode, curTextContent, wordText, lastWordText, k;
     if (typeof wordDelimiter === "object") {
       wordDelimSplitter = wordDelimiter.delimiter || wordDelimiter;
@@ -8318,7 +8369,7 @@
         for (j = 1; j <= words.length; j++) {
           wordText = words[j - 1];
           if (!reduceWhiteSpace && isPreformatted && wordText.charAt(0) === "\n") {
-            (_a2 = curNode.previousSibling) == null ? void 0 : _a2.remove();
+            (_a = curNode.previousSibling) == null ? void 0 : _a.remove();
             _insertNodeBefore(document.createElement("br"), element, curNode);
             wordText = wordText.slice(1);
           }
@@ -8388,8 +8439,8 @@
       this.masks = [];
       this.vars = config3;
       this.elements.forEach((el) => {
-        var _a2;
-        config3.overwrite !== false && ((_a2 = el[_splitProp]) == null ? void 0 : _a2._data.orig.filter(({ element }) => element === el).forEach(_revertOriginal));
+        var _a;
+        config3.overwrite !== false && ((_a = el[_splitProp]) == null ? void 0 : _a._data.orig.filter(({ element }) => element === el).forEach(_revertOriginal));
         el[_splitProp] = this;
       });
       this._split = () => this.isSplit && this.split(this.vars);
@@ -8452,8 +8503,8 @@
               }
               lineStartIndex < i && wrapLine(lineStartIndex, i);
               toRemove.forEach((el) => {
-                var _a2;
-                return (_a2 = el.parentNode) == null ? void 0 : _a2.removeChild(el);
+                var _a;
+                return (_a = el.parentNode) == null ? void 0 : _a.removeChild(el);
               });
             }
             if (!splitWords) {
@@ -8512,7 +8563,7 @@
       _fonts == null ? void 0 : _fonts.removeEventListener("loadingdone", this._split);
     }
     revert() {
-      var _a2, _b;
+      var _a, _b;
       if (this.isSplit) {
         let { orig, anim } = this._data;
         this.kill();
@@ -8523,7 +8574,7 @@
           this._data.animTime = anim.totalTime();
           anim.revert();
         }
-        (_b = (_a2 = this.vars).onRevert) == null ? void 0 : _b.call(_a2, this);
+        (_b = (_a = this.vars).onRevert) == null ? void 0 : _b.call(_a, this);
       }
       return this;
     }
@@ -8656,7 +8707,7 @@
     if (target._countTarget) return target._countTarget;
     const match = (target.textContent || "0").replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
     const end = match ? parseFloat(match[0]) : 0;
-    const decimals = (match == null ? void 0 : match[0].includes(".")) ? (match[0].split(".")[1] || "").length : 0;
+    const decimals = match?.[0].includes(".") ? (match[0].split(".")[1] || "").length : 0;
     const startCls = [...target.classList].find((c) => c.startsWith("spawn-num-"));
     const start = startCls ? parseFloat(startCls.slice("spawn-num-".length)) : 0;
     return target._countTarget = { start, end, decimals };
@@ -8790,6 +8841,12 @@
     if (dir === "down") return gsapWithCSS.fromTo(track, { y: -dist }, { y: 0, ...vars });
     return gsapWithCSS.fromTo(track, { x: 0 }, { x: -dist, ...vars });
   }
+  function flip(state, ease, dur) {
+    Flip.from(state, { duration: dur, ease: ease || DEFAULT_EASE });
+  }
+  function animatecss(target, dur, delay, ease, propertyS, propertySValue, propertyE, propertyEValue) {
+    return gsapWithCSS.fromTo(target, { [propertyS]: propertySValue }, { [propertyE]: propertyEValue, ease, duration: dur, delay });
+  }
 
   // CustomAnims.js
   var customAnims = [
@@ -8823,6 +8880,9 @@
       }
     }
   ];
+  function Example(target, customVars) {
+    return gsapWithCSS.to(target, customVars);
+  }
 
   // Config.js
   var defaults2 = {
@@ -8947,10 +9007,7 @@
       const match = [...el.classList].find((c) => c.startsWith("ease-"));
       return match ? match.split("-")[1] : defaults2.ease;
     };
-    const reducedMotion = () => {
-      var _a2, _b, _c;
-      return (_c = typeof window !== "undefined" && ((_b = (_a2 = window.matchMedia) == null ? void 0 : _a2.call(window, `(prefers-reduced-motion: reduce)`)) == null ? void 0 : _b.matches)) != null ? _c : false;
-    };
+    const reducedMotion = () => (typeof window !== "undefined" && window.matchMedia?.(`(prefers-reduced-motion: reduce)`)?.matches) ?? false;
     const isReduced = (el) => reducedMotion() && el.classList.contains("reduced");
     const isPreserved = (el) => {
       for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
@@ -8962,19 +9019,13 @@
       if (el.classList.contains("preserve")) el.dataset.gsapPreserved = "1";
     };
     const findSpawn = (el) => {
-      const direct = spawnConfigs.find(({ sel }) => {
-        var _a2;
-        return (_a2 = el.matches) == null ? void 0 : _a2.call(el, sel);
-      });
+      const direct = spawnConfigs.find(({ sel }) => el.matches?.(sel));
       if (direct) return direct;
       const cls = [...el.classList].find((c) => c.startsWith(TEXT_PREFIX));
       if (!cls) return null;
       return spawnConfigs.find(({ sel }) => sel === "." + cls.slice(TEXT_PREFIX_LEN));
     };
-    const isGhost = (el) => {
-      var _a2;
-      return ((_a2 = el == null ? void 0 : el.dataset) == null ? void 0 : _a2.gsapGhost) === "1";
-    };
+    const isGhost = (el) => el?.dataset?.gsapGhost === "1";
     const markGhost = (el) => {
       el.classList.remove("leave", "appear");
       spawnConfigs.forEach(({ sel }) => el.classList.remove(sel.slice(1)));
@@ -8982,8 +9033,7 @@
     };
     const leaveStates = /* @__PURE__ */ new WeakMap();
     const captureLeave = (node) => {
-      var _a2;
-      if (!((_a2 = node.classList) == null ? void 0 : _a2.contains("leave"))) return;
+      if (!node.classList?.contains("leave")) return;
       const config3 = findSpawn(node);
       if (!config3 || config3.typewriter) return;
       leaveStates.set(node, {
@@ -9005,8 +9055,7 @@
       return { x: r.x + window.scrollX, y: r.y + window.scrollY, w: r.width, h: r.height };
     };
     const captureFlip = (node) => {
-      var _a2;
-      if (!((_a2 = node.classList) == null ? void 0 : _a2.contains("flip"))) return;
+      if (!node.classList?.contains("flip")) return;
       const config3 = findSpawn(node);
       if (!config3 || config3.typewriter) return;
       if (flipping.has(node)) return;
@@ -9043,9 +9092,8 @@
       );
     };
     const animateFlip = (scope) => {
-      var _a2;
       if (!scope) return;
-      gsapWithCSS.utils.toArray(((_a2 = scope.querySelectorAll) == null ? void 0 : _a2.call(scope, ".flip")) || []).forEach((el) => {
+      gsapWithCSS.utils.toArray(scope.querySelectorAll?.(".flip") || []).forEach((el) => {
         if (el.isConnected) playFlip(el);
       });
     };
@@ -9076,7 +9124,7 @@
         snap3.tween.eventCallback("onReverseComplete", () => {
           if (reattached) node.remove();
           else node.style.display = "none";
-          spacer2 == null ? void 0 : spacer2.remove();
+          spacer2?.remove();
         });
         return;
       }
@@ -9094,15 +9142,14 @@
         ease: snap3.ease || defaults2.ease,
         onComplete: () => {
           g.remove();
-          spacer == null ? void 0 : spacer.remove();
+          spacer?.remove();
         }
       });
     };
     const collectLeave = (node) => {
-      var _a2, _b;
       if (!node || node.nodeType !== 1) return [];
-      if ((_a2 = node.classList) == null ? void 0 : _a2.contains("leave")) return [node];
-      return gsapWithCSS.utils.toArray((_b = node.querySelectorAll) == null ? void 0 : _b.call(node, ".leave"));
+      if (node.classList?.contains("leave")) return [node];
+      return gsapWithCSS.utils.toArray(node.querySelectorAll?.(".leave"));
     };
     const refreshLeaveRect = (el) => {
       const s = leaveStates.get(el);
@@ -9262,7 +9309,7 @@
       const rtlChars = gran === "chars" && isRTLText(el);
       const key = rtlChars ? "rtl-chars" : gran;
       if (!s || s.granularity !== key) {
-        s == null ? void 0 : s.revert();
+        s?.revert();
         s = rtlChars ? getRTLCharSplit(el) : new SplitText(el, {
           type: gran,
           linesClass: "gsap-line",
@@ -9358,8 +9405,7 @@
     };
     gsapWithCSS.utils.toArray(".pin").forEach(setupPin);
     const setupScrollDriven = (el) => {
-      var _a2;
-      if ((_a2 = el.dataset) == null ? void 0 : _a2.gsapScrollDriven) return;
+      if (el.dataset?.gsapScrollDriven) return;
       el.dataset.gsapScrollDriven = "1";
       if (isReduced(el)) return;
       const cls = [...el.classList];
@@ -9438,8 +9484,7 @@
     };
     gsapWithCSS.utils.toArray('[class^="parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven);
     const setupScroll = (el) => {
-      var _a2, _b, _c, _d, _e;
-      if ((_a2 = el.dataset) == null ? void 0 : _a2.gsapScroll) return;
+      if (el.dataset?.gsapScroll) return;
       if (isTextElement(el)) return;
       if (isReduced(el)) return;
       el.dataset.gsapScroll = "1";
@@ -9447,7 +9492,7 @@
       if (!config3) return;
       const { from, typewriter: isTypewriter, typewriterSplit, play } = config3;
       if (el.classList.contains("scroll-progress")) {
-        const ease2 = isTypewriter ? (_c = (_b = [...el.classList].find((c) => c.startsWith("ease-"))) == null ? void 0 : _b.split("-")[1]) != null ? _c : "none" : getEase(el);
+        const ease2 = isTypewriter ? [...el.classList].find((c) => c.startsWith("ease-"))?.split("-")[1] ?? "none" : getEase(el);
         const to = {};
         for (const [key] of Object.entries(from)) {
           if (key === "opacity") to[key] = 1;
@@ -9485,7 +9530,7 @@
       }
       if (!el.classList.contains("scroll")) return;
       const { delay, duration } = readTiming(el);
-      const ease = isTypewriter ? (_e = (_d = [...el.classList].find((c) => c.startsWith("ease-"))) == null ? void 0 : _d.split("-")[1]) != null ? _e : "none" : getEase(el);
+      const ease = isTypewriter ? [...el.classList].find((c) => c.startsWith("ease-"))?.split("-")[1] ?? "none" : getEase(el);
       const fullText = el.innerHTML;
       const enter = () => {
         if (el._scrollTween) el._scrollTween.kill();
@@ -9493,13 +9538,12 @@
         el._scrollTween.eventCallback("onComplete", () => fireOnComplete(el, "spawn"));
       };
       const reverseToStart = () => {
-        var _a3;
         if (config3.count) {
           const t = el._scrollTween;
           if (t && t.progress() > 0 && !t.reversed()) t.reverse();
           return;
         }
-        (_a3 = el._scrollTween) == null ? void 0 : _a3.kill();
+        el._scrollTween?.kill();
         if (isTypewriter && !typewriterSplit) {
           el.innerHTML = fullText;
           return;
@@ -9531,13 +9575,11 @@
         const { delay, duration } = readTiming(el);
         const ease = getEase(el);
         const enter = () => {
-          var _a2;
-          (_a2 = el._scrollTween) == null ? void 0 : _a2.kill();
+          el._scrollTween?.kill();
           el._scrollTween = playText(el, from, delay, duration, ease);
         };
         const reverseToStart = () => {
-          var _a2;
-          (_a2 = el._scrollTween) == null ? void 0 : _a2.kill();
+          el._scrollTween?.kill();
           const parts = getParts(el, getGranularity(el));
           if (parts.length) gsapWithCSS.to(parts, { ...from, ease, duration: 0.3 });
         };
@@ -9587,7 +9629,6 @@
     setTimeout(scheduleRefresh, 1200);
     spawnConfigs.forEach(({ sel, typewriter: isTypewriter, typewriterSplit, play }) => {
       gsapWithCSS.utils.toArray(sel).forEach((el) => {
-        var _a2;
         if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return;
         if (isPreserved(el)) return;
         if (isReduced(el)) return;
@@ -9598,7 +9639,7 @@
           if (typewriterSplit) {
             el._spawnTween = playTypewriterSplit(el, delay, duration, elEase);
           } else {
-            (_a2 = el.typewriter) == null ? void 0 : _a2.kill();
+            el.typewriter?.kill();
             el.typewriter = typewriter(el, el.innerHTML, duration, delay, elEase);
           }
         } else {
@@ -9771,9 +9812,8 @@
       if (isReduced(el)) return;
       const ctx = readLoopCtx(el);
       loopConfigs.forEach(({ sel, build, key, loop }) => {
-        var _a2;
         if (el.matches(sel)) {
-          (_a2 = el[key]) == null ? void 0 : _a2.kill();
+          el[key]?.kill();
           el[key] = trackCompatLoop(el, build(el, ctx));
           if (loop) el[key].repeat(-1);
           el[key].eventCallback(
@@ -9830,24 +9870,21 @@
         if (el.classList.contains("hover-" + name)) {
           const area = wrapTarget(el);
           addListener(area, "mouseenter", () => {
-            var _a2;
             pauseCompatLoops(el);
-            (_a2 = el[key]) == null ? void 0 : _a2.kill();
+            el[key]?.kill();
             el[key] = build(el, ctx).repeat(-1);
             el[key].eventCallback("onRepeat", () => fireOnComplete(el, "loop"));
           });
           addListener(area, "mouseleave", () => {
-            var _a2;
-            (_a2 = el[key]) == null ? void 0 : _a2.kill();
+            el[key]?.kill();
             el[key] = reset(el, readClassNumber(el, "etime-", defaults2.effectDuration), getEase(el));
             resumeCompatLoops(el);
           });
         } else if (el.classList.contains("click-" + name)) {
           const area = wrapTarget(el);
           addListener(area, "mousedown", () => {
-            var _a2;
             pauseCompatLoops(el);
-            (_a2 = el[key]) == null ? void 0 : _a2.kill();
+            el[key]?.kill();
             el[key] = build(el, ctx);
             el[key].eventCallback("onComplete", () => fireOnComplete(el, "click"));
           });
@@ -9872,7 +9909,6 @@
     };
     const cssTweens = [];
     const setupCssAnims = (el) => {
-      var _a2, _b;
       if (isReduced(el)) return;
       const anim = parseCssAnim(el);
       if (!anim) return;
@@ -9881,11 +9917,11 @@
       const key = "_cssAnim";
       const loopVars = { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: -1 };
       if (anim.mode === "loop") {
-        (_a2 = el[key]) == null ? void 0 : _a2.kill();
+        el[key]?.kill();
         el[key] = gsapWithCSS.fromTo(el, { [anim.prop]: anim.from }, loopVars);
         cssTweens.push(el[key]);
       } else if (anim.mode === "spawn") {
-        (_b = el[key]) == null ? void 0 : _b.kill();
+        el[key]?.kill();
         el[key] = gsapWithCSS.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease });
         cssTweens.push(el[key]);
       } else if (anim.mode === "hover") {
@@ -9893,27 +9929,23 @@
         if (anim.single) {
           const original = gsapWithCSS.getProperty(el, anim.prop);
           addListener(area, "mouseenter", () => {
-            var _a3;
-            (_a3 = el[key]) == null ? void 0 : _a3.kill();
+            el[key]?.kill();
             el[key] = gsapWithCSS.to(el, { [anim.prop]: anim.to, duration: dur, ease });
             cssTweens.push(el[key]);
           });
           addListener(area, "mouseleave", () => {
-            var _a3;
-            (_a3 = el[key]) == null ? void 0 : _a3.kill();
+            el[key]?.kill();
             el[key] = gsapWithCSS.to(el, { [anim.prop]: original, duration: dur, ease });
             cssTweens.push(el[key]);
           });
         } else {
           addListener(area, "mouseenter", () => {
-            var _a3;
-            (_a3 = el[key]) == null ? void 0 : _a3.kill();
+            el[key]?.kill();
             el[key] = gsapWithCSS.fromTo(el, { [anim.prop]: anim.from }, { ...loopVars });
             cssTweens.push(el[key]);
           });
           addListener(area, "mouseleave", () => {
-            var _a3;
-            (_a3 = el[key]) == null ? void 0 : _a3.kill();
+            el[key]?.kill();
             el[key] = gsapWithCSS.to(el, { [anim.prop]: anim.from, duration: dur, ease });
             cssTweens.push(el[key]);
           });
@@ -9923,22 +9955,19 @@
         if (anim.single) {
           const original = gsapWithCSS.getProperty(el, anim.prop);
           addListener(area, "mousedown", () => {
-            var _a3;
-            (_a3 = el[key]) == null ? void 0 : _a3.kill();
+            el[key]?.kill();
             el[key] = gsapWithCSS.to(el, { [anim.prop]: anim.to, duration: dur, ease });
             el[key].eventCallback("onComplete", () => fireOnComplete(el, "click"));
             cssTweens.push(el[key]);
           });
           addListener(area, "mouseup", () => {
-            var _a3;
-            (_a3 = el[key]) == null ? void 0 : _a3.kill();
+            el[key]?.kill();
             el[key] = gsapWithCSS.to(el, { [anim.prop]: original, duration: dur, ease });
             cssTweens.push(el[key]);
           });
         } else {
           addListener(area, "mousedown", () => {
-            var _a3;
-            (_a3 = el[key]) == null ? void 0 : _a3.kill();
+            el[key]?.kill();
             el[key] = gsapWithCSS.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: 1 });
             el[key].eventCallback("onComplete", () => fireOnComplete(el, "click"));
             cssTweens.push(el[key]);
@@ -9951,16 +9980,14 @@
       if (isReduced(el)) return;
       const ctx = readLoopCtx(el);
       animAll.forEach((a) => {
-        var _a2;
-        if (a.setup && ((_a2 = el.matches) == null ? void 0 : _a2.call(el, a.sel))) {
+        if (a.setup && el.matches?.(a.sel)) {
           const teardown = a.setup(el, ctx);
           if (typeof teardown === "function") setupTeardowns.push(teardown);
         }
       });
     };
     gsapWithCSS.utils.toArray("body *").forEach((el) => {
-      var _a2;
-      if ((_a2 = el.dataset) == null ? void 0 : _a2.gsapSetup) return;
+      if (el.dataset?.gsapSetup) return;
       el.dataset.gsapSetup = "1";
       setupClicks(el);
       setupLoops(el);
@@ -9980,19 +10007,17 @@
       }
       if (!flipPendingRaf) {
         flipPendingRaf = requestAnimationFrame(() => {
-          var _a2, _b;
           flipPendingRaf = null;
           if (!flipRoots.size) return;
           const toFlip = /* @__PURE__ */ new Set();
           flipRoots.forEach((scope) => {
-            var _a3;
             if (!scope) return;
-            gsapWithCSS.utils.toArray(((_a3 = scope.querySelectorAll) == null ? void 0 : _a3.call(scope, ".flip")) || []).forEach((el) => {
+            gsapWithCSS.utils.toArray(scope.querySelectorAll?.(".flip") || []).forEach((el) => {
               if (el.isConnected) toFlip.add(el);
             });
           });
           toFlip.forEach(playFlip);
-          gsapWithCSS.utils.toArray(((_b = (_a2 = document.body).querySelectorAll) == null ? void 0 : _b.call(_a2, ".flip")) || []).forEach(captureFlip);
+          gsapWithCSS.utils.toArray(document.body.querySelectorAll?.(".flip") || []).forEach(captureFlip);
           flipRoots = /* @__PURE__ */ new Set();
         });
       }
@@ -10026,17 +10051,15 @@
     const appearObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
-          var _a2;
           if (node.nodeType !== 1) return;
-          const els = ((_a2 = node.querySelectorAll) == null ? void 0 : _a2.call(node, "*")) ? [node, ...node.querySelectorAll("*")] : [node];
+          const els = node.querySelectorAll?.("*") ? [node, ...node.querySelectorAll("*")] : [node];
           let pinned = false;
           els.forEach((el) => {
-            var _a3, _b;
-            if (!((_a3 = el.classList) == null ? void 0 : _a3.contains("appear"))) return;
+            if (!el.classList?.contains("appear")) return;
             animateAppear(el);
             setupScroll(el);
             setupScrollDriven(el);
-            if ((_b = el.dataset) == null ? void 0 : _b.gsapSetup) return;
+            if (el.dataset?.gsapSetup) return;
             el.dataset.gsapSetup = "1";
             setupClicks(el);
             setupLoops(el);
@@ -10085,33 +10108,26 @@
       window.removeEventListener("load", ScrollTrigger2.refresh);
       clearTimeout(refreshTimer);
       scrollTriggers.forEach((t) => {
-        var _a2;
         t.kill();
-        (_a2 = t.trigger._scrollTween) == null ? void 0 : _a2.kill();
+        t.trigger._scrollTween?.kill();
         delete t.trigger._scrollTween;
       });
       ScrollTrigger2.refresh();
       registeredListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn));
       magnetListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn));
-      magnetQuery == null ? void 0 : magnetQuery.removeEventListener("change", applyMagnet);
-      loopEls.forEach(({ el, key }) => {
-        var _a2;
-        return (_a2 = el[key]) == null ? void 0 : _a2.kill();
-      });
-      cssTweens.forEach((t) => t == null ? void 0 : t.kill());
+      magnetQuery?.removeEventListener("change", applyMagnet);
+      loopEls.forEach(({ el, key }) => el[key]?.kill());
+      cssTweens.forEach((t) => t?.kill());
       cssTweens.length = 0;
-      gsapWithCSS.utils.toArray(".typewriter").forEach((el) => {
-        var _a2;
-        return (_a2 = el.typewriter) == null ? void 0 : _a2.kill();
-      });
+      gsapWithCSS.utils.toArray(".typewriter").forEach((el) => el.typewriter?.kill());
       textSplits.forEach((s) => s.revert());
       textSplits.length = 0;
-      onCompleteTweens.forEach((t) => t == null ? void 0 : t.kill());
+      onCompleteTweens.forEach((t) => t?.kill());
       onCompleteTweens.length = 0;
       setupTeardowns.forEach((fn) => {
         try {
           fn();
-        } catch (e) {
+        } catch {
         }
       });
       setupTeardowns.length = 0;
@@ -10123,8 +10139,7 @@
   var REDUCED_KEY = "funbyte-reduced-motion";
   var reducedMotionQuery = typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   var stored = readStored();
-  var _a;
-  var reduced = (_a = reducedMotionQuery == null ? void 0 : reducedMotionQuery.matches) != null ? _a : false;
+  var reduced = reducedMotionQuery?.matches ?? false;
   var forcedReduced = readReducedOverride();
   var subscribers = /* @__PURE__ */ new Set();
   function readStored() {
@@ -10132,7 +10147,7 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw === null ? null : raw === "true";
-    } catch (e) {
+    } catch {
       return null;
     }
   }
@@ -10140,7 +10155,7 @@
     if (typeof window === "undefined") return false;
     try {
       return localStorage.getItem(REDUCED_KEY) === "true";
-    } catch (e) {
+    } catch {
       return false;
     }
   }
@@ -10161,7 +10176,7 @@
     stored = !getEnabled();
     try {
       localStorage.setItem(STORAGE_KEY, String(stored));
-    } catch (e) {
+    } catch {
     }
     emit();
     if (typeof window !== "undefined") window.location.reload();
@@ -10170,7 +10185,7 @@
     forcedReduced = true;
     try {
       localStorage.setItem(REDUCED_KEY, "true");
-    } catch (e) {
+    } catch {
     }
     emit();
     if (typeof window !== "undefined") window.location.reload();
@@ -10179,7 +10194,7 @@
     forcedReduced = false;
     try {
       localStorage.removeItem(REDUCED_KEY);
-    } catch (e) {
+    } catch {
     }
     emit();
     if (typeof window !== "undefined") window.location.reload();
@@ -10198,10 +10213,15 @@
     toggleAnimations,
     enableReducedMotion,
     disableReducedMotion,
+    initListeners,
     registerComplete,
+    resolveHandler,
     customAnims,
+    Example,
     defaults: defaults2,
-    animations
+    animations,
+    normalize: normalize3,
+    ...Animations_exports
   };
   if (typeof window !== "undefined") {
     window.addEventListener("DOMContentLoaded", () => initAnimations());

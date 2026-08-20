@@ -19,3 +19,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Third-party notice
+
+This project depends on GSAP (GreenSock Animation Platform), which is NOT
+covered by the MIT license above and is distributed separately.
+
+GSAP is used under the Webflow Standard No-Charge GSAP License and is installed
+as a dependency from npm. GSAP remains the property of Webflow, Inc. / GreenSock
+and is subject to its own license terms, which take precedence over this MIT
+license with respect to GSAP itself.
+
+See https://gsap.com/standard-license/ for the applicable GSAP terms.

@@ -64,6 +64,8 @@ export interface AnimationConfig {
   typewriter?: boolean
   /** Marks a per-part (SplitText) typewriter entry. */
   typewriterSplit?: boolean
+  /** Marks a numeric counter entry (counts from `.spawn-num-N` to the element's number). */
+  count?: boolean
   /** Set false to skip generating a `.spawn-text-<name>` variant. Default true. */
   text?: boolean
   /** Set false to keep `build` but skip the always-on repeat. Default true. */
@@ -79,6 +81,7 @@ export interface SpawnConfig {
   play: (el: HTMLElement, delay: number, dur: number, ease: string) => any
   typewriter?: boolean
   typewriterSplit?: boolean
+  count?: boolean
   text: boolean
 }
 
