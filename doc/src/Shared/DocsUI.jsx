@@ -51,7 +51,7 @@ export function EntranceDemo({ cls, children = null }) {
 
 export function ClassRef({ rows }) {
   return (
-    <div className="my-4 overflow-hidden rounded-lg border border-slate-700 text-sm">
+    <div className="my-4 overflow-x-auto rounded-lg border border-slate-700 text-sm">
       {rows.map(([cls, desc]) => (
         <div key={cls} className="grid grid-cols-[auto_1fr] gap-4 border-b border-slate-700/70 px-3 py-2 last:border-0">
           <code className="whitespace-nowrap font-bold text-cyan-200">{cls}</code>

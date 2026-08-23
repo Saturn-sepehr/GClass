@@ -1,7 +1,17 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
-import { Demo } from "@/Shared/DocsUI";
 
 export const metadata = { title: "GClass — Progress bars" };
+
+function Track({ label, barClass }) {
+  return (
+    <div>
+      <p className="mb-2 text-xs opacity-60">{label}</p>
+      <div className="h-3 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-700">
+        <div className={`${barClass} h-full w-full rounded-full bg-cyan-300/80`} />
+      </div>
+    </div>
+  );
+}
 
 export default function Page() {
   return (
@@ -13,16 +23,26 @@ export default function Page() {
         They are scroll-driven extras: no spawn class needed on the element.
       </P>
 
-      <H2>Demo — fills as you scroll past</H2>
+      <H2>Demo — three ranges side by side</H2>
+      <P>
+        Scroll down slowly and compare: the early-start bar begins filling as
+        soon as it peeks over the bottom edge, the default bar starts at the
+        standard range, and the reversed one drains from full to empty. All
+        three scrub with your scrollbar — scroll back up and they rewind.
+      </P>
       <div className="my-4 space-y-[45vh]">
-        {[1, 2].map((i) => (
-          <div key={i}>
-            <p className="mb-2 text-xs opacity-60">scroll-fill bar {i} — fills across the whole viewport traversal</p>
-            <div className="h-3 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-700">
-              <div className="progress-bar h-full w-full rounded-full bg-cyan-300/80" />
-            </div>
-          </div>
-        ))}
+        <Track
+          label=".progress-bar — default range (top bottom → center center)"
+          barClass="progress-bar"
+        />
+        <Track
+          label=".progress-bar .progress-start-40 — starts filling while still low in the viewport"
+          barClass="progress-bar progress-start-40"
+        />
+        <Track
+          label=".scroll-fill .progress-reverse — full → empty"
+          barClass="scroll-fill progress-reverse"
+        />
       </div>
 
       <H2>Tunables</H2>

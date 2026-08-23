@@ -5,10 +5,10 @@ import Link from 'next/link'
 export default function Header() {
   return (
     <div className='sticky top-0 z-30 bg-slate-900 preserve w-full'>
-        <nav className='bg-slate-800/50 ring-1 ring-slate-700 mx-10 ease-expo curtain-horizontal my-2 preserve rounded-xl p-4 flex justify-between'>
+        <nav className='bg-slate-800/50 ring-1 ring-slate-700 mx-4 sm:mx-10 ease-expo curtain-horizontal my-2 preserve rounded-xl p-3 sm:p-4 flex justify-between'>
             <div className='flex items-center gap-2'> 
               <Link href="/">
-            <Image className='spawn-up priority-2' src={Logo} width={64} height={64} alt='logo'></Image>
+            <Image className='spawn-up priority-2 h-12 w-12 sm:h-16 sm:w-16' src={Logo} width={64} height={64} alt='logo'></Image>
             </Link>
             <p className='font-bold spawn-text-spawn-up letter priority-2 text-cyan-200/60'>A <a className='text-green-500 underline' href='https://gsap.com/'>GSAP</a> Library</p>
             </div>

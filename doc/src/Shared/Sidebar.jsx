@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import React from "react"
+import React, { useEffect, useState } from "react"
+import { Menu, X } from "lucide-react"
 
 const SECTIONS = [
   {
@@ -21,6 +22,7 @@ const SECTIONS = [
       ["Clip & curtains", "clip-curtains"],
       ["Typewriter", "typewriter"],
       ["Split text", "split-text"],
+      ["Counters", "counter"],
     ],
   },
   {
@@ -54,40 +56,109 @@ const SECTIONS = [
   },
 ]
 
+function NavSections({ pathname }) {
+  return (
+    <ul className="space-y-5">
+      {SECTIONS.map((section) => (
+        <li key={section.title}>
+          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider opacity-60">
+            {section.title}
+          </p>
+          <ul className="space-y-0.5">
+            {section.items.map(([label, slug]) => {
+              const href = `/documentation/${slug}`
+              const active = pathname === href
+              return (
+                <li key={slug}>
+                  <Link
+                    href={href}
+                    className={`block rounded-md px-2 py-1 text-sm transition-colors ${
+                      active
+                        ? "bg-cyan-300/10 font-bold text-cyan-200"
+                        : "opacity-75 hover:bg-slate-700/50 hover:opacity-100"
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// Desktop keeps the inline sticky sidebar; below lg the same nav collapses
+// into a floating hamburger button that opens a slide-in drawer.
 export default function Sidebar() {
   const pathname = usePathname()
+  const [open, setOpen] = useState(false)
+
+  // Close the drawer whenever the route changes (state-adjust-during-render
+  // pattern — no effect needed), and lock body scroll while it is open.
+  const [prevPath, setPrevPath] = useState(pathname)
+  if (prevPath !== pathname) {
+    setPrevPath(pathname)
+    setOpen(false)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => e.key === "Escape" && setOpen(false)
+    window.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      document.body.style.overflow = ""
+    }
+  }, [open])
+
   return (
-    <nav className="w-48">
-      <p className="mb-3 text-xs tracking-[0.25em] opacity-50">DOCS</p>
-      <ul className="space-y-5">
-        {SECTIONS.map((section) => (
-          <li key={section.title}>
-            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider opacity-60">
-              {section.title}
-            </p>
-            <ul className="space-y-0.5">
-              {section.items.map(([label, slug]) => {
-                const href = `/documentation/${slug}`
-                const active = pathname === href
-                return (
-                  <li key={slug}>
-                    <Link
-                      href={href}
-                      className={`block rounded-md px-2 py-1 text-sm transition-colors ${
-                        active
-                          ? "bg-cyan-300/10 font-bold text-cyan-200"
-                          : "opacity-75 hover:bg-slate-700/50 hover:opacity-100"
-                      }`}
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <>
+      {/* Desktop sidebar — geometry identical to the old aside > nav pair */}
+      <nav className="sticky top-24 hidden h-fit w-48 shrink-0 lg:block">
+        <p className="mb-3 text-xs tracking-[0.25em] opacity-50">DOCS</p>
+        <NavSections pathname={pathname} />
+      </nav>
+
+      {/* Mobile trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Open docs navigation"
+        aria-expanded={open}
+        className="fixed bottom-6 right-6 z-40 rounded-full border border-cyan-200/25 bg-slate-800/90 p-3.5 text-cyan-200 shadow-lg backdrop-blur transition-colors hover:bg-cyan-200/15 lg:hidden"
+      >
+        <Menu className="h-6 w-6" />
+      </button>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Docs navigation"
+        >
+          <div className="absolute inset-0 bg-black/70" onClick={() => setOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] overflow-y-auto bg-slate-900 p-5 ring-1 ring-slate-700">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-xs tracking-[0.25em] opacity-50">DOCS</p>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close docs navigation"
+                className="rounded-md p-1.5 transition-colors hover:bg-slate-700/60"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <NavSections pathname={pathname} />
+          </div>
+        </div>
+      )}
+    </>
   )
 }

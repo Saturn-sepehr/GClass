@@ -19,13 +19,39 @@ export default function Page() {
      .scroll owns the element completely -->
 <div class="appear scroll spawn-fade">appear is ignored here</div>`}</Code>
 
-      <H2>Demo — scroll down and back up</H2>
-      <div className="my-4 space-y-[38vh]">
-        {[1, 2, 3, 4].map((i) => (
-          <Demo key={i} className="scroll spawn-left time-1 flex min-h-[140px] items-center justify-center py-10">
-            box {i} — scroll-triggered spawn-left
-          </Demo>
-        ))}
+      <H2>Demo — scroll down, then back up</H2>
+      <P>
+        Every box below carries <code>.scroll</code> with a different spawn.
+        Each one slides in as it crosses the bottom edge and rewinds when you
+        scroll it back out — try both directions.
+      </P>
+      <div className="my-4 space-y-[35vh]">
+        <Demo className="scroll spawn-up time-1 mr-auto flex min-h-[130px] w-full max-w-md items-center justify-center py-10">
+          .scroll .spawn-up
+        </Demo>
+        <Demo className="scroll spawn-right time-1 ml-auto flex min-h-[130px] w-full max-w-md items-center justify-center py-10">
+          .scroll .spawn-right
+        </Demo>
+        <Demo className="scroll spawn-blur time-1 mr-auto flex min-h-[130px] w-full max-w-md items-center justify-center py-10">
+          .scroll .spawn-blur
+        </Demo>
+        <Demo className="scroll spawn-x-up time-1 ml-auto flex min-h-[130px] w-full max-w-md items-center justify-center py-10">
+          .scroll .spawn-x-up — 360° flip
+        </Demo>
+      </div>
+
+      <H2>Demo — triggers fire independently</H2>
+      <P>
+        Side-by-side elements get their own trigger each: they enter at
+        different scroll offsets even though they sit on the same row.
+      </P>
+      <div className="my-4 mb-[35vh] flex flex-wrap gap-4">
+        <Demo className="scroll spawn-left time-1 flex min-h-[120px] min-w-[180px] flex-1 items-center justify-center py-10">
+          enters first
+        </Demo>
+        <Demo className="scroll spawn-left time-1 mt-16 flex min-h-[120px] min-w-[180px] flex-1 items-center justify-center py-10">
+          enters later
+        </Demo>
       </div>
 
       <Note>
