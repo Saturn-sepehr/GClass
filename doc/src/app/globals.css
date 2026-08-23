@@ -1,0 +1,39 @@
+
+@import url('https://fonts.cdnfonts.com/css/rosemary');
+@import "tailwindcss";
+
+@theme{
+  --font-rosemary: 'Rosemary', sans-serif;
+}
+
+
+.crt-overlay {
+  background:
+    /* 2px checker dither */
+    repeating-conic-gradient(rgba(255, 255, 255, 0.02) 0% 25%, transparent 0% 50%) 0 0 / 3px 3px,
+    /* scanlines */
+    repeating-linear-gradient(0deg,
+      rgba(0, 0, 0, 0.22) 0 1px,
+      transparent 1px 3px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .crt-screen {
+    animation: crt-flicker 2.5s steps(4) infinite;
+  }
+}
+
+@keyframes crt-flicker {
+  0% { opacity: 1; }
+  10% { opacity: 0.985; }
+  20% { opacity: 0.95; }
+  30% { opacity: 1; }
+  40% { opacity: 0.95; }
+  50% { opacity: 0.985; }
+  60% { opacity: 1; }
+  70% { opacity: 1; }
+  80% { opacity: 1; }
+  90% { opacity: 0.95; }
+  100% { opacity: 1; }
+
+}

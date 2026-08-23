@@ -340,6 +340,9 @@ export function pulse (delay , target , amount , dur , ease){
 
 export function radiate (delay , target , amount , dur , ease , zIndex){
     const clone = target.cloneNode(true)
+    // Tagged so engine teardown can sweep up clones whose tween was killed
+    // before its onComplete (route changes mid-animation).
+    clone.setAttribute("data-gsap-radiate", "1")
     clone.style.cssText = `position:fixed;left:0;top:0;right:auto;bottom:auto;margin:0;pointer-events:none;transform-origin:50% 50%;${zIndex != null ? `z-index:${zIndex};` : ""}`
     // Keep the ripple glued to the target so it tracks scroll/resize instead of
     // getting stranded at the position captured when the animation was built.
@@ -363,6 +366,13 @@ export function radiate (delay , target , amount , dur , ease , zIndex){
     applyRect()
     window.addEventListener("scroll", schedule, { passive: true })
     window.addEventListener("resize", schedule, { passive: true })
+    // Killing the tween (teardown, hover/click rebuilds) must clean up exactly
+    // like natural completion — otherwise clones + listeners leak.
+    const cleanup = () => {
+        clone.remove()
+        window.removeEventListener("scroll", schedule)
+        window.removeEventListener("resize", schedule)
+    }
 
     return gsap.fromTo(clone , {scale:1 , opacity:1} , {
         scale:amount / 10 ,
@@ -370,11 +380,8 @@ export function radiate (delay , target , amount , dur , ease , zIndex){
         duration:dur ,
         delay:delay ,
         ease:easeOf(ease) ,
-        onComplete: () => {
-            clone.remove()
-            window.removeEventListener("scroll", schedule)
-            window.removeEventListener("resize", schedule)
-        } ,
+        onComplete: cleanup ,
+        onInterrupt: cleanup ,
     })
 }
 
@@ -400,27 +407,51 @@ export function marquee (target , dir , duration , xOffset = 0 , yOffset = 0 , n
     // which opens a gap on the trailing edge at some point in the loop.
     target.style.position = "relative"
     target.style.overflow = "hidden"
-    const track = document.createElement("div")
-    track.style.cssText = `position:absolute;top:${yOffset}px;left:${xOffset}px;display:flex;flex-direction:${horizontal ? "row" : "column"};width:max-content;will-change:transform;`
-    while (target.firstChild) track.appendChild(target.firstChild)
-    target.appendChild(track)
 
-    // The track is absolutely positioned, so once its content moves in, the host
-    // has no in-flow children left and can collapse to zero height. With the
-    // `overflow:hidden` set above that clips the track away entirely (e.g. a
-    // bare-text `<h1 class="marquee-left">` disappears). Preserve the content's
-    // height on the host when that happens so the marquee stays visible. Hosts
-    // with their own height (flex cards etc.) are left untouched.
+    // Rebuilds over the SAME element (engine restarts, StrictMode remounts)
+    // must reuse the existing track. Re-creating it would swallow the old
+    // absolute track as the first "child", repeat THAT as the tiling unit —
+    // every copy stacks at the same offset and scrollWidth collapses.
+    let track = target._gcTrack
+    if (!track || !track.isConnected) {
+        track = document.createElement("div")
+        track.style.cssText = `position:absolute;top:${yOffset}px;left:${xOffset}px;display:flex;flex-direction:${horizontal ? "row" : "column"};width:max-content;will-change:transform;`
+        while (target.firstChild) track.appendChild(target.firstChild)
+        target.appendChild(track)
+        // Guard against legacy poisoned DOM: older builds could wrap a previous
+        // absolute track inside this one. Unwrap any nested engine tracks so
+        // the stashed unit is always the raw content.
+        while (
+            track.children.length &&
+            [...track.children].every((c) => c.style.position === "absolute" && c.style.display === "flex")
+        ) {
+            const inner = track.firstElementChild
+            while (inner.firstChild) track.insertBefore(inner.firstChild, inner)
+            track.removeChild(inner)
+        }
+        target._gcUnitHtml = track.innerHTML
+    }
+    track.style.flexDirection = horizontal ? "row" : "column"
+    const unitHtml = target._gcUnitHtml
+
+    // Measure ONE unit on its own: the live track may already hold N copies
+    // (or stale content), which would inflate unitSize and starve `copies`.
+    const measurer = document.createElement("div")
+    measurer.style.cssText = track.style.cssText + "visibility:hidden;"
+    measurer.innerHTML = unitHtml
+    target.appendChild(measurer)
+    const unitSize = horizontal ? measurer.scrollWidth : measurer.scrollHeight
+    measurer.remove()
+
+    // Nothing to tile (empty content) — return an inert tween rather than one
+    // dividing by a zero-width unit.
+    if (!unitSize) return gsap.fromTo(track, {}, { duration: 0 })
+
+    // The track is absolutely positioned, so a bare-text host can collapse to
+    // zero height and `overflow:hidden` would clip the strip away entirely.
     if (target.offsetHeight === 0 && track.offsetHeight > 0) {
         target.style.height = track.offsetHeight + "px"
     }
-
-    const first = track.children[0]
-    if (!first) return gsap.fromTo(track, {}, { duration: 0 })
-
-    // A single copy of the content (the width one loop step must travel).
-    const unitHtml = track.innerHTML
-    const unitSize = horizontal ? track.scrollWidth : track.scrollHeight
 
     // Default: repeat the unit until the whole strip is at least as wide as the
     // viewport (plus one extra copy so the trailing edge stays covered mid-loop).

@@ -57,19 +57,37 @@ export default function initListeners() {
 
         // `.preserve` keeps an already-rendered element (e.g. one that persists
         // in a shared layout across route changes) from being re-animated when
-        // the Listeners setup re-runs. The element is animated the first time it
-        // appears and tagged with data-gsap-preserved; on a later path change the
-        // tag survives on the persistent DOM node, so setup skips it.
-        // `.preserve` keeps an already-rendered element from being re-animated. It
-        // applies to the element AND its children: any preserved ancestor also
-        // suppresses animation on this node.
+        // the Listeners setup re-runs. It applies to the element AND its
+        // children: any preserved ancestor also suppresses animation on this
+        // node. Two subtleties make this behave correctly:
+        //   • markPreserved() tags the FULL preserve-ancestor chain, so a bare
+        //     `.preserve` container without its own spawn class (a site header,
+        //     say) still gets tagged when one of its children animates.
+        //   • Suppression requires the element ITSELF to carry data-gsap-wired
+        //     (set when a previous run animated it). Freshly mounted content
+        //     under a preserved root therefore still plays its entrance — only
+        //     DOM that survived from an earlier run stays frozen.
         const isPreserved = (el) => {
+            if (!el.dataset.gsapWired) return false
             for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
                 if (node.classList.contains("preserve") && node.dataset.gsapPreserved) return true
             }
             return false
         }
-        const markPreserved = (el) => { if (el.classList.contains("preserve")) el.dataset.gsapPreserved = "1" }
+        const markPreserved = (el) => {
+            for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+                if (node.classList.contains("preserve")) node.dataset.gsapPreserved = "1"
+            }
+        }
+        // True when el sits inside a `.preserve` root that a run has already
+        // tagged. Such regions are frozen by design: later runs skip them, so
+        // teardown must leave their visual state untouched too.
+        const underPreservedRoot = (el) => {
+            for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+                if (node.classList.contains("preserve") && node.dataset.gsapPreserved) return true
+            }
+            return false
+        }
 
         // `spawnConfigs` is derived from the config in Config.js (see top of
         // file). Adding/removing an entry there automatically re-wires every
@@ -699,7 +717,7 @@ export default function initListeners() {
                 scrollTriggers.push(t.scrollTrigger)
             }
         }
-        gsap.utils.toArray('[class^="parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven)
+        gsap.utils.toArray('[class^="parallax-"],[class*=" parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven)
 
         // `.scroll`/`.scroll-progress` entrance animation, driven by ScrollTrigger.
         // Split out into a helper so DYNAMICALLY-added elements (e.g. pagination
@@ -915,6 +933,7 @@ export default function initListeners() {
                     })
                 }
                 markPreserved(el)
+                el.dataset.gsapWired = "1"
             })
         })
 
@@ -931,6 +950,7 @@ export default function initListeners() {
                 const { delay, duration } = readTiming(el)
                 el._spawnTween = playText(el, from, delay, duration, getEase(el))
                 markPreserved(el)
+                el.dataset.gsapWired = "1"
             })
         })
 
@@ -1077,8 +1097,11 @@ export default function initListeners() {
                     el[key]?.kill()
                     el[key] = trackCompatLoop(el, build(el, ctx))
                     if (loop) el[key].repeat(-1)
-                    // Infinite loops never truly complete, so fire on each cycle
-                    // (onRepeat); finite ones fire on their real completion.
+                    // Track wired loops so teardown can kill them (radiate
+                    // relies on kill/onInterrupt to remove its clones).
+                    if (!loopEls.some((l) => l.el === el && l.key === key)) {
+                        loopEls.push({ el, key })
+                    }
                     el[key].eventCallback(el[key].repeat() === -1 ? "onRepeat" : "onComplete",
                         () => fireOnComplete(el, "loop"))
                 }
@@ -1474,13 +1497,30 @@ export default function initListeners() {
         magnetListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
         magnetQuery?.removeEventListener("change", applyMagnet)
         loopEls.forEach(({ el, key }) => el[key]?.kill())
+        // Sweep any radiate clones orphaned by pre-fix kills or edge cases.
+        document.querySelectorAll('[data-gsap-radiate]').forEach((n) => n.remove())
         cssTweens.forEach((t) => t?.kill())
         cssTweens.length = 0
         gsap.utils.toArray(".typewriter").forEach(el => {
-            if (el.typewriter && !el.typewriter.reversed()) el.typewriter.progress(1)
+            // Preserved-region typewriters stay as-is (already at their end
+            // state); finalize the rest so a mid-type kill can't strand
+            // partial text where the next run's stash would read it.
+            const keep = el.isConnected && underPreservedRoot(el)
+            if (!keep && el.typewriter && !el.typewriter.reversed()) el.typewriter.progress(1)
             el.typewriter?.kill()
         })
-        textSplits.forEach((s) => s.revert())
+        textSplits.forEach((s) => {
+            // Splits inside a tagged preserve region keep their spans — the
+            // next run will skip those elements, and reverting here would
+            // visibly strip their finished animation. Everything else reverts
+            // cleanly (and drops out of splitCache so a reused element can be
+            // re-split fresh).
+            const keep = (s.elements || []).some((e) => e.isConnected && underPreservedRoot(e))
+            if (!keep) {
+                ;(s.elements || []).forEach((e) => splitCache.delete(e))
+                s.revert()
+            }
+        })
         textSplits.length = 0
         onCompleteTweens.forEach((t) => t?.kill())
         onCompleteTweens.length = 0
