@@ -6,7 +6,7 @@ Framework-agnostic: works in vanilla JS, React, Vue, Svelte, or any bundler.
 
 ## Live demo
 
-https://saturn-sepehr.github.io/GClass/demo/index.html
+https://saturn-sepehr.github.io/GClass/
 
 ## Installation
 
