@@ -6,7 +6,7 @@ import { useEffect } from "react";
 export default function Documentation() {
   const nav = useRouter()
   useEffect(() => {
-    nav.push("documentation/installation")
+    nav.push("/documentation/installation")
   } , [])
   return (
     <div>
