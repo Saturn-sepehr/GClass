@@ -64,13 +64,13 @@ export default function Page() {
       </P>
       <div className="my-4 space-y-[38vh]">
         <div className="text-center">
-          <p className="count scroll spawn-fade text-5xl font-extrabold text-cyan-200">
+          <p className="count scroll text-5xl font-extrabold text-cyan-200">
             4200
           </p>
           <p className="mt-2 text-xs opacity-60">.count .spawn-fade .scroll</p>
         </div>
         <div className="text-center">
-          <p className="count scroll spawn-up text-5xl font-extrabold text-cyan-200">
+          <p className="count scroll text-5xl font-extrabold text-cyan-200">
             99.9
           </p>
           <p className="mt-2 text-xs opacity-60">uptime % — one decimal</p>
