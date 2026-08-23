@@ -3,6 +3,7 @@ node_modules/
 
 # Dev playground
 dev/
+next-test/
 
 #Checklist
 CHECKLIST.txt

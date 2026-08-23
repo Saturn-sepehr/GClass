@@ -1,5 +1,5 @@
 import gsap from 'gsap'
-import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars } from './Animations'
+import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText } from './Animations'
 import { customAnims } from './CustomAnims'
 import { defaults, normalize } from './Config'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
@@ -724,7 +724,7 @@ export default function initListeners() {
                 for (const [key] of Object.entries(from)) {
                     if (key === "opacity") to[key] = 1
                     else if (key === "filter") to[key] = "blur(0px)"
-                    else if (key === "text") to[key] = el.innerHTML
+                    else if (key === "text") to[key] = stashText(el)
                     else if (key === "clipPath") to[key] = "inset(0% 0% 0% 0%)"
                     else to[key] = key.startsWith("scale") ? 1 : 0
                 }
@@ -767,7 +767,7 @@ export default function initListeners() {
                 ? ([...el.classList].find(c => c.startsWith("ease-"))?.split("-")[1] ?? "none")
                 : getEase(el)
 
-            const fullText = el.innerHTML
+            const fullText = stashText(el)
 
             const enter = () => {
                 if (el._scrollTween) el._scrollTween.kill()
@@ -902,7 +902,7 @@ export default function initListeners() {
                         el._spawnTween = playTypewriterSplit(el, delay, duration, elEase)
                     } else {
                         el.typewriter?.kill()
-                        el.typewriter = typewriter(el, el.innerHTML, duration, delay, elEase)
+                        el.typewriter = typewriter(el, stashText(el), duration, delay, elEase)
                     }
                 } else {
                     el._spawnTween = play(el, delay, duration, getEase(el))
@@ -1442,18 +1442,44 @@ export default function initListeners() {
         window.removeEventListener("load", ScrollTrigger.refresh)
         clearTimeout(refreshTimer)
         scrollTriggers.forEach((t) => {
-            t.kill()
+            const tw = t.trigger._scrollTween
+            // Finalize a mid-flight typewriter entrance at its end state
+            // BEFORE killing: stranded partial text would otherwise be read as
+            // settled content by the next run's stash.
+            if (tw && !tw.reversed() && t.trigger.classList?.contains("typewriter")) tw.progress(1)
+            // kill(true): revert pinning (remove pin-spacers, restore inline
+            // styles) so a later init can re-pin cleanly instead of nesting a
+            // second spacer inside the leaked first one.
+            t.kill(true)
             t.trigger._scrollTween?.kill()
             delete t.trigger._scrollTween
         })
         ScrollTrigger.refresh()
+        // Clear per-element wire-up tags. Without this, any engine restart
+        // (initAnimations() called again, StrictMode remounts, route-level
+        // re-mounts that keep DOM nodes alive) would silently skip rewiring:
+        // .scroll/.pin/parallax triggers stay dead (their old ones were just
+        // killed) and clicks/loops/hover never re-bind. `_appeared` goes too,
+        // so dynamically-added .appear elements can animate under the new
+        // engine run. data-gsap-preserved (cross-reset memory) and
+        // data-gsap-ghost (detached .leave clones) are intentionally KEPT.
+        gsap.utils.toArray('[data-gsap-scroll],[data-gsap-setup],[data-gsap-pinned],[data-gsap-scroll-driven]').forEach((el) => {
+            delete el.dataset.gsapScroll
+            delete el.dataset.gsapSetup
+            delete el.dataset.gsapPinned
+            delete el.dataset.gsapScrollDriven
+            delete el._appeared
+        })
         registeredListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
         magnetListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
         magnetQuery?.removeEventListener("change", applyMagnet)
         loopEls.forEach(({ el, key }) => el[key]?.kill())
         cssTweens.forEach((t) => t?.kill())
         cssTweens.length = 0
-        gsap.utils.toArray(".typewriter").forEach(el => el.typewriter?.kill())
+        gsap.utils.toArray(".typewriter").forEach(el => {
+            if (el.typewriter && !el.typewriter.reversed()) el.typewriter.progress(1)
+            el.typewriter?.kill()
+        })
         textSplits.forEach((s) => s.revert())
         textSplits.length = 0
         onCompleteTweens.forEach((t) => t?.kill())

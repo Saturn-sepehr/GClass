@@ -28,6 +28,23 @@ export const finalOpacity = (target) => {
     return isNaN(v) ? 1 : v
 }
 
+// TextPlugin tweens take their endpoints from the LIVE DOM: the `.typewriter`
+// play callbacks pass `el.innerHTML` as the text to type. The tween's from
+// state ("") is applied the instant the tween is created, and a teardown that
+// kills the tween mid-flight leaves that wiped state behind — so a later
+// engine re-init reading `el.innerHTML` again would type an empty (or
+// partially-typed) string forever. Stash the full HTML on first sight and
+// reuse it. The stash only refreshes from SETTLED content: never while a
+// typewriter tween on the element is actively rendering partial progress, and
+// never from a blank DOM. Legit content changes (React re-renders, dynamic
+// `.appear` elements) therefore update the stash naturally.
+export const stashText = (el) => {
+    const busy = (el.typewriter || el._scrollTween)?.isActive?.()
+    const html = el.innerHTML
+    if (!busy && html && html.trim()) el._gcText = html
+    return el._gcText !== undefined ? el._gcText : html
+}
+
 
 //Spawn animations
 

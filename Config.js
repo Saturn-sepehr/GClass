@@ -3,7 +3,7 @@ import {
   spinCCW, spinCW, expandA, typewriter, bell, spawnBlur, spawnFade, spawnXDown,
   spawnXUp, spawnYRight, spawnYLeft, pulse, radiate, hover, expandRight,
   expandLeft, expandUp, expandDown, marquee, countUp,
-  spawnClipReveal, curtainHorizontal, curtainVertical,
+  spawnClipReveal, curtainHorizontal, curtainVertical, stashText,
 } from './Animations.js'
 
 // ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ export const animations = [
   { sel: ".expand-up", from: { opacity: 0, scaleY: 0 }, play: (el, delay, dur, ease) => expandUp(el, delay, dur, ease) },
   { sel: ".expand-down", from: { opacity: 0, scaleY: 0 }, play: (el, delay, dur, ease) => expandDown(el, delay, dur, ease) },
   { sel: ".expand-all", from: { opacity: 0, scale: 0 }, play: (el, delay, dur, ease) => expandA(el, delay, dur, ease) },
-  { sel: ".typewriter", typewriter: true, from: { text: "" }, play: (el, delay, dur, ease) => typewriter(el, el.innerHTML, dur, delay, ease) },
+  { sel: ".typewriter", typewriter: true, from: { text: "" }, play: (el, delay, dur, ease) => typewriter(el, stashText(el), dur, delay, ease) },
   { sel: ".typewriter-split", typewriter: true, typewriterSplit: true, from: { opacity: 0 }, play: (el, delay, dur, ease) => null },
 
   // Custom-function animation: counts from the `.spawn-num-N` value (N = the
