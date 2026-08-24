@@ -15,7 +15,7 @@ export default function Display({ children }) {
       />
       {/* scrolling content — intentionally NO filter here: it would become a
           containing block and break ScrollTrigger's fixed-position pinning */}
-      <div className='relative z-10 font-mono text-cyan-200'>{children}</div>
+      <div className='relative font-mono text-cyan-200'>{children}</div>
       {/* scanlines + dither + flicker sit above everything */}
       <div className='bg-slate-900 opacity-50 mix-blend-color pointer-events-none fixed inset-0 z-50' aria-hidden='true' />
       <div className='crt-overlay pointer-events-none fixed inset-0 z-50' aria-hidden='true' />

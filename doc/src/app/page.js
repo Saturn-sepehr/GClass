@@ -26,6 +26,8 @@ export default function Home() {
               Docs
             </Link>
           </div>
+          <br></br>
+          <p className="text-red-500 typewriter order">GCLASS IS STILL IN BETA, EXPECT A LOT BUGS</p>
         </div>
       </main>
     </div>

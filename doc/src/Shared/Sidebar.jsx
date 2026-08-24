@@ -65,7 +65,7 @@ function NavSections({ pathname, cls = "" }) {
     <ul className="space-y-5 preserve">
       {SECTIONS.map((section) => (
         <li key={section.title}>
-          <p className={`mb-1.5 appear text-[11px] order spawn-text-spawn-down letter font-bold uppercase tracking-wider opacity-60 ${cls}`}>
+          <p className={`mb-1.5 appear text-[11px] spawn-text-spawn-down letter font-bold uppercase tracking-wider opacity-60 ${cls}`}>
             {section.title}
           </p>
           <ul className="space-y-0.5">
@@ -76,9 +76,9 @@ function NavSections({ pathname, cls = "" }) {
                 <li key={slug}>
                   <Link
                     href={href}
-                    className={`block appear compatibility spawn-left click-hover amount-2 order rounded-md px-2 py-1 text-sm transition-colors ${cls} ${
+                    className={`block appear compatibility spawn-left click-hover amount-2 rounded-md px-2 py-1 text-sm transition-colors ${cls} ${
                       active
-                        ? "bg-cyan-300/10 font-bold text-cyan-200"
+                        ? "bg-cyan-300/10 font-bold"
                         : "opacity-75 hover:bg-slate-700/50 hover:opacity-100"
                     }`}
                   >
@@ -124,7 +124,7 @@ export default function Sidebar() {
       {/* Desktop sidebar — geometry identical to the old aside > nav pair */}
       <nav className="sticky top-24 hidden h-fit w-48 shrink-0 lg:block preserve">
         <p className="mb-3 text-xs tracking-[0.25em] opacity-50 typewriter-split appear letter">DOCS</p>
-        <NavSections pathname={pathname} cls="priority-50" />
+        <NavSections pathname={pathname} cls="priority-0" />
       </nav>
 
       {/* Mobile trigger */}
@@ -141,7 +141,7 @@ export default function Sidebar() {
       {/* Mobile drawer */}
       {open && (
         <div
-          className="fixed  inset-0 z-40 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden"
           role="dialog"
           aria-modal="true"
           aria-label="Docs navigation"
@@ -159,7 +159,7 @@ export default function Sidebar() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <NavSections pathname={pathname} cls="priority-100" />
+            <NavSections pathname={pathname} cls="priority-0" />
           </div>
         </div>
       )}

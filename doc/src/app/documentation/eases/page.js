@@ -108,13 +108,13 @@ export default function Page() {
         to it:
       </P>
       <ul className="my-3 list-inside list-disc space-y-1 text-sm leading-relaxed opacity-80">
-        <li>All entrance tweens — spawns, expands, clip reveals, curtains</li>
-        <li><code>.scroll</code> entrances and scrubbed <code>.scroll-progress</code></li>
-        <li><code>.spawn-text-*</code> SplitText parts (each part shares the ease)</li>
-        <li>Loop settle segments — <code>.shake</code>, <code>.bounce</code>, <code>.bell</code>, <code>.pulse</code></li>
-        <li><code>hover-</code>/<code>click-</code> interactions and their mouseleave reset</li>
-        <li><code>.magnet</code> / <code>.magnet3d</code> cursor tracking</li>
-        <li><code>css-*</code> arbitrary-property tweens and <code>.flip</code> morphs</li>
+        <li className="order typewriter-split letter spawn-left">All entrance tweens — spawns, expands, clip reveals, curtains</li>
+        <li className="order typewriter-split letter spawn-left"><code>.scroll</code> entrances and scrubbed <code>.scroll-progress</code></li>
+        <li className="order typewriter-split letter spawn-left"><code>.spawn-text-*</code> SplitText parts (each part shares the ease)</li>
+        <li className="order typewriter-split letter spawn-left">Loop settle segments — <code>.shake</code>, <code>.bounce</code>, <code>.bell</code>, <code>.pulse</code></li>
+        <li className="order typewriter-split letter spawn-left"><code>hover-</code>/<code>click-</code> interactions and their mouseleave reset</li>
+        <li className="order typewriter-split letter spawn-left"><code>.magnet</code> / <code>.magnet3d</code> cursor tracking</li>
+        <li className="order typewriter-split letter spawn-left"><code>css-*</code> arbitrary-property tweens and <code>.flip</code> morphs</li>
       </ul>
       <Note>
         Two deliberate exceptions: <b>typewriters</b> default to{" "}

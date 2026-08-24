@@ -8,7 +8,7 @@ import { useState } from "react"
 export default function Replay({ label = "Replay", children }) {
   const [run, setRun] = useState(0)
   return (
-    <div>
+    <div className="order spawn-down">
       <button
         type="button"
         onClick={() => setRun((v) => v + 1)}
