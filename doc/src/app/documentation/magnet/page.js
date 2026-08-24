@@ -17,7 +17,7 @@ export default function Page() {
 
       <H2>Demo — move your cursor across these</H2>
       <div className="my-4 flex flex-wrap gap-6">
-        <Demo className={BOX + " magnet amount-30 mgrow-1.1"}>
+        <Demo className={BOX + " magnet mgrow-1.1"}>
           .magnet
         </Demo>
         <Demo className={BOX + " magnet3d mtilt-16"}>
