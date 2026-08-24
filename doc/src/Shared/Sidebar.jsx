@@ -43,6 +43,7 @@ const SECTIONS = [
       ["hover-* / click-*", "hover-click"],
       ["Magnet", "magnet"],
       ["css-* classes", "css-classes"],
+      [".ease-N", "eases"],
     ],
   },
   {
@@ -56,12 +57,15 @@ const SECTIONS = [
   },
 ]
 
-function NavSections({ pathname }) {
+// `cls` lets each call site carry its own engine tunables (e.g. a distinct
+// priority-N): .order sequencing groups by priority value, so separate
+// numbers keep the desktop nav and the mobile drawer on independent timelines.
+function NavSections({ pathname, cls = "" }) {
   return (
-    <ul className="space-y-5">
+    <ul className="space-y-5 preserve">
       {SECTIONS.map((section) => (
         <li key={section.title}>
-          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider opacity-60">
+          <p className={`mb-1.5 appear text-[11px] order spawn-text-spawn-down letter font-bold uppercase tracking-wider opacity-60 ${cls}`}>
             {section.title}
           </p>
           <ul className="space-y-0.5">
@@ -72,7 +76,7 @@ function NavSections({ pathname }) {
                 <li key={slug}>
                   <Link
                     href={href}
-                    className={`block rounded-md px-2 py-1 text-sm transition-colors ${
+                    className={`block appear compatibility spawn-left click-hover amount-2 order rounded-md px-2 py-1 text-sm transition-colors ${cls} ${
                       active
                         ? "bg-cyan-300/10 font-bold text-cyan-200"
                         : "opacity-75 hover:bg-slate-700/50 hover:opacity-100"
@@ -118,9 +122,9 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop sidebar — geometry identical to the old aside > nav pair */}
-      <nav className="sticky top-24 hidden h-fit w-48 shrink-0 lg:block">
-        <p className="mb-3 text-xs tracking-[0.25em] opacity-50">DOCS</p>
-        <NavSections pathname={pathname} />
+      <nav className="sticky top-24 hidden h-fit w-48 shrink-0 lg:block preserve">
+        <p className="mb-3 text-xs tracking-[0.25em] opacity-50 typewriter-split appear letter">DOCS</p>
+        <NavSections pathname={pathname} cls="priority-50" />
       </nav>
 
       {/* Mobile trigger */}
@@ -137,15 +141,15 @@ export default function Sidebar() {
       {/* Mobile drawer */}
       {open && (
         <div
-          className="fixed inset-0 z-40 lg:hidden"
+          className="fixed  inset-0 z-40 lg:hidden"
           role="dialog"
           aria-modal="true"
           aria-label="Docs navigation"
         >
           <div className="absolute inset-0 bg-black/70" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] overflow-y-auto bg-slate-900 p-5 ring-1 ring-slate-700">
+          <div className="absolute  inset-y-0 left-0 w-72 max-w-[85%] overflow-y-auto  bg-slate-900 p-5 ring-1 ring-slate-700">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs tracking-[0.25em] opacity-50">DOCS</p>
+              <p className="text-xs tracking-[0.25em] opacity-50 typewriter-split appear letter">DOCS</p>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -155,7 +159,7 @@ export default function Sidebar() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <NavSections pathname={pathname} />
+            <NavSections pathname={pathname} cls="priority-100" />
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
+  import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import { Demo } from "@/Shared/DocsUI";
 
 export const metadata = { title: "GClass — Parallax" };

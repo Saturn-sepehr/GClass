@@ -17,6 +17,39 @@
       transparent 1px 3px);
 }
 
+/* Fake fisheye, two layers:
+   ::before — the glass boundary at inset 0; its INSET shadow shades inward
+   from a 3.5rem-rounded rectangle.
+   ::after  — a hollow rounded-rect "bezel" ring: a border-only element far
+   larger than the screen, centred on it. Its hole is exactly viewport-sized,
+   so the straight border edges live entirely off-screen, but the hole's
+   rounded inner corners dip into the real screen corners — covering the
+   unshaded slivers that ::before's rounding leaves empty.
+   Pure overlays — nothing is filtered, so ScrollTrigger pinning stays intact. */
+.crt-vignette::before {
+  content: "";
+  position: absolute;
+  inset: 0px;
+  border-radius: 3.5rem;
+  box-shadow:
+    inset 0 0 50px 10px rgba(0, 0, 0, 0.22),
+    inset 0 0 130px 30px rgba(0, 0, 0, 0.14);
+}
+
+.crt-vignette::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(100vw + 120vmax);
+  height: calc(100vh + 120vmax);
+  transform: translate(-50%, -50%);
+  /* inner radius = border-radius − border-width → a 3rem opening that
+     matches ::before's curvature */
+  border: 60vmax solid rgba(4, 7, 12, 0.55);
+  border-radius: calc(60vmax + 3rem);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .crt-screen {
     animation: crt-flicker 2.5s steps(4) infinite;

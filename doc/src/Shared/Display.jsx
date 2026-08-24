@@ -6,9 +6,11 @@ import React from 'react'
 export default function Display({ children }) {
   return (
     <>
-      {/* tube backdrop */}
+      {}
+ 
+        {/* tube backdrop */}
       <div
-        className='crt-screen fixed inset-0 z-0 bg-slate-900 shadow-[inset_0_0_46px_rgba(0,0,0,0.75)]'
+        className='crt-screen  fixed inset-0 z-0 bg-slate-900'
         aria-hidden='true'
       />
       {/* scrolling content — intentionally NO filter here: it would become a
@@ -17,6 +19,13 @@ export default function Display({ children }) {
       {/* scanlines + dither + flicker sit above everything */}
       <div className='bg-slate-900 opacity-50 mix-blend-color pointer-events-none fixed inset-0 z-50' aria-hidden='true' />
       <div className='crt-overlay pointer-events-none fixed inset-0 z-50' aria-hidden='true' />
+      
+        {/* fake fisheye: edge falloff reads as the tube curving away */}
+      <div
+        className='crt-vignette pointer-events-none fixed inset-0 z-50 overflow-hidden'
+        aria-hidden='true'
+      />
+     
     </>
   )
 }
