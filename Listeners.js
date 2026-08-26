@@ -1,5 +1,5 @@
 import gsap from 'gsap'
-import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText } from './Animations'
+import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText, scrambleVars } from './Animations'
 import { customAnims } from './CustomAnims'
 import { defaults, normalize } from './Config'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
@@ -28,6 +28,69 @@ export function resolveHandler(name) {
     if (completeHandlers.has(name)) return completeHandlers.get(name)
     if (typeof window !== "undefined" && typeof window[name] === "function") return window[name]
     return null
+}
+
+// --- .randomize-<prop>-[min]-[max] randomization -----------------------------
+// Adds function-based values (e.g. rotation: () => gsap.utils.random(-90, 90))
+// to the FROM state of spawn tweens, so each element enters from its own pose.
+// GSAP evaluates function values on tween BUILD, and the engine always kills +
+// rebuilds tweens on replay (.scroll re-enter, .appear re-insert), so every
+// replay re-rolls automatically — no invalidate/repeatRefresh bookkeeping.
+//
+// The class is the guard: hasRandom() is a cheap className probe and nothing
+// below allocates or patches anything unless it passes, so elements without
+// .randomize-* run exactly the pre-feature code path.
+//
+// Notes:
+//   • randomize OVERRIDES the base spawn's value for that prop (a
+//     randomize-rotation on .spawn-cw replaces the spin).
+//   • A matching END value is derived per prop (scale* -> 1, opacity -> 1,
+//     transforms -> 0, ...) unless the config's own `to` already animates the
+//     prop, so a randomized prop on a spawn that doesn't natively use it still
+//     tweens back to rest instead of sticking at the rolled value.
+//   • Timeline-mediated builders (count/scramble/draw-split) construct via
+//     Timeline methods, not the exported gsap.fromTo, so they sit outside the
+//     injection — irrelevant in practice, since their props aren't randomize
+//     targets.
+const RANDOMIZE_RE = /^randomize-(\w+)-\[(-?[\d.]+)\]-\[(-?[\d.]+)\]$/
+const hasRandom = (el) => typeof el.className === "string" && /\brandomize-/.test(el.className)
+const randomVars = (el) => {
+    const rnd = {}
+    for (const c of el.classList) {
+        const m = c.match(RANDOMIZE_RE)
+        if (m) rnd[m[1]] = () => gsap.utils.random(Number(m[2]), Number(m[3]))
+    }
+    return rnd
+}
+// Resting end-state for a randomized prop (mirrors computeTo's rules).
+const randomEnds = (keys) => Object.fromEntries(keys.map((k) => [
+    k,
+    k === "opacity" ? 1
+        : k === "filter" ? "blur(0px)"
+        : k === "clipPath" ? "inset(0% 0% 0% 0%)"
+        : k === "drawSVG" ? "100%"
+        : k.startsWith("scale") ? 1
+        : 0,
+]))
+// Runs a spawn config's play(), injecting the element's .randomize-* function
+// values into every from-state the config builds. Config helpers hardcode
+// their from literals inside Animations.js, so the injection hooks the only
+// interception point available: play() builds its tweens SYNCHRONOUSLY, which
+// makes a scoped gsap.fromTo swap safe — patch, let the config construct,
+// restore in finally{}. Without .randomize-* this is a bare passthrough.
+const invokePlay = (config, el, delay, dur, ease) => {
+    if (!hasRandom(el)) return config.play(el, delay, dur, ease)
+    const rnd = randomVars(el)
+    const keys = Object.keys(rnd)
+    if (!keys.length) return config.play(el, delay, dur, ease)
+    const ends = randomEnds(keys)
+    const origFromTo = gsap.fromTo
+    gsap.fromTo = (t, from, to) => origFromTo(t, { ...from, ...rnd }, { ...ends, ...to })
+    try {
+        return config.play(el, delay, dur, ease)
+    } finally {
+        gsap.fromTo = origFromTo
+    }
 }
 
 export default function initListeners() {
@@ -335,7 +398,7 @@ export default function initListeners() {
             const delay = readClassNumber(el, "complete-delay-", 0)
             const dur = readClassNumber(el, "complete-time-", 1)
             const tween = entry.play
-                ? entry.play(el, delay, dur, getEase(el))
+                ? invokePlay(entry, el, delay, dur, getEase(el))
                 : entry.build(el, readLoopCtx(el))
             if (!tween) return
             if (!entry.play) tween.delay(delay)
@@ -355,12 +418,16 @@ export default function initListeners() {
         }
 
         const scrollTriggers = []
+        // Derives the fully-visible twin of a spawn's `from` state. drawSVG is
+        // inverted relative to the numeric default: its HIDDEN value is 0%, so
+        // the drawn end state is the full stroke.
         const computeTo = (from) => {
             const to = {}
-            for (const [key] of Object.entries(from)) {
+            for (const [key] of Object.entries(from || {})) {
                 if (key === "opacity") to[key] = 1
                 else if (key === "filter") to[key] = "blur(0px)"
                 else if (key === "clipPath") to[key] = "inset(0% 0% 0% 0%)"
+                else if (key === "drawSVG") to[key] = "100%"
                 else to[key] = key.startsWith("scale") ? 1 : 0
             }
             return to
@@ -489,12 +556,50 @@ export default function initListeners() {
             },
         })
 
+        // Flex targets can't be split directly: the split parts would become
+        // flex ITEMS, so justify-content/gap would apply per letter, whitespace-
+        // only text nodes stop rendering (spaces vanish) and line grouping reads
+        // garbage. Loose text runs are therefore pre-wrapped in plain block
+        // divs — real boxes with normal inline flow inside — and the wrappers
+        // are undone whenever the split reverts. Non-text children (icons etc.)
+        // stay put, keeping their own flex-item status and the gaps around them.
+        const wrapFlexTarget = (el) => {
+            if (!/^(inline-)?flex$/.test(getComputedStyle(el).display)) return null
+            const wrappers = []
+            let run = []
+            const flush = () => {
+                if (!run.length) return
+                const w = document.createElement("div")
+                el.insertBefore(w, run[0])
+                run.forEach((n) => w.appendChild(n))
+                wrappers.push(w)
+                run = []
+            }
+            ;[...el.childNodes].forEach((n) => {
+                if (n.nodeType === 3 && n.textContent.trim()) run.push(n)
+                else flush()
+            })
+            flush()
+            if (!wrappers.length) return null
+            return () => wrappers.forEach((w) => {
+                while (w.firstChild) el.insertBefore(w.firstChild, w)
+                w.remove()
+            })
+        }
+
+        // Revert a SplitText instance AND undo any flex pre-wrapping made for
+        // it. Every revert path funnels through here so wrappers can't leak.
+        const revertSplitInstance = (s) => {
+            s.revert()
+            s._gcFlexUnwrap?.()
+        }
+
         const getSplit = (el, gran) => {
             let s = splitCache.get(el)
             const rtlChars = gran === "chars" && isRTLText(el)
             const key = rtlChars ? "rtl-chars" : gran
             if (!s || s.granularity !== key) {
-                s?.revert()
+                if (s) revertSplitInstance(s)
                 s = rtlChars
                     ? getRTLCharSplit(el)
                     : new SplitText(el, {
@@ -503,6 +608,7 @@ export default function initListeners() {
                         wordsClass: "gsap-word",
                         charsClass: "gsap-char",
                     })
+                s._gcFlexUnwrap = wrapFlexTarget(el)
                 s.granularity = key
                 splitCache.set(el, s)
                 textSplits.push(s)
@@ -532,7 +638,7 @@ export default function initListeners() {
             splitCache.delete(el)
             const idx = textSplits.indexOf(s)
             if (idx !== -1) textSplits.splice(idx, 1)
-            s.revert()
+            revertSplitInstance(s)
         }
         // The whole point of `.time-X` on a `.spawn-text-X` element is that the
         // FULL reveal (first part starting to last part finishing) takes X
@@ -563,8 +669,17 @@ export default function initListeners() {
                 duration = Math.min(dur, Math.max(dur / 3, defaults.minTextPartDuration))
                 stagger = parts.length > 1 ? (dur - duration) / (parts.length - 1) : 0
             }
-            return gsap.fromTo(parts, { ...from }, {
-                ...computeTo(from), ease, duration, delay, stagger,
+            // .randomize-*: per-PART roll (function values evaluate once per
+            // target, so every char/word/line lands on its own pose); end
+            // states recompute from the merged keys so new props tween to rest.
+            let rnd = null
+            if (hasRandom(el)) {
+                rnd = randomVars(el)
+                if (!Object.keys(rnd).length) rnd = null
+            }
+            const effFrom = { ...from, ...rnd }
+            return gsap.fromTo(parts, effFrom, {
+                ...computeTo(effFrom), ease, duration, delay, stagger,
                 onComplete: () => {
                     if (el.classList.contains("leave")) refreshLeaveRect(el)
                     revertSplit(el)
@@ -719,6 +834,16 @@ export default function initListeners() {
         }
         gsap.utils.toArray('[class^="parallax-"],[class*=" parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven)
 
+        // Scroller resolution: a `.scroll`/`.scroll-progress` element inside a
+        // `.scroll-frame` container binds its trigger to THAT box instead of the
+        // window. Innermost frame wins (`closest` walks up); no frame ancestor
+        // keeps the default window scroller. The frame must be a real scroller
+        // (fixed height + overflow auto/scroll) or its triggers never fire.
+        const getScroller = (el) => {
+            const frame = el.closest?.(".scroll-frame")
+            return frame && frame !== el ? frame : undefined
+        }
+
         // `.scroll`/`.scroll-progress` entrance animation, driven by ScrollTrigger.
         // Split out into a helper so DYNAMICALLY-added elements (e.g. pagination
         // rendered after a data fetch) get a trigger too, instead of only elements
@@ -739,11 +864,12 @@ export default function initListeners() {
                     : getEase(el)
 
                 const to = {}
-                for (const [key] of Object.entries(from)) {
+                for (const [key] of Object.entries(from || {})) {
                     if (key === "opacity") to[key] = 1
                     else if (key === "filter") to[key] = "blur(0px)"
                     else if (key === "text") to[key] = stashText(el)
                     else if (key === "clipPath") to[key] = "inset(0% 0% 0% 0%)"
+                    else if (key === "drawSVG") to[key] = "100%"
                     else to[key] = key.startsWith("scale") ? 1 : 0
                 }
 
@@ -754,10 +880,16 @@ export default function initListeners() {
                 // GSAP's ScrollTrigger ignores a `reversed` config; swap from/to so
                 // the scrub maps in the opposite direction instead.
                 const reverse = el.classList.contains("progress-reverse")
+                // .randomize-* applies to the HIDDEN start only (non-reverse):
+                // a scrub's resting end must stay deterministic or the element
+                // would sit permanently off-pose after being scrolled through.
+                const rnd = !reverse && hasRandom(el) ? randomVars(el) : null
+                const rndEnds = rnd ? randomEnds(Object.keys(rnd)) : null
 
                 const tl = gsap.timeline({
                     scrollTrigger: {
                         trigger: el,
+                        scroller: getScroller(el),
                         start: startClass != null ? `top ${clamp(100 - startClass)}%` : defaults.progressStart,
                         end: endClass != null ? `top ${clamp(100 - endClass)}%` : defaults.progressEnd,
                         scrub: true,
@@ -769,11 +901,32 @@ export default function initListeners() {
                     const { start, end, decimals } = countTargetVars(el)
                     const obj = { n: reverse ? end : start }
                     tl.fromTo(obj, { n: reverse ? end : start }, { n: reverse ? start : end, ease, onUpdate: () => { el.textContent = obj.n.toFixed(decimals) } }, 0)
+                } else if (config.scramble) {
+                    // Scramble driven by scroll progress: each top-level text
+                    // run scrubs through garbage states (.progress-reverse
+                    // swaps the endpoints). The generic from/to scrub can't
+                    // express this (it only knows the numeric `from` keys),
+                    // which is why the entry carries the scramble flag.
+                    // .scramble-all has no empty state: its tween runs between
+                    // identical endpoints so the scrub just drives the sweep.
+                    // Same ease rule as play(): linear unless .ease-* present.
+                    const { segs, chars, speed, revealDelay, rtl } = scrambleVars(el)
+                    const all = el.classList.contains("scramble-all")
+                    segs.forEach(({ t, text }) => {
+                        if (all) {
+                            tl.to(t,
+                                { scrambleText: { text, chars, speed, revealDelay, rightToLeft: rtl }, ease }, 0)
+                        } else {
+                            tl.fromTo(t,
+                                { scrambleText: { text: reverse ? text : "", chars } },
+                                { scrambleText: { text: reverse ? "" : text, chars, speed, revealDelay, rightToLeft: rtl }, ease }, 0)
+                        }
+                    })
                 } else if (typewriterSplit) {
                     const parts = getParts(el, getGranularity(el))
                     if (parts.length) tl.fromTo(parts, { opacity: reverse ? 1 : 0 }, { opacity: reverse ? 0 : 1, ease })
                 } else {
-                    tl.fromTo(el, { ...(reverse ? to : from) }, { ...(reverse ? from : to), ease })
+                    tl.fromTo(el, { ...(reverse ? to : from), ...rnd }, { ...rndEnds, ...(reverse ? from : to), ease })
                 }
                 scrollTriggers.push(tl.scrollTrigger)
                 return
@@ -793,7 +946,7 @@ export default function initListeners() {
                     ? (typewriterSplit
                         ? playTypewriterSplit(el, delay, duration, ease)
                         : typewriter(el, fullText, duration, delay, ease))
-                    : play(el, delay, duration, ease)
+                    : invokePlay(config, el, delay, duration, ease)
                 el._scrollTween.eventCallback("onComplete", () => fireOnComplete(el, "spawn"))
             }
             const reverseToStart = () => {
@@ -820,6 +973,7 @@ export default function initListeners() {
 
             const st = ScrollTrigger.create({
                 trigger: el,
+                scroller: getScroller(el),
                 start: "top bottom",
                 end: "bottom top",
                 onEnter: enter,
@@ -852,6 +1006,7 @@ export default function initListeners() {
                 }
                 scrollTriggers.push(ScrollTrigger.create({
                     trigger: el,
+                    scroller: getScroller(el),
                     start: "top bottom",
                     end: "top top",
                     onEnter: enter,
@@ -873,14 +1028,19 @@ export default function initListeners() {
                 const tl = gsap.timeline({
                     scrollTrigger: {
                         trigger: el,
+                        scroller: getScroller(el),
                         start: startClass != null ? `top ${clamp(100 - startClass)}%` : defaults.progressStart,
                         end: endClass != null ? `top ${clamp(100 - endClass)}%` : defaults.progressEnd,
                         scrub: true,
                     },
                 })
                 // `.progress-reverse` runs the split scrub in reverse; swap from/to.
+                // Randomize applies to the hidden (non-reverse) start only, same
+                // rule as the element-level scrub above.
                 const reverse = el.classList.contains("progress-reverse")
-                tl.fromTo(parts, { ...(reverse ? to : from) }, { ...(reverse ? from : to), ease })
+                const rnd = !reverse && hasRandom(el) ? randomVars(el) : null
+                tl.fromTo(parts, { ...(reverse ? to : from), ...rnd },
+                    { ...(rnd ? randomEnds(Object.keys(rnd)) : null), ...(reverse ? from : to), ease })
                 scrollTriggers.push(tl.scrollTrigger)
             })
         })
@@ -907,7 +1067,8 @@ export default function initListeners() {
         setTimeout(scheduleRefresh, 400)
         setTimeout(scheduleRefresh, 1200)
 
-        spawnConfigs.forEach(({ sel, typewriter: isTypewriter, typewriterSplit, play }) => {
+        spawnConfigs.forEach((config) => {
+            const { sel, typewriter: isTypewriter, typewriterSplit } = config
             gsap.utils.toArray(sel).forEach((el) => {
                 if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
                 if (isPreserved(el)) return
@@ -923,7 +1084,7 @@ export default function initListeners() {
                         el.typewriter = typewriter(el, stashText(el), duration, delay, elEase)
                     }
                 } else {
-                    el._spawnTween = play(el, delay, duration, getEase(el))
+                    el._spawnTween = invokePlay(config, el, delay, duration, getEase(el))
                     el._spawnTween.eventCallback("onComplete", () => {
                         if (el.classList.contains("leave")) refreshLeaveRect(el)
                         if (el.classList.contains("flip")) captureFlip(el)
@@ -1384,9 +1545,9 @@ export default function initListeners() {
                 const elEase = easeClass ? easeClass.split("-")[1] : "none"
                 el._spawnTween = config.typewriterSplit
                     ? playTypewriterSplit(el, delay, duration, elEase)
-                    : config.play(el, delay, duration, elEase)
+                    : invokePlay(config, el, delay, duration, elEase)
             } else {
-                el._spawnTween = config.play(el, delay, duration, ease)
+                el._spawnTween = invokePlay(config, el, delay, duration, ease)
                 el._spawnTween.eventCallback("onComplete", () => {
                     if (el.classList.contains("leave")) refreshLeaveRect(el)
                     if (el.classList.contains("flip")) captureFlip(el)
@@ -1466,10 +1627,11 @@ export default function initListeners() {
         clearTimeout(refreshTimer)
         scrollTriggers.forEach((t) => {
             const tw = t.trigger._scrollTween
-            // Finalize a mid-flight typewriter entrance at its end state
-            // BEFORE killing: stranded partial text would otherwise be read as
+            // Finalize a mid-flight typewriter/scramble entrance at its end state
+            // BEFORE killing: stranded partial/garbled text would otherwise be read as
             // settled content by the next run's stash.
-            if (tw && !tw.reversed() && t.trigger.classList?.contains("typewriter")) tw.progress(1)
+            const cls = t.trigger.classList
+            if (tw && !tw.reversed() && (cls?.contains("typewriter") || cls?.contains("scramble"))) tw.progress(1)
             // kill(true): revert pinning (remove pin-spacers, restore inline
             // styles) so a later init can re-pin cleanly instead of nesting a
             // second spacer inside the leaked first one.
@@ -1501,13 +1663,15 @@ export default function initListeners() {
         document.querySelectorAll('[data-gsap-radiate]').forEach((n) => n.remove())
         cssTweens.forEach((t) => t?.kill())
         cssTweens.length = 0
-        gsap.utils.toArray(".typewriter").forEach(el => {
-            // Preserved-region typewriters stay as-is (already at their end
-            // state); finalize the rest so a mid-type kill can't strand
-            // partial text where the next run's stash would read it.
+        gsap.utils.toArray(".typewriter, .scramble").forEach(el => {
+            // Preserved-region typewriters/scrambles stay as-is (already at
+            // their end state); finalize the rest so a mid-type/mid-scramble
+            // kill can't strand partial or garbled text where the next run's
+            // stash would read it.
             const keep = el.isConnected && underPreservedRoot(el)
-            if (!keep && el.typewriter && !el.typewriter.reversed()) el.typewriter.progress(1)
-            el.typewriter?.kill()
+            const tw = el.typewriter || el._spawnTween || el._scrollTween
+            if (!keep && tw && !tw.reversed()) tw.progress(1)
+            tw?.kill()
         })
         textSplits.forEach((s) => {
             // Splits inside a tagged preserve region keep their spans — the
@@ -1518,7 +1682,7 @@ export default function initListeners() {
             const keep = (s.elements || []).some((e) => e.isConnected && underPreservedRoot(e))
             if (!keep) {
                 ;(s.elements || []).forEach((e) => splitCache.delete(e))
-                s.revert()
+                revertSplitInstance(s)
             }
         })
         textSplits.length = 0

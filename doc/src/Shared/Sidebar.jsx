@@ -22,7 +22,9 @@ const SECTIONS = [
       ["Clip & curtains", "clip-curtains"],
       ["Typewriter", "typewriter"],
       ["Split text", "split-text"],
+      ["Scramble text", "scramble-text"],
       ["Counters", "counter"],
+      ["DrawSVG", "draw-svg"],
     ],
   },
   {
@@ -30,6 +32,7 @@ const SECTIONS = [
     items: [
       [".scroll", "scroll"],
       [".scroll-progress", "scroll-progress"],
+      [".scroll-frame", "scroll-frame"],
       [".pin", "pin"],
       [".parallax-N", "parallax"],
       ["Progress bars", "progress-bars"],

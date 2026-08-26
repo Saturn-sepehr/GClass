@@ -1,9 +1,13 @@
-import { Flip, SplitText, TextPlugin } from "gsap/all";
+import { DrawSVGPlugin, Flip, MotionPathPlugin, ScrambleTextPlugin, SplitText, TextPlugin } from "gsap/all";
 import gsap from "gsap";
+import { defaults } from './Config.js'
 
 gsap.registerPlugin(Flip)
 gsap.registerPlugin(SplitText)
 gsap.registerPlugin(TextPlugin)
+gsap.registerPlugin(DrawSVGPlugin)
+gsap.registerPlugin(MotionPathPlugin)
+gsap.registerPlugin(ScrambleTextPlugin)
 
 // A tasteful fallback whenever a call site omits an ease, so the animation
 // never lapses into the raw "none" look. Callers still override this freely.
@@ -39,7 +43,7 @@ export const finalOpacity = (target) => {
 // never from a blank DOM. Legit content changes (React re-renders, dynamic
 // `.appear` elements) therefore update the stash naturally.
 export const stashText = (el) => {
-    const busy = (el.typewriter || el._scrollTween)?.isActive?.()
+    const busy = (el.typewriter || el._spawnTween || el._scrollTween)?.isActive?.()
     const html = el.innerHTML
     if (!busy && html && html.trim()) el._gcText = html
     return el._gcText !== undefined ? el._gcText : html
@@ -216,6 +220,188 @@ export function countUp (target , delay , dur, ease){
     // composes cleanly with `.scroll` / `.scroll-progress` / `.appear` /
     // `.leave` without imposing a fade.
     return gsap.timeline({ delay }).fromTo(obj , { n: start } , { n: end , duration:dur , ease:e , onUpdate: () => { target.textContent = obj.n.toFixed(decimals) } } , 0)
+}
+
+// Stroke-draw reveal (strokes only — filled SVGs are deliberately out of
+// scope for now). Explicit fromTo endpoints so the animation's hidden state
+// matches this class's Config `from` metadata exactly: `.scroll-progress`
+// scrubs between those two values and `.leave`/`.scroll` reversal tweens back
+// into them.
+export function drawsvg (target , delay , dur , ease){
+    const e = easeOf(ease)
+    return gsap.fromTo(target , {drawSVG:"0%"} , {ease:e , duration:dur , delay:delay , drawSVG:"100%"})
+}
+
+// Busts a multi-segment <path> (one containing multiple "M" commands) apart
+// into one single-segment <path> per segment. Browsers can't reliably render
+// a stroke-dash progressive reveal across disconnected subpaths, while
+// separate paths draw correctly. Adapted from the official DrawSVGPlugin
+// helper, with one addition: splitting REPLACES the source path in the DOM,
+// so the result is cached on that element and reused while the segments are
+// still live — an engine re-init (StrictMode remount, route change) must not
+// churn the DOM a second time. Attributes are copied verbatim; filled SVGs
+// are simply untouched territory for now.
+export function splitPaths (paths){
+    const toSplit = gsap.utils.toArray(paths)
+    let newPaths = []
+    if (toSplit.length > 1) {
+        toSplit.forEach(path => newPaths.push(...splitPaths(path)))
+        return newPaths
+    }
+    const path = toSplit[0]
+    if (!path) return newPaths
+    if (path._gcSplitPaths?.[0]?.isConnected) return path._gcSplitPaths
+    const rawPath = MotionPathPlugin.getRawPath(path)
+    const parent = path.parentNode
+    const attributes = [...path.attributes]
+    newPaths = rawPath.map(segment => {
+        const newPath = document.createElementNS("http://www.w3.org/2000/svg" , "path")
+        let i = attributes.length
+        while (i--) {
+            const attr = attributes[i]
+            // Don't copy GSAP wiring or appear/scroll triggers — children are
+            // animated via the returned timeline, not as independent spawns.
+            // Copying "appear" caused appearObserver → split → appear loop.
+            if (attr.nodeName === "class") {
+                const filtered = attr.nodeValue
+                    .split(/\s+/)
+                    .filter(c => c && c !== "appear" && c !== "scroll" && c !== "scroll-progress" && c !== "draw" && c !== "draw-split")
+                    .join(" ")
+                if (filtered) newPath.setAttributeNS(null, "class", filtered)
+                continue
+            }
+            if (attr.nodeName.startsWith("data-gsap")) continue
+            newPath.setAttributeNS(null , attr.nodeName , attr.nodeValue)
+        }
+        newPath.setAttributeNS(null , "d" ,
+            "M" + segment[0] + "," + segment[1] +
+            "C" + segment.slice(2).join(",") +
+            (segment.closed ? "z" : ""))
+        // Isolate paint and mark as split child so future inits skip it
+        newPath.dataset.gsapSplit = "1"
+        newPath.style.contain = "paint"
+        newPath.style.willChange = "transform"
+        parent.insertBefore(newPath , path)
+        return newPath
+    })
+    parent.removeChild(path)
+    return path._gcSplitPaths = newPaths
+}
+
+// Like drawsvg but built for MULTI-SEGMENT paths: splitPaths() first, then
+// draw each resulting segment one after another, giving every segment a slice
+// of `dur` proportional to its own stroke length so the pen travels at a
+// constant speed across the whole drawing. Returns a timeline, so leave /
+// scroll reversal un-draws the segments back-to-front and the engine's
+// onComplete hooks fire only after the final segment lands.
+export function drawsvgSplit (target , delay , dur , ease){
+    const e = easeOf(ease)
+    const tl = gsap.timeline({ delay })
+    const paths = splitPaths(target)
+    let distance = 0
+    paths.forEach(segment => distance += segment.getTotalLength())
+    // Nothing drawable (empty selection / zero-length strokes): hand back the
+    // inert timeline rather than divide by zero below.
+    if (!distance) return tl
+    paths.forEach(segment => {
+        tl.fromTo(segment ,
+            {drawSVG:"0%"} ,
+            {ease:e , duration:dur * (segment.getTotalLength() / distance) , drawSVG:"100%"})
+    })
+    return tl
+}
+
+// Scramble plumbing. Only the element's TOP-LEVEL TEXT runs are scrambled:
+// each run is wrapped in its own span and tweened separately, while real child
+// elements (links, icons, ...) are left completely untouched — their markup
+// survives the animation intact. Wraps are cached on the element so replays
+// (engine re-inits, .appear re-triggers) reuse the same spans instead of
+// churning the DOM.
+export const scrambleSegments = (target) => {
+    let wraps = target._gcScrambleSegs
+    if (!wraps || !wraps.length || !wraps.every((w) => w.parentNode === target)) {
+        wraps = []
+        ;[...target.childNodes].forEach((node) => {
+            // Whitespace-only runs stay bare so natural spacing is preserved;
+            // everything else becomes an individually scrambable span.
+            if (node.nodeType !== 3 || !node.textContent.trim()) return
+            // ScrambleTextPlugin TRIMS its targets, so a span holding
+            // " with a " would resolve to "with a" and swallow the spaces
+            // around a neighbouring element. Split the edge whitespace off
+            // into bare text nodes and wrap only the trimmed core.
+            const raw = node.textContent
+            const core = raw.trim()
+            const leadIdx = raw.indexOf(core[0])
+            const trailStart = leadIdx + core.length
+            const frag = document.createDocumentFragment()
+            if (leadIdx > 0) frag.appendChild(document.createTextNode(raw.slice(0 , leadIdx)))
+            const span = document.createElement("span")
+            span.textContent = core
+            frag.appendChild(span)
+            if (trailStart < raw.length) frag.appendChild(document.createTextNode(raw.slice(trailStart)))
+            target.insertBefore(frag , node)
+            target.removeChild(node)
+            wraps.push(span)
+        })
+        target._gcScrambleSegs = wraps
+    }
+    return wraps.map((w) => ({ t: w , text: w.textContent }))
+}
+
+// Reads a scramble element's modifier classes and resolves them against the
+// package defaults:
+//   .amount-N        -> ScrambleText speed (default 1, GSAP's own default)
+//   .reveal-delay-N  -> revealDelay in seconds (default defaults.revealDelay)
+//   .chars-[...]     -> character pool taken verbatim from inside the brackets
+//                       (default defaults.characterlist)
+export function scrambleVars (target){
+    const num = (prefix , fallback) => {
+        const match = [...target.classList].find(c => c.startsWith(prefix))
+        return match ? Number(match.slice(prefix.length)) : fallback
+    }
+    // Greedy up to the LAST "]" so pools containing "]" survive intact.
+    const charsCls = [...target.classList].find(c => /^chars-\[(.*)\]$/.test(c))
+    return {
+        segs: scrambleSegments(target) ,
+        chars: charsCls ? charsCls.slice("chars-[".length , -1) : defaults.characterlist ,
+        speed: num("amount-" , 1) ,
+        revealDelay: num("reveal-delay-" , defaults.revealDelay) ,
+        // .scramble-rtl flips the reveal direction (ScrambleTextPlugin's
+        // rightToLeft) so the sweep travels right -> left.
+        rtl: target.classList.contains("scramble-rtl") ,
+    }
+}
+
+// Scramble spawn: the text starts empty and resolves into the real content
+// through garbage characters — no opacity involved, the scramble IS the
+// reveal. Unlike typewriter there is no opacity fade to hide behind, so the
+// package default "back" ease would visually finish at ~36% of `dur` (back.out
+// crosses ~99% early and the reveal index clamps): unless an explicit ease-*
+// class is present the tween therefore eases linearly, making time-N the TRUE
+// total reveal time. One timeline holds a per-text-run tween at position 0 so
+// leave/scroll reversal and onComplete hooks treat it as a single animation.
+//
+// Variants / modifiers:
+//   .scramble-all     - no empty-start typing: the already-finished string
+//                       flips to garbage as a whole and sweeps back (native
+//                       ScrambleTextPlugin resolve).
+//   .scramble-rtl     - reveal travels right -> left.
+export function scramble (target , delay , dur , ease){
+    const e = [...target.classList].some(c => c.startsWith("ease-")) ? easeOf(ease) : "none"
+    const { segs , chars , speed , revealDelay , rtl } = scrambleVars(target)
+    const all = target.classList.contains("scramble-all")
+    const tl = gsap.timeline({ delay })
+    segs.forEach(({ t , text }) => {
+        if (all) {
+            tl.to(t ,
+                {scrambleText:{text , chars , speed , revealDelay , rightToLeft:rtl} , ease:e , duration:dur} , 0)
+        } else {
+            tl.fromTo(t ,
+                {scrambleText:{text:"" , chars}} ,
+                {scrambleText:{text , chars , speed , revealDelay , rightToLeft:rtl} , ease:e , duration:dur} , 0)
+        }
+    })
+    return tl
 }
 
 

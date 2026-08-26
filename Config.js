@@ -4,6 +4,7 @@ import {
   spawnXUp, spawnYRight, spawnYLeft, pulse, radiate, hover, expandRight,
   expandLeft, expandUp, expandDown, marquee, countUp,
   spawnClipReveal, curtainHorizontal, curtainVertical, stashText,
+  drawsvg, drawsvgSplit, scramble,
 } from './Animations.js'
 
 // ---------------------------------------------------------------------------
@@ -68,6 +69,8 @@ export const defaults = {
   textStagger: 0.03,
   typewriterSplitCharDuration: 0.05,
   minTextPartDuration: 0.3,
+  revealDelay:0,
+  characterlist:"AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz"
 }
 
 export const animations = [
@@ -94,6 +97,25 @@ export const animations = [
   { sel: ".typewriter", typewriter: true, from: { text: "" }, play: (el, delay, dur, ease) => typewriter(el, stashText(el), dur, delay, ease) },
   { sel: ".typewriter-split", typewriter: true, typewriterSplit: true, from: { opacity: 0 }, play: (el, delay, dur, ease) => null },
 
+  // Scramble reveal: the text resolves out of garbage characters (ScrambleText).
+  // No opacity change — the scramble IS the spawn. Only the element's own text
+  // runs animate; nested elements (links, icons) are preserved untouched.
+  // Deliberately NO `from`: the scramble manages its own DOM (segment spans),
+  // so the generic TextPlugin-based reversal would destroy it — `.scroll`
+  // exit simply freezes the revealed state and re-entry replays fresh.
+  // `scramble: true` gives `.scroll-progress` a true scrub branch (like
+  // `.count`), since the generic from/to scrub can't express a text tween.
+  // Defaults to a LINEAR ease so time-N is the true total reveal time;
+  // an explicit .ease-* class overrides. Modifiers:
+  //   .reveal-delay-N  - seconds of full-garbage hold before chars start locking in
+  //   .chars-[...]     - the character pool, verbatim inside the brackets
+  //   .amount-N        - scramble speed (ScrambleTextPlugin `speed`)
+  //   .scramble-all    - no typing: the finished string flips to garbage as a
+  //                      whole and sweeps back (native plugin resolve)
+  //   .scramble-rtl    - reveal travels right -> left
+  { sel: ".scramble", scramble: true, text: false, play: (el, delay, dur, ease) => scramble(el, delay, dur, ease) },
+  { sel: ".scramble-all", scramble: true, text: false, play: (el, delay, dur, ease) => scramble(el, delay, dur, ease) },
+
   // Custom-function animation: counts from the `.spawn-num-N` value (N = the
   // starting number) up to whatever number is in the element (falling back to 0
   // when no `.spawn-num-N` class is present). `play` just wraps a helper from
@@ -113,6 +135,15 @@ export const animations = [
   { sel: ".clip-reveal", text: false, from: { clipPath: "inset(0% 0% 100% 0%)" }, play: (el, delay, dur, ease) => spawnClipReveal(el, delay, dur, ease, "up") },
   { sel: ".curtain-horizontal", text: false, from: { clipPath: "inset(0% 50% 0% 50%)" }, play: (el, delay, dur, ease) => curtainHorizontal(el, delay, dur, ease) },
   { sel: ".curtain-vertical", text: false, from: { clipPath: "inset(50% 0% 50% 0%)" }, play: (el, delay, dur, ease) => curtainVertical(el, delay, dur, ease) },
+
+  // Stroke-draw reveals (strokes only — filled SVGs are a separate plan).
+  // The hidden state is a fully undrawn stroke (`drawSVG: "0%"`): that's what
+  // `.scroll-progress` scrubs up from and what leave/scroll reversal returns
+  // to. `.draw` animates its target(s) as one stroke; `.draw-split` first
+  // splits multi-segment paths (paths with multiple "M" commands) into one
+  // <path> per segment and draws them sequentially at constant pen speed.
+  { sel: ".draw", text: false, from: { drawSVG: "0%" }, play: (el, delay, dur, ease) => drawsvg(el, delay, dur, ease) },
+  { sel: ".draw-split", text: false, from: { drawSVG: "0%" }, play: (el, delay, dur, ease) => drawsvgSplit(el, delay, dur, ease) },
 
   
   // --- Loops (build + key). Also usable via hover-<name>/click-<name> ---------
@@ -147,6 +178,7 @@ export function normalize(extra = []) {
       typewriterSplit: a.typewriterSplit,
       text: a.text !== false,
       count: a.count,
+      scramble: a.scramble,
     }))
   const loopConfigs = all
     .filter((a) => a.build)

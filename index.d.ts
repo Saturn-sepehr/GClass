@@ -66,6 +66,8 @@ export interface AnimationConfig {
   typewriterSplit?: boolean
   /** Marks a numeric counter entry (counts from `.spawn-num-N` to the element's number). */
   count?: boolean
+  /** Marks a ScrambleText entry (text resolves out of garbage characters). */
+  scramble?: boolean
   /** Set false to skip generating a `.spawn-text-<name>` variant. Default true. */
   text?: boolean
   /** Set false to keep `build` but skip the always-on repeat. Default true. */
@@ -82,6 +84,7 @@ export interface SpawnConfig {
   typewriter?: boolean
   typewriterSplit?: boolean
   count?: boolean
+  scramble?: boolean
   text: boolean
 }
 
@@ -118,6 +121,8 @@ export interface Defaults {
   textStagger: number
   typewriterSplitCharDuration: number
   minTextPartDuration: number
+  revealDelay: number
+  characterlist: string
 }
 
 /** Global timing / ease defaults (edit to tweak global behaviour). */
@@ -165,6 +170,40 @@ export function expandDown(target: TweenTarget, delay: number, dur: number, ease
 export function countUp(target: TweenTarget, delay: number, dur: number, ease: string): any
 /** Reads a count element's start (`.spawn-num-N`, else 0), target number, and decimals. */
 export function countTargetVars(target: TweenTarget): { start: number; end: number; decimals: number }
+/**
+ * Reads a scramble element's modifiers against the package defaults:
+ * `.amount-N` -> speed (default 1), `.reveal-delay-N` -> revealDelay
+ * (default `defaults.revealDelay`), `.chars-[...]` -> character pool verbatim
+ * (default `defaults.characterlist`). Also segments the element: only
+ * top-level text runs are scrambled (each wrapped in its own span); nested
+ * elements are preserved untouched.
+ */
+export function scrambleVars(target: TweenTarget): {
+  segs: { t: any; text: string }[]
+  chars: string
+  speed: number
+  revealDelay: number
+  rtl: boolean
+}
+/**
+ * Scramble spawn: the text starts empty and resolves into its real content
+ * through garbage characters (ScrambleTextPlugin). No opacity change; nested
+ * elements are preserved. Defaults to a linear ease so `.time-N` is the true
+ * total reveal time — an explicit `.ease-*` class overrides. Modifiers read
+ * from the element: .reveal-delay-N, .chars-[...], .amount-N, .scramble-all
+ * (whole-string scramble-and-sweep, no empty-start typing), .scramble-rtl.
+ */
+export function scramble(target: TweenTarget, delay: number, dur: number, ease: string): any
+/** Progressively draws the target's SVG stroke from 0% to 100% (strokes only). */
+export function drawsvg(target: TweenTarget, delay: number, dur: number, ease: string): any
+/**
+ * Splits multi-segment `<path>` elements (multiple "M" commands) into one
+ * single-segment `<path>` per segment. Destructive: source paths are replaced.
+ * Results are cached on the original element for engine re-inits.
+ */
+export function splitPaths(paths: any): any[]
+/** DrawSVG variant that splits multi-segment paths first, then draws each segment sequentially at constant speed. Returns a timeline. */
+export function drawsvgSplit(target: TweenTarget, delay: number, dur: number, ease: string): any
 export function verticalmove(target: TweenTarget, amount: number, dur: number, ease: string): any
 export function expandmove(target: TweenTarget, amount: number, dur: number, ease: string): any
 export function magnet(target: TweenTarget, x: number, y: number, scale: number, dur: number, ease: string): any

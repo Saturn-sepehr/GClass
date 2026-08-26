@@ -23,10 +23,10 @@ export default function Page() {
             .expand-horizontal .scroll-progress — width follows the scrollbar
           </p>
           <div className="h-3 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-700">
-            <div className="expand-horizontal scroll-progress h-full w-full rounded-full bg-cyan-300/80" />
+            <div className="expand-horizontal progress-start-20 progress-end-80 scroll-progress h-full w-full rounded-full bg-cyan-300/80" />
           </div>
         </div>
-        <Demo className="spawn-fade scroll-progress flex min-h-[180px] items-center justify-center text-sm">
+        <Demo className="spawn-fade scroll-progress progress-start-20 ease- progress-end-80 ease-none flex min-h-[180px] items-center justify-center text-sm">
           I fade in proportionally to your scroll
         </Demo>
         <Demo className="spawn-up scroll-progress flex min-h-[180px] flex-col items-start justify-center gap-3 p-6 text-sm">

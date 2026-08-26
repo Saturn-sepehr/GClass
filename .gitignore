@@ -4,13 +4,14 @@ node_modules/
 # Dev playground
 dev/
 next-test/
-
+playground/
 #Checklist
 CHECKLIST.txt
 
 # Build output
 dist/
 build/
+.next/
 *.local
 
 # Logs
