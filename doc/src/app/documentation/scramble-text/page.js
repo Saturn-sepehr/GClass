@@ -66,31 +66,12 @@ export default function Page() {
       <Replay>
         <Demo className="flex min-h-[72px] items-center justify-center text-center text-sm">
           <p className="scramble appear time-2">
-            Visit <a href="#" className="font-bold text-cyan-200 underline">docs</a> for <span className="rounded bg-cyan-200/20 px-1.5 py-0.5 text-xs">v1.0.0-beta.11</span> →
+            Visit <a href="#" className="font-bold text-cyan-200 underline">docs</a> for <span className="rounded bg-cyan-200/20 px-1.5 py-0.5 text-xs">v1.0.0-beta.12</span> →
           </p>
         </Demo>
       </Replay>
 
-      <H2>Demo — scroll variants</H2>
-      <P>
-        Like any spawn, both flavours work with <code>.scroll</code> (replays
-        on enter, freezes on leave) and <code>.scroll-progress</code> (scrubbed
-        — your scrollbar is the playhead). <code>.scroll</code> exit freezes
-        at revealed; re-enter replays fresh.
-      </P>
-      <div className="my-4 space-y-[38vh]">
-        <Demo className="flex min-h-[72px] items-center justify-center text-center text-sm">
-          <span className="scramble scroll time-2">Scroll to replay</span>
-        </Demo>
-        <Demo className="flex min-h-[72px] items-center justify-center text-center text-sm">
-          <span className="scramble-all scroll time-2">Scroll to sweep</span>
-        </Demo>
-      </div>
-      <div className="h-[30vh]" />
-      <Demo className="flex min-h-[80px] items-center justify-center text-center text-sm">
-        <span className="scramble scroll-progress progress-start-20 progress-end-80 time-2">Scrubbed — drag scrollbar</span>
-      </Demo>
-      <div className="h-[30vh]" />
+    
 
       <H2>Tunables</H2>
       <ClassRef
