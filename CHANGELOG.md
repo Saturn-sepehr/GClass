@@ -2,6 +2,9 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
+## [1.0.0-beta.13] - 2026-08-27
+- Added a new `.fill-svg` modifier for the `.draw` and `.draw-split` classes that fills the SVG after it has been drawn.
+
 ## [1.0.0-beta.12] - 2026-08-26
 
 - Fixed `scramble` with `scroll-progress` throwing `can't convert undefined to object` — `computeTo` (`Listeners.js:424`) and scrub `to` builder (`Listeners.js:867`) now guard `from` (`scramble` has no `from`).

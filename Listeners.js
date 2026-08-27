@@ -925,6 +925,24 @@ export default function initListeners() {
                 } else if (typewriterSplit) {
                     const parts = getParts(el, getGranularity(el))
                     if (parts.length) tl.fromTo(parts, { opacity: reverse ? 1 : 0 }, { opacity: reverse ? 0 : 1, ease })
+                } else if (el.classList.contains("fill-svg") && (el.classList.contains("draw") || el.classList.contains("draw-split"))) {
+                    // fill-svg modifier for draw: stroke first, then fill, sequential scrub.
+                    // For scrub the two phases are sequential tweens so scroll maps
+                    // draw → fill. Reverse swaps order so unfill happens before undraw.
+                    const fillEaseCls = [...el.classList].find(c => c.startsWith("fill-ease-"))
+                    const fillEase = fillEaseCls ? fillEaseCls.slice("fill-ease-".length) : ease
+                    const fillTimeCls = [...el.classList].find(c => c.startsWith("fill-time-"))
+                    const fillDur = fillTimeCls ? Number(fillTimeCls.slice("fill-time-".length)) : 0.5
+                    const drawDur = 1
+                    // Ensure the hidden / revealed fill state is correct before scrub starts
+                    gsap.set(el, { fillOpacity: reverse ? 1 : 0 })
+                    if (!reverse) {
+                        tl.fromTo(el, { drawSVG: "0%" , ...rnd }, { drawSVG: "100%" , ...rndEnds, ease, duration: drawDur })
+                        tl.fromTo(el, { fillOpacity: 0 }, { fillOpacity: 1, ease: fillEase, duration: fillDur })
+                    } else {
+                        tl.fromTo(el, { fillOpacity: 1 }, { fillOpacity: 0, ease: fillEase, duration: fillDur })
+                        tl.fromTo(el, { drawSVG: "100%" , ...rndEnds }, { drawSVG: "0%" , ...rnd, ease, duration: drawDur })
+                    }
                 } else {
                     tl.fromTo(el, { ...(reverse ? to : from), ...rnd }, { ...rndEnds, ...(reverse ? from : to), ease })
                 }

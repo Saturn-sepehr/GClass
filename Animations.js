@@ -222,14 +222,43 @@ export function countUp (target , delay , dur, ease){
     return gsap.timeline({ delay }).fromTo(obj , { n: start } , { n: end , duration:dur , ease:e , onUpdate: () => { target.textContent = obj.n.toFixed(decimals) } } , 0)
 }
 
+// Helpers for the `fill-svg` draw-modifier. When an element carries both
+// `.draw`/`.draw-split` and `.fill-svg`, the stroke is drawn first and then
+// the interior fills. `fill-time-N` / `fill-ease-NAME` override the fill
+// phase; otherwise the fill takes half of `dur` and reuses the draw ease.
+const fillTimeOf = (el , fallback) => {
+    const m = [...el.classList].find(c => c.startsWith("fill-time-"))
+    return m ? Number(m.slice("fill-time-".length)) : fallback * 0.5
+}
+const fillEaseOf = (el , fallbackEase) => {
+    const m = [...el.classList].find(c => c.startsWith("fill-ease-"))
+    return m ? m.slice("fill-ease-".length) : fallbackEase
+}
+
 // Stroke-draw reveal (strokes only — filled SVGs are deliberately out of
 // scope for now). Explicit fromTo endpoints so the animation's hidden state
 // matches this class's Config `from` metadata exactly: `.scroll-progress`
 // scrubs between those two values and `.leave`/`.scroll` reversal tweens back
-// into them.
+// into them. When the target also carries `.fill-svg`, the interior is filled
+// after the stroke finishes (draw → fill sequential timeline).
 export function drawsvg (target , delay , dur , ease){
     const e = easeOf(ease)
-    return gsap.fromTo(target , {drawSVG:"0%"} , {ease:e , duration:dur , delay:delay , drawSVG:"100%"})
+    const first = gsap.utils.toArray(target)[0]
+    const hasFill = !!first?.classList?.contains("fill-svg")
+    if (!hasFill) {
+        return gsap.fromTo(target , {drawSVG:"0%"} , {ease:e , duration:dur , delay:delay , drawSVG:"100%"})
+    }
+    const fillDur = fillTimeOf(first , dur)
+    const fillEase = fillEaseOf(first , ease)
+    const fillTargets = gsap.utils.toArray(target).filter(el => el.classList.contains("fill-svg"))
+    const tl = gsap.timeline({ delay })
+    // Keep fill invisible while the stroke draws
+    if (fillTargets.length) gsap.set(fillTargets , { fillOpacity: 0 })
+    tl.fromTo(target , {drawSVG:"0%"} , {ease:e , duration:dur , drawSVG:"100%"})
+    if (fillTargets.length) {
+        tl.fromTo(fillTargets , {fillOpacity:0} , {ease:easeOf(fillEase) , duration:fillDur , fillOpacity:1})
+    }
+    return tl
 }
 
 // Busts a multi-segment <path> (one containing multiple "M" commands) apart
@@ -293,9 +322,15 @@ export function splitPaths (paths){
 // of `dur` proportional to its own stroke length so the pen travels at a
 // constant speed across the whole drawing. Returns a timeline, so leave /
 // scroll reversal un-draws the segments back-to-front and the engine's
-// onComplete hooks fire only after the final segment lands.
+// onComplete hooks fire only after the final segment lands. When the source
+// also carries `.fill-svg`, every resulting segment is filled together after
+// the last draw segment lands (draw → fill).
 export function drawsvgSplit (target , delay , dur , ease){
     const e = easeOf(ease)
+    const first = gsap.utils.toArray(target)[0]
+    const hasFill = !!first?.classList?.contains("fill-svg")
+    const fillDur = hasFill ? fillTimeOf(first , dur) : 0
+    const fillEase = hasFill ? fillEaseOf(first , ease) : ease
     const tl = gsap.timeline({ delay })
     const paths = splitPaths(target)
     let distance = 0
@@ -303,11 +338,15 @@ export function drawsvgSplit (target , delay , dur , ease){
     // Nothing drawable (empty selection / zero-length strokes): hand back the
     // inert timeline rather than divide by zero below.
     if (!distance) return tl
+    if (hasFill && paths.length) gsap.set(paths , { fillOpacity: 0 })
     paths.forEach(segment => {
         tl.fromTo(segment ,
             {drawSVG:"0%"} ,
             {ease:e , duration:dur * (segment.getTotalLength() / distance) , drawSVG:"100%"})
     })
+    if (hasFill && paths.length) {
+        tl.fromTo(paths , {fillOpacity:0} , {ease:easeOf(fillEase) , duration:fillDur , fillOpacity:1})
+    }
     return tl
 }
 

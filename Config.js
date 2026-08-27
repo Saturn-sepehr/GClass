@@ -142,6 +142,11 @@ export const animations = [
   // to. `.draw` animates its target(s) as one stroke; `.draw-split` first
   // splits multi-segment paths (paths with multiple "M" commands) into one
   // <path> per segment and draws them sequentially at constant pen speed.
+  // `.fill-svg` is a MODIFIER for both: add it alongside `.draw`/`.draw-split`
+  // to fill the interior after the stroke finishes (draw → fill). Tunables:
+  // `fill-time-N` (fill duration, default = 0.5× draw time) and
+  // `fill-ease-NAME` (default reuses draw ease). Requires a fill color on
+  // the element (`fill` attribute or CSS); the modifier animates `fillOpacity`.
   { sel: ".draw", text: false, from: { drawSVG: "0%" }, play: (el, delay, dur, ease) => drawsvg(el, delay, dur, ease) },
   { sel: ".draw-split", text: false, from: { drawSVG: "0%" }, play: (el, delay, dur, ease) => drawsvgSplit(el, delay, dur, ease) },
 
