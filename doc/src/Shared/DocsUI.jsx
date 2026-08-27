@@ -84,10 +84,10 @@ function highlight(code, lang) {
   h = h.replace(/'[^']*'/g, (m) => store("text-amber-300", m))
   h = h.replace(/`[^`]*`/g, (m) => store("text-amber-300", m))
 
-  // keywords & apis & numbers on the placeholder-stripped code
+  // numbers BEFORE keywords/apis to avoid matching 300 inside injected class="text-cyan-300"
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="text-emerald-300">$1</span>')
   h = h.replace(/\b(import|from|const|let|var|function|return|push|new|async|await|export|default)\b/g, '<span class="text-cyan-300">$1</span>')
   h = h.replace(/\b(gsap|customAnims|defaults|initAnimations|registerComplete|toggleAnimations|disableReducedMotion)\b/g, '<span class="text-violet-300">$1</span>')
-  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="text-emerald-300">$1</span>')
 
   // restore strings/comments
   for (const { ph, html } of placeholders) {
