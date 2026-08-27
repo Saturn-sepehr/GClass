@@ -1,7 +1,7 @@
 import { H1, H2, P, Note, Code } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 
-export const metadata = { title: "GClass — Quick start" };
+export const metadata = { title: "GClass - Quick start" };
 
 export default function Page() {
   return (
@@ -10,7 +10,7 @@ export default function Page() {
       <P>
         Import <code>initAnimations</code> once your DOM is ready. From then on,
         everything is class-driven: add a utility class to an element and it
-        animates — no per-element JS, no config files.
+        animates - no per-element JS, no config files.
       </P>
       <Code>{`import { initAnimations } from 'gclass-anims'
 
@@ -22,7 +22,7 @@ useEffect(() => { initAnimations() }, [pathname])`}</Code>
 
       <H2>Your first animation</H2>
       <P>
-        Press Replay to remove and re-insert the box below — the engine watches
+        Press Replay to remove and re-insert the box below - the engine watches
         the DOM for <code>.appear</code> elements and plays their entrance each
         time they mount.
       </P>
@@ -36,7 +36,7 @@ useEffect(() => { initAnimations() }, [pathname])`}</Code>
         Class anatomy: <b>behaviour</b> (<code>.spawn-up</code>) +{" "}
         <b>trigger</b> (<code>.scroll</code>, <code>.appear</code>) +{" "}
         <b>tunables</b> (<code>.time-1</code>, <code>.ease-back</code>,{" "}
-        <code>.priority-2</code>). Combine freely — order in{" "}
+        <code>.priority-2</code>). Combine freely - order in{" "}
         <code>class</code> does not matter.
       </Note>
     </article>

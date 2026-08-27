@@ -3,18 +3,18 @@ import { Demo } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 import DrawSplitFix from "@/Shared/DrawSplitFix";
 
-export const metadata = { title: "GClass — DrawSVG" };
+export const metadata = { title: "GClass - DrawSVG" };
 
 export default function Page() {
   return (
     <article>
    
-      <H1>DrawSVG — stroke reveals</H1>
+      <H1>DrawSVG - stroke reveals</H1>
     
       <P>
         <code>.draw</code> and <code>.draw-split</code> progressively draw an
         SVG stroke from <code>0%</code> to <code>100%</code> using GSAP&apos;s
-        DrawSVGPlugin. Strokes only — filled shapes are out of scope. Both are
+        DrawSVGPlugin. Strokes only - filled shapes are out of scope. Both are
         spawn classes, so they get <code>.scroll</code>,{" "}
         <code>.scroll-progress</code>, <code>.appear</code>,{" "}
         <code>.leave</code> and all timing tunables for free.
@@ -31,7 +31,7 @@ export default function Page() {
         fill="none" stroke="currentColor" stroke-width="3" />
 </svg>`}</Code>
 
-      <H2>.draw — single stroke</H2>
+      <H2>.draw - single stroke</H2>
       <P>
         Draws the target(s) as one stroke via{" "}
         <code>drawSVG: &quot;0%&quot; → &quot;100%&quot;</code>. Works on any
@@ -61,14 +61,14 @@ export default function Page() {
         </Demo>
       </Replay>
 
-      <H2>.draw-split — multi-segment paths</H2>
+      <H2>.draw-split - multi-segment paths</H2>
       <P>
         Browsers can&apos;t reliably dash-animate a path with multiple{" "}
         <code>M</code> commands as one stroke. <code>.draw-split</code>{" "}
         busts it apart first: each segment becomes its own{" "}
         <code>&lt;path&gt;</code> (attributes copied verbatim, original
         removed), then each segment is drawn sequentially with a slice of{" "}
-        <code>time-N</code> proportional to its length — constant pen speed
+        <code>time-N</code> proportional to its length - constant pen speed
         across the whole drawing. Result is cached on the element so StrictMode
         remounts don&apos;t churn the DOM.
       </P>
@@ -102,10 +102,10 @@ export default function Page() {
         zero.
       </P>
 
-      <H2>.fill-svg — fill after stroke (modifier)</H2>
+      <H2>.fill-svg - fill after stroke (modifier)</H2>
       <P>
         <code>.fill-svg</code> is a modifier for <code>.draw</code> and{" "}
-        <code>.draw-split</code> — add it alongside either class and the
+        <code>.draw-split</code> - add it alongside either class and the
         interior fills after the stroke finishes (<code>draw → fill</code>).
         Requires a fill color on the element (<code>fill</code> attribute or
         CSS); the modifier animates <code>fillOpacity: 0 → 1</code> so the
@@ -188,14 +188,14 @@ export default function Page() {
 <path class="draw-split fill-svg scroll-progress fill-time-1" d="..." />`}</Code>
 
       <Note>
-        Stroke only — for outline-only reveals keep{" "}
+        Stroke only - for outline-only reveals keep{" "}
         <code>fill=&quot;none&quot;</code> with a visible{" "}
         <code>stroke</code>/<code>stroke-width</code>. Add{" "}
         <code>.fill-svg</code> with a <code>fill</code> color (
         <code>fill=&quot;currentColor&quot;</code> inherits the text color) to
         fill after the stroke; it animates <code>fillOpacity</code>. Markers
         and multi-path groups are untouched. Draw state is{" "}
-        <code>drawSVG: 0% → 100%</code> — the stroke IS the reveal. Splitting
+        <code>drawSVG: 0% → 100%</code> - the stroke IS the reveal. Splitting
         replaces the source path in the DOM and copies all attributes verbatim.
       </Note>
     </article>

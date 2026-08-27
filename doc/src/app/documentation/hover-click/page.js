@@ -1,14 +1,14 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — hover-* / click-*" };
+export const metadata = { title: "GClass - hover-* / click-*" };
 
 const BOX = "flex min-h-[80px] min-w-[150px] cursor-pointer items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700 text-xs";
 
 export default function Page() {
   return (
     <article>
-      <H1>hover-* / click-* — loop triggers</H1>
+      <H1>hover-* / click-* - loop triggers</H1>
       <P>
         Prefix any loop name to bind it to the pointer:{" "}
         <code>.hover-shake</code> runs while hovered,{" "}
@@ -45,7 +45,7 @@ export default function Page() {
         <code>.wrapdiv</code> wraps the element in a stable parent that owns
         pointer events, so animating scale never shifts the hit area under the
         cursor. <code>.compatibility</code> pauses an always-on loop while a
-        hover/click interaction is active, resuming it afterwards — both write
+        hover/click interaction is active, resuming it afterwards - both write
         to the same transforms.
       </P>
       <Code>{`<button class="hover-shake wrapdiv">…</button>

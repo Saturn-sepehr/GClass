@@ -18,14 +18,14 @@
 }
 
 /* Fake fisheye, two layers:
-   ::before — the glass boundary at inset 0; its INSET shadow shades inward
+   ::before - the glass boundary at inset 0; its INSET shadow shades inward
    from a 3.5rem-rounded rectangle.
-   ::after  — a hollow rounded-rect "bezel" ring: a border-only element far
+   ::after  - a hollow rounded-rect "bezel" ring: a border-only element far
    larger than the screen, centred on it. Its hole is exactly viewport-sized,
    so the straight border edges live entirely off-screen, but the hole's
-   rounded inner corners dip into the real screen corners — covering the
+   rounded inner corners dip into the real screen corners - covering the
    unshaded slivers that ::before's rounding leaves empty.
-   Pure overlays — nothing is filtered, so ScrollTrigger pinning stays intact. */
+   Pure overlays - nothing is filtered, so ScrollTrigger pinning stays intact. */
 .crt-vignette::before {
   content: "";
   position: absolute;

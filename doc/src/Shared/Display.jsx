@@ -14,14 +14,14 @@ export default function Display({ children }) {
     <>
       {}
   
-        {/* tube backdrop — disabled on /draw-svg to avoid paint storm with drawSVG */}
+        {/* tube backdrop - disabled on /draw-svg to avoid paint storm with drawSVG */}
 
         <div
           className='crt-screen  fixed inset-0 z-0 bg-slate-900'
           aria-hidden='true'
         />
      
-      {/* scrolling content — intentionally NO filter here: it would become a
+      {/* scrolling content - intentionally NO filter here: it would become a
           containing block and break ScrollTrigger's fixed-position pinning */}
       <div className='relative font-mono text-cyan-200'>{children}</div>
       {/* scanlines + dither + flicker sit above everything */}

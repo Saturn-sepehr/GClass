@@ -2,7 +2,7 @@ import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — Loops" };
+export const metadata = { title: "GClass - Loops" };
 
 const BOX = "flex min-h-[80px] min-w-[140px] items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700 text-xs";
 
@@ -11,7 +11,7 @@ export default function Page() {
     <article>
       <H1>Loops</H1>
       <P>
-        Loop classes run an infinite animation from mount — no trigger needed.
+        Loop classes run an infinite animation from mount - no trigger needed.
         They are also the pool behind <code>.hover-&lt;name&gt;</code> and{" "}
         <code>.click-&lt;name&gt;</code>.
       </P>

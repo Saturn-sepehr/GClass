@@ -35,7 +35,7 @@ export const finalOpacity = (target) => {
 // TextPlugin tweens take their endpoints from the LIVE DOM: the `.typewriter`
 // play callbacks pass `el.innerHTML` as the text to type. The tween's from
 // state ("") is applied the instant the tween is created, and a teardown that
-// kills the tween mid-flight leaves that wiped state behind — so a later
+// kills the tween mid-flight leaves that wiped state behind - so a later
 // engine re-init reading `el.innerHTML` again would type an empty (or
 // partially-typed) string forever. Stash the full HTML on first sight and
 // reuse it. The stash only refreshes from SETTLED content: never while a
@@ -111,7 +111,7 @@ export function spawnBlur (target , delay , dur , ease){
 //   right - hidden on the left, wipes open rightward (left -> right)
 // The `from` inset is mirrored in the Config entry so
 // `.scroll`/`.scroll-progress`/`.leave` reversal and `.appear` all know the
-// hidden state. No opacity is involved — pure clip wipe.
+// hidden state. No opacity is involved - pure clip wipe.
 const CLIP_FROM = {
     up: "inset(0% 0% 100% 0%)",
     down: "inset(100% 0% 0% 0%)",
@@ -123,13 +123,13 @@ export function spawnClipReveal (target , delay , dur , ease , dir = "up"){
     return gsap.fromTo(target , {clipPath: from} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
 }
 
-// Curtain reveal: opens outward from the horizontal centre — a vertical slit in
+// Curtain reveal: opens outward from the horizontal centre - a vertical slit in
 // the middle widens left and right until the whole box is shown.
 export function curtainHorizontal (target , delay , dur , ease){
     return gsap.fromTo(target , {clipPath:"inset(0% 50% 0% 50%)"} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
 }
 
-// Curtain reveal: opens outward from the vertical centre — a horizontal slit in
+// Curtain reveal: opens outward from the vertical centre - a horizontal slit in
 // the middle widens up and down until the whole box is shown.
 export function curtainVertical (target , delay , dur , ease){
     return gsap.fromTo(target , {clipPath:"inset(50% 0% 50% 0%)"} , {clipPath:"inset(0% 0% 0% 0%)" , ease:easeOf(ease) , duration:dur , delay:delay})
@@ -235,7 +235,7 @@ const fillEaseOf = (el , fallbackEase) => {
     return m ? m.slice("fill-ease-".length) : fallbackEase
 }
 
-// Stroke-draw reveal (strokes only — filled SVGs are deliberately out of
+// Stroke-draw reveal (strokes only - filled SVGs are deliberately out of
 // scope for now). Explicit fromTo endpoints so the animation's hidden state
 // matches this class's Config `from` metadata exactly: `.scroll-progress`
 // scrubs between those two values and `.leave`/`.scroll` reversal tweens back
@@ -267,7 +267,7 @@ export function drawsvg (target , delay , dur , ease){
 // separate paths draw correctly. Adapted from the official DrawSVGPlugin
 // helper, with one addition: splitting REPLACES the source path in the DOM,
 // so the result is cached on that element and reused while the segments are
-// still live — an engine re-init (StrictMode remount, route change) must not
+// still live - an engine re-init (StrictMode remount, route change) must not
 // churn the DOM a second time. Attributes are copied verbatim; filled SVGs
 // are simply untouched territory for now.
 export function splitPaths (paths){
@@ -288,7 +288,7 @@ export function splitPaths (paths){
         let i = attributes.length
         while (i--) {
             const attr = attributes[i]
-            // Don't copy GSAP wiring or appear/scroll triggers — children are
+            // Don't copy GSAP wiring or appear/scroll triggers - children are
             // animated via the returned timeline, not as independent spawns.
             // Copying "appear" caused appearObserver → split → appear loop.
             if (attr.nodeName === "class") {
@@ -352,7 +352,7 @@ export function drawsvgSplit (target , delay , dur , ease){
 
 // Scramble plumbing. Only the element's TOP-LEVEL TEXT runs are scrambled:
 // each run is wrapped in its own span and tweened separately, while real child
-// elements (links, icons, ...) are left completely untouched — their markup
+// elements (links, icons, ...) are left completely untouched - their markup
 // survives the animation intact. Wraps are cached on the element so replays
 // (engine re-inits, .appear re-triggers) reuse the same spans instead of
 // churning the DOM.
@@ -412,7 +412,7 @@ export function scrambleVars (target){
 }
 
 // Scramble spawn: the text starts empty and resolves into the real content
-// through garbage characters — no opacity involved, the scramble IS the
+// through garbage characters - no opacity involved, the scramble IS the
 // reveal. Unlike typewriter there is no opacity fade to hide behind, so the
 // package default "back" ease would visually finish at ~36% of `dur` (back.out
 // crosses ~99% early and the reveal index clamps): unless an explicit ease-*
@@ -537,7 +537,7 @@ export function shake (delay , target , amount , dur , ease){
 export function bell (delay , target , amount , dur , ease){
     const tl = gsap.timeline()
     tl.set(target , {transformOrigin : "50% 0%"})
-    // A quick toll that overshoots and damps down — reads as a physical strike
+    // A quick toll that overshoots and damps down - reads as a physical strike
     // instead of a symmetrical wiggle.
     .to(target , {rotate:amount , duration:dur * 0.12 , ease:"power2.out"})
     .to(target , {rotate:-amount * 0.7, duration:dur * 0.18 , ease:"power2.inOut"})
@@ -592,7 +592,7 @@ export function radiate (delay , target , amount , dur , ease , zIndex){
     window.addEventListener("scroll", schedule, { passive: true })
     window.addEventListener("resize", schedule, { passive: true })
     // Killing the tween (teardown, hover/click rebuilds) must clean up exactly
-    // like natural completion — otherwise clones + listeners leak.
+    // like natural completion - otherwise clones + listeners leak.
     const cleanup = () => {
         clone.remove()
         window.removeEventListener("scroll", schedule)
@@ -627,7 +627,7 @@ export function marquee (target , dir , duration , xOffset = 0 , yOffset = 0 , n
     const horizontal = dir === "left" || dir === "right"
     // Anchor the track to the top-left corner so its two identical copies tile
     // the container exactly. The track is positioned absolutely, out of the
-    // container's flex layout — otherwise a `justify-center` (or any alignment)
+    // container's flex layout - otherwise a `justify-center` (or any alignment)
     // on the container centers the overflowing track and shifts the tile seam,
     // which opens a gap on the trailing edge at some point in the loop.
     target.style.position = "relative"
@@ -635,7 +635,7 @@ export function marquee (target , dir , duration , xOffset = 0 , yOffset = 0 , n
 
     // Rebuilds over the SAME element (engine restarts, StrictMode remounts)
     // must reuse the existing track. Re-creating it would swallow the old
-    // absolute track as the first "child", repeat THAT as the tiling unit —
+    // absolute track as the first "child", repeat THAT as the tiling unit -
     // every copy stacks at the same offset and scrollWidth collapses.
     let track = target._gcTrack
     if (!track || !track.isConnected) {
@@ -668,7 +668,7 @@ export function marquee (target , dir , duration , xOffset = 0 , yOffset = 0 , n
     const unitSize = horizontal ? measurer.scrollWidth : measurer.scrollHeight
     measurer.remove()
 
-    // Nothing to tile (empty content) — return an inert tween rather than one
+    // Nothing to tile (empty content) - return an inert tween rather than one
     // dividing by a zero-width unit.
     if (!unitSize) return gsap.fromTo(track, {}, { duration: 0 })
 

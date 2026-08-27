@@ -8,11 +8,11 @@ import {
 } from './Animations.js'
 
 // ---------------------------------------------------------------------------
-// GClass configuration — THE single place to add / remove / tweak animations.
+// GClass configuration - THE single place to add / remove / tweak animations.
 //
 // `animations` is an array of entries. Each entry is a plain object; the engine
 // inspects which fields are present and wires up the matching behaviour
-// automatically — no engine edits needed:
+// automatically - no engine edits needed:
 //
 //   sel        - the className you put on elements (e.g. ".spawn-up")
 //
@@ -98,10 +98,10 @@ export const animations = [
   { sel: ".typewriter-split", typewriter: true, typewriterSplit: true, from: { opacity: 0 }, play: (el, delay, dur, ease) => null },
 
   // Scramble reveal: the text resolves out of garbage characters (ScrambleText).
-  // No opacity change — the scramble IS the spawn. Only the element's own text
+  // No opacity change - the scramble IS the spawn. Only the element's own text
   // runs animate; nested elements (links, icons) are preserved untouched.
   // Deliberately NO `from`: the scramble manages its own DOM (segment spans),
-  // so the generic TextPlugin-based reversal would destroy it — `.scroll`
+  // so the generic TextPlugin-based reversal would destroy it - `.scroll`
   // exit simply freezes the revealed state and re-entry replays fresh.
   // `scramble: true` gives `.scroll-progress` a true scrub branch (like
   // `.count`), since the generic from/to scrub can't express a text tween.
@@ -119,7 +119,7 @@ export const animations = [
   // Custom-function animation: counts from the `.spawn-num-N` value (N = the
   // starting number) up to whatever number is in the element (falling back to 0
   // when no `.spawn-num-N` class is present). `play` just wraps a helper from
-  // Animations.js — nothing else is special, so it still gets
+  // Animations.js - nothing else is special, so it still gets
   // order/scroll/leave/appear automatically.
   { sel: ".count", count: true, text: false, from: { opacity: 0 }, play: (el, delay, dur, ease) => countUp(el, delay, dur, ease) },
 
@@ -136,7 +136,7 @@ export const animations = [
   { sel: ".curtain-horizontal", text: false, from: { clipPath: "inset(0% 50% 0% 50%)" }, play: (el, delay, dur, ease) => curtainHorizontal(el, delay, dur, ease) },
   { sel: ".curtain-vertical", text: false, from: { clipPath: "inset(50% 0% 50% 0%)" }, play: (el, delay, dur, ease) => curtainVertical(el, delay, dur, ease) },
 
-  // Stroke-draw reveals (strokes only — filled SVGs are a separate plan).
+  // Stroke-draw reveals (strokes only - filled SVGs are a separate plan).
   // The hidden state is a fully undrawn stroke (`drawSVG: "0%"`): that's what
   // `.scroll-progress` scrubs up from and what leave/scroll reversal returns
   // to. `.draw` animates its target(s) as one stroke; `.draw-split` first

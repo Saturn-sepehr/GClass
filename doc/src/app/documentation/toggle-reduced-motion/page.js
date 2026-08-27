@@ -1,6 +1,6 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — Toggle & reduced motion" };
+export const metadata = { title: "GClass - Toggle & reduced motion" };
 
 export default function Page() {
   return (
@@ -30,7 +30,7 @@ disableReducedMotion()    // clears the override`}</Code>
       <H2>Per-element opt-out</H2>
       <P>
         While the OS requests reduced motion, any element carrying{" "}
-        <code>.reduced</code> is left completely un-animated — its spawn, loop,
+        <code>.reduced</code> is left completely un-animated - its spawn, loop,
         click and scroll behaviours all skip. Elements without{" "}
         <code>.reduced</code> keep animating.
       </P>

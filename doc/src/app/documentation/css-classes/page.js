@@ -1,16 +1,16 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — css-* classes" };
+export const metadata = { title: "GClass - css-* classes" };
 
 const BOX = "flex min-h-[80px] min-w-[160px] items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700 text-xs";
 
 export default function Page() {
   return (
     <article>
-      <H1>css-* — arbitrary property animations</H1>
+      <H1>css-* - arbitrary property animations</H1>
       <P>
-        Animate any numeric GSAP property straight from the class name — no
+        Animate any numeric GSAP property straight from the class name - no
         config entry required:
       </P>
       <Code>{`css-<prop>-<from>-<to>          ping-pong loop

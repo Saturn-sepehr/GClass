@@ -2,7 +2,7 @@ import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import { Demo } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 
-export const metadata = { title: "GClass — Counters" };
+export const metadata = { title: "GClass - Counters" };
 
 const CARD =
   "rounded-xl bg-slate-800 p-5 text-center ring-1 ring-slate-700";
@@ -10,11 +10,11 @@ const CARD =
 export default function Page() {
   return (
     <article>
-      <H1>.count — number counters</H1>
+      <H1>.count - number counters</H1>
       <P>
         <code>.count</code> animates the number inside an element from a start
         value up (or down) to the number found in its content. It is a pure
-        counter — only <code>textContent</code> is touched, never opacity — so
+        counter - only <code>textContent</code> is touched, never opacity - so
         it composes cleanly with <code>.scroll</code>,{" "}
         <code>.scroll-progress</code>, <code>.appear</code> and{" "}
         <code>.leave</code>. Pair it with a spawn like{" "}
@@ -28,7 +28,7 @@ export default function Page() {
 <!-- scrubbed directly by the scrollbar -->
 <span class="count scroll-progress">100</span>%`}</Code>
 
-      <H2>Demo — the basics</H2>
+      <H2>Demo - the basics</H2>
       <P>
         Four counters that played when this page loaded: a default 0-count, a
         decimal target, a countdown via <code>.spawn-num-N</code>, and a custom
@@ -56,10 +56,10 @@ export default function Page() {
       </div>
       </Replay>
 
-      <H2>Demo — scroll-triggered</H2>
+      <H2>Demo - scroll-triggered</H2>
       <P>
         With <code>.scroll</code> the count runs when the element enters the
-        viewport and rewinds to its start value when it leaves — scroll back
+        viewport and rewinds to its start value when it leaves - scroll back
         up over these to watch them reset and recount.
       </P>
       <div className="my-4 space-y-[38vh]">
@@ -73,11 +73,11 @@ export default function Page() {
           <p className="count scroll text-5xl font-extrabold text-cyan-200">
             99.9
           </p>
-          <p className="mt-2 text-xs opacity-60">uptime % — one decimal</p>
+          <p className="mt-2 text-xs opacity-60">uptime % - one decimal</p>
         </div>
       </div>
 
-      <H2>Demo — scrubbed by the scrollbar</H2>
+      <H2>Demo - scrubbed by the scrollbar</H2>
       <P>
         Combined with <code>.scroll-progress</code> your scroll position IS
         the playhead: the number tracks the scrollbar exactly, up and down.
@@ -94,7 +94,7 @@ export default function Page() {
       <H2>Tunables</H2>
       <ClassRef
         rows={[
-          ["spawn-num-N", "Count from N instead of 0 — N above the target counts down"],
+          ["spawn-num-N", "Count from N instead of 0 - N above the target counts down"],
           ["time-N", "Seconds the count takes (standard spawn machinery)"],
         ]}
       />

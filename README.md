@@ -62,7 +62,7 @@ export default {
 
 ## Usage
 
-Add utility classes to your markup. Everything is class-driven — no config.
+Add utility classes to your markup. Everything is class-driven - no config.
 
 ```html
 <div class="spawn-up">reveals sliding up on scroll</div>
@@ -98,5 +98,5 @@ customAnims.push({
 
 ## License
 
-MIT — except GSAP, which is used under the Webflow Standard No-Charge GSAP
+MIT - except GSAP, which is used under the Webflow Standard No-Charge GSAP
 License and is not bundled or redistributed.

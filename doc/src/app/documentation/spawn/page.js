@@ -2,14 +2,14 @@ import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 import { EntranceDemo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — Spawn" };
+export const metadata = { title: "GClass - Spawn" };
 
 const BOX = "flex min-h-[72px] min-w-[150px] items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700 text-xs";
 
 export default function Page() {
   return (
     <article>
-      <H1>Spawn — entrance animations</H1>
+      <H1>Spawn - entrance animations</H1>
       <P>
         Spawn classes animate an element <i>in</i>: they apply a hidden{" "}
         <code>from</code> state, then tween to its natural one. Every spawn
@@ -36,7 +36,7 @@ export default function Page() {
 
       <H2>3D flips</H2>
       <P>
-        Full 360° flips around the X or Y axis with a depth scale — card-like
+        Full 360° flips around the X or Y axis with a depth scale - card-like
         unfolds.
       </P>
       <Replay>

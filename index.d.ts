@@ -189,7 +189,7 @@ export function scrambleVars(target: TweenTarget): {
  * Scramble spawn: the text starts empty and resolves into its real content
  * through garbage characters (ScrambleTextPlugin). No opacity change; nested
  * elements are preserved. Defaults to a linear ease so `.time-N` is the true
- * total reveal time — an explicit `.ease-*` class overrides. Modifiers read
+ * total reveal time - an explicit `.ease-*` class overrides. Modifiers read
  * from the element: .reveal-delay-N, .chars-[...], .amount-N, .scramble-all
  * (whole-string scramble-and-sweep, no empty-start typing), .scramble-rtl.
  */

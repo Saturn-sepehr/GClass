@@ -2,7 +2,7 @@ import { H1, H2, P, Note, Code } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — customAnims" };
+export const metadata = { title: "GClass - customAnims" };
 
 export default function Page() {
   return (
@@ -48,7 +48,7 @@ customAnims.push({
 
       <Note>
         Provide <code>from</code> if you want leave-reversal and scroll
-        reversal to look right — it is the state the engine returns the element
+        reversal to look right - it is the state the engine returns the element
         to. Loop-style entries use a <code>build(el, ctx)</code> callback plus a{" "}
         storage <code>key</code> instead of <code>play</code>.
       </Note>

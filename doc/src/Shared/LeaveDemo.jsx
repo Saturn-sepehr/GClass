@@ -14,7 +14,7 @@ export default function LeaveDemo() {
     // engine temporarily inserts into this container during exit animations.
     row.className =
       "appear leave spawn-left leave-demo-row mb-2 rounded-lg text-cyan-200 bg-slate-800 px-4 py-3 text-sm ring-1 ring-slate-700"
-    row.textContent = `row #${++n} — slides in on add, slides out on remove`
+    row.textContent = `row #${++n} - slides in on add, slides out on remove`
     list.current.appendChild(row)
     setCount((c) => c + 1)
   }

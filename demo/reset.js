@@ -1,7 +1,7 @@
 // Shared "reset" helper for the live demo pages.
 //
 // Every animated demo element gets:
-//   1. the `.appear` class — the engine's opt-in gate that animates an element
+//   1. the `.appear` class - the engine's opt-in gate that animates an element
 //      when it is (re-)added to the DOM, and
 //   2. a small ↻ reset button that removes the element and re-inserts it, so
 //      the MutationObserver re-wires and re-animates it from scratch.
@@ -80,7 +80,7 @@
     })
 
     // Individual elements: one button each. The button always sits directly
-    // after its element, so reset the element that currently precedes it — that
+    // after its element, so reset the element that currently precedes it - that
     // way repeated resets keep targeting the live element after replacements.
     demos.forEach((el) => {
       register(el)

@@ -1,7 +1,7 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import CompleteDemo from "@/Shared/CompleteDemo";
 
-export const metadata = { title: "GClass — on-*-complete-*" };
+export const metadata = { title: "GClass - on-*-complete-*" };
 
 export default function Page() {
   return (
@@ -39,7 +39,7 @@ export default function Page() {
 
       <Note>
         Infinite loops can never &quot;complete&quot;, so loop handlers fire on{" "}
-        <code>onRepeat</code> — every cycle — while finite animations use their
+        <code>onRepeat</code> - every cycle - while finite animations use their
         real <code>onComplete</code>.
       </Note>
     </article>

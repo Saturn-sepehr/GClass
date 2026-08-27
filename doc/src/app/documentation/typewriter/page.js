@@ -2,7 +2,7 @@ import { H1, H2, P, Note, Code } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 import { EntranceDemo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — Typewriter" };
+export const metadata = { title: "GClass - Typewriter" };
 
 const BOX = "flex min-h-[72px] w-full items-center rounded-xl bg-slate-800 px-5 ring-1 ring-slate-700 text-sm";
 
@@ -13,7 +13,7 @@ export default function Page() {
       <P>
         Types the element&apos;s existing content out character by character,
         powered by GSAP&apos;s TextPlugin. The text you write in the HTML is
-        the text that gets typed — no duplication needed.
+        the text that gets typed - no duplication needed.
       </P>
 
       <H2>Single stream</H2>
@@ -39,7 +39,7 @@ export default function Page() {
           Letter by letter, like a terminal boot log.
         </div>
         <div className="appear scroll typewriter-split time-3 w-full rounded-xl bg-slate-900 px-6 py-7 text-base leading-relaxed text-cyan-200/90 ring-1 ring-slate-700/70">
-          Word by word — cheaper for long paragraphs.
+          Word by word - cheaper for long paragraphs.
         </div>
       </Replay>
 

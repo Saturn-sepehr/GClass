@@ -1,30 +1,30 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — .pin" };
+export const metadata = { title: "GClass - .pin" };
 
 export default function Page() {
   return (
     <article>
-      <H1>.pin — sticky sections</H1>
+      <H1>.pin - sticky sections</H1>
       <P>
         <code>.pin</code> holds an element fixed to the viewport across a
         scroll range using ScrollTrigger pinning (with spacing kept intact).
         The next section starts exactly where the pinned one released.
       </P>
 
-      <H2>Demo — back-to-back pins</H2>
+      <H2>Demo - back-to-back pins</H2>
       <P>
         Two pinned panels in a row: watch panel 1 lock to the viewport while
         you scroll through its range, release, and panel 2 engage at exactly
-        that scroll position — no gap, no jump.
+        that scroll position - no gap, no jump.
       </P>
       <div className="h-[30vh]" />
       <Demo className="pin flex h-[60vh] items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-center ring-1 ring-slate-600">
         <div>
           <p className="text-lg font-bold">Pinned panel 1</p>
           <p className="mt-2 text-xs opacity-60">
-            locked — keep scrolling until it releases
+            locked - keep scrolling until it releases
           </p>
         </div>
       </Demo>
@@ -38,15 +38,15 @@ export default function Page() {
       </Demo>
       <div className="h-[45vh] pt-6">
         <Demo className="flex items-center justify-center py-6">
-          content after the pins — if you see doubled space above, pin cleanup
+          content after the pins - if you see doubled space above, pin cleanup
           leaked
         </Demo>
       </div>
 
-      <H2>Demo — early release with .progress-end-25</H2>
+      <H2>Demo - early release with .progress-end-25</H2>
       <P>
         Tunables move the engage/release points. This panel releases 25%
-        before its range would normally end — it lets go noticeably earlier
+        before its range would normally end - it lets go noticeably earlier
         than the two above did. Scroll back and forth across both demos to
         feel the difference.
       </P>

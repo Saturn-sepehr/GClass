@@ -1,6 +1,6 @@
 import { H1, H2, P, Note, Code } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — registerComplete" };
+export const metadata = { title: "GClass - registerComplete" };
 
 export default function Page() {
   return (
@@ -31,7 +31,7 @@ initAnimations()`}</Code>
 
       <Note>
         Registering before <code>initAnimations()</code> is safest, but not
-        required — lookups happen at completion time, not wiring time.
+        required - lookups happen at completion time, not wiring time.
         Returning the same fn you pass in makes inline registration ergonomic:
         <br />
         <code>{`onClick={registerComplete('x', fn)}`}</code>

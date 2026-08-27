@@ -35,7 +35,7 @@ export function resolveHandler(name) {
 // to the FROM state of spawn tweens, so each element enters from its own pose.
 // GSAP evaluates function values on tween BUILD, and the engine always kills +
 // rebuilds tweens on replay (.scroll re-enter, .appear re-insert), so every
-// replay re-rolls automatically — no invalidate/repeatRefresh bookkeeping.
+// replay re-rolls automatically - no invalidate/repeatRefresh bookkeeping.
 //
 // The class is the guard: hasRandom() is a cheap className probe and nothing
 // below allocates or patches anything unless it passes, so elements without
@@ -50,7 +50,7 @@ export function resolveHandler(name) {
 //     tweens back to rest instead of sticking at the rolled value.
 //   • Timeline-mediated builders (count/scramble/draw-split) construct via
 //     Timeline methods, not the exported gsap.fromTo, so they sit outside the
-//     injection — irrelevant in practice, since their props aren't randomize
+//     injection - irrelevant in practice, since their props aren't randomize
 //     targets.
 const RANDOMIZE_RE = /^randomize-(\w+)-\[(-?[\d.]+)\]-\[(-?[\d.]+)\]$/
 const hasRandom = (el) => typeof el.className === "string" && /\brandomize-/.test(el.className)
@@ -76,7 +76,7 @@ const randomEnds = (keys) => Object.fromEntries(keys.map((k) => [
 // values into every from-state the config builds. Config helpers hardcode
 // their from literals inside Animations.js, so the injection hooks the only
 // interception point available: play() builds its tweens SYNCHRONOUSLY, which
-// makes a scoped gsap.fromTo swap safe — patch, let the config construct,
+// makes a scoped gsap.fromTo swap safe - patch, let the config construct,
 // restore in finally{}. Without .randomize-* this is a bare passthrough.
 const invokePlay = (config, el, delay, dur, ease) => {
     if (!hasRandom(el)) return config.play(el, delay, dur, ease)
@@ -128,7 +128,7 @@ export default function initListeners() {
         //     say) still gets tagged when one of its children animates.
         //   • Suppression requires the element ITSELF to carry data-gsap-wired
         //     (set when a previous run animated it). Freshly mounted content
-        //     under a preserved root therefore still plays its entrance — only
+        //     under a preserved root therefore still plays its entrance - only
         //     DOM that survived from an earlier run stays frozen.
         const isPreserved = (el) => {
             if (!el.dataset.gsapWired) return false
@@ -207,7 +207,7 @@ export default function initListeners() {
         }
 
         // Capture the element's first (resting) bounds. A later layout change
-        // morphs from this snapshot to the live position — a vanilla FLIP.
+        // morphs from this snapshot to the live position - a vanilla FLIP.
         const captureFlip = (node) => {
             if (!node.classList?.contains("flip")) return
             const config = findSpawn(node)
@@ -466,8 +466,8 @@ export default function initListeners() {
         // whitespace) must not become tween targets; they are kept as inert text
         // nodes so the natural gap is preserved and never animated.
         const RTL_JOIN_BREAK = /[\u200C\u200D\s]/
-        // A real Arabic/Persian joining letter. Any other visible character —
-        // Latin, digits, punctuation (، ؟ ؛ . ! …) — is NOT a joining letter: it
+        // A real Arabic/Persian joining letter. Any other visible character -
+        // Latin, digits, punctuation (، ؟ ؛ . ! …) - is NOT a joining letter: it
         // must not give the preceding letter a trailing Zero-Width-Joiner (which
         // would render it in its connecting form instead of its correct END form),
         // but it should still be split into its own span so it animates too.
@@ -560,7 +560,7 @@ export default function initListeners() {
         // flex ITEMS, so justify-content/gap would apply per letter, whitespace-
         // only text nodes stop rendering (spaces vanish) and line grouping reads
         // garbage. Loose text runs are therefore pre-wrapped in plain block
-        // divs — real boxes with normal inline flow inside — and the wrappers
+        // divs - real boxes with normal inline flow inside - and the wrappers
         // are undone whenever the split reverts. Non-text children (icons etc.)
         // stay put, keeping their own flex-item status and the gaps around them.
         const wrapFlexTarget = (el) => {
@@ -644,7 +644,7 @@ export default function initListeners() {
         // FULL reveal (first part starting to last part finishing) takes X
         // seconds, no matter how many chars/words/lines it got split into.
         // GSAP staggered tweens actually finish at `duration + stagger * (n-1)`,
-        // so `dur` can't be handed straight to `duration` as before — instead we
+        // so `dur` can't be handed straight to `duration` as before - instead we
         // solve for `duration`/`stagger` together so they always sum to `dur`.
         // An explicit `.stagger-N` class is honored as-is; only `duration` is
         // back-solved in that case so the last part still lands on `dur`.
@@ -741,7 +741,7 @@ export default function initListeners() {
         // and lets the single ScrollTrigger.refresh() at the end reconcile layout.
         gsap.utils.toArray(".pin").forEach(setupPin)
 
-        // Scroll-driven extras — class-driven ScrollTrigger behaviours that don't
+        // Scroll-driven extras - class-driven ScrollTrigger behaviours that don't
         // fit the spawn/loop machinery (no `play`/`build`), handled like `.pin`:
         //   .parallax-N            - element drifts relative to scroll. N is a
         //                            speed factor: 1 = static, <1 = slower,
@@ -1322,7 +1322,7 @@ export default function initListeners() {
 
         // `hover-<name>` and `click-<name>` trigger one of the loop animations on
         // mouseenter/mousedown. The element is wrapped in a parent div that acts as
-        // the stable hover/click hit area, while the element itself animates — so
+        // the stable hover/click hit area, while the element itself animates - so
         // the WHOLE box moves/scales instead of just its text, and the area never
         // shifts under the cursor. Marquee is skipped (its build restructures the
         // DOM).
@@ -1469,7 +1469,7 @@ export default function initListeners() {
 
         // Per-entry `setup` hook: a "special abilities" extension point. Any
         // config entry with a `setup(el, ctx)` function runs it once for every
-        // matching element at wiring time — for behaviour that doesn't fit the
+        // matching element at wiring time - for behaviour that doesn't fit the
         // scroll/order/loop machinery. If it RETURNS a function, that's treated
         // as a teardown and invoked when the whole engine is torn down, so
         // side-effects (listeners, observers, timers) can be cleaned up.
@@ -1520,7 +1520,7 @@ export default function initListeners() {
                     // to <body>, which adds `body` as a second scope alongside the
                     // node's former parent. Running animateFlip per scope re-enters
                     // playFlip on the same element, killing the in-flight tween and
-                    // clearing its transform — snapping the element into place.
+                    // clearing its transform - snapping the element into place.
                     // Dedupe across scopes so each element flips exactly once.
                     const toFlip = new Set()
                     flipRoots.forEach((scope) => {
@@ -1692,7 +1692,7 @@ export default function initListeners() {
             tw?.kill()
         })
         textSplits.forEach((s) => {
-            // Splits inside a tagged preserve region keep their spans — the
+            // Splits inside a tagged preserve region keep their spans - the
             // next run will skip those elements, and reverting here would
             // visibly strip their finished animation. Everything else reverts
             // cleanly (and drops out of splitCache so a reused element can be

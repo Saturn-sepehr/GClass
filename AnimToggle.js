@@ -44,7 +44,7 @@ function readReducedOverride() {
 //   - Otherwise, if the user HAS an explicit stored choice, respect it
 //     (override wins), even under reduced motion.
 //   - Otherwise (no stored value) fall back to the default, which is ON unless
-//     reduced motion is detected — in which case animations are off.
+//     reduced motion is detected - in which case animations are off.
 function getEnabled() {
   if (forcedReduced) return false
   return stored === null ? !reduced : stored

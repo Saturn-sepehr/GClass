@@ -2,7 +2,7 @@ import { H1, H2, P, Note, Code } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 import { EntranceDemo, Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — Clip & curtains" };
+export const metadata = { title: "GClass - Clip & curtains" };
 
 const BOX = "flex min-h-[90px] w-full items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 ring-1 ring-slate-600 text-xs";
 
@@ -30,7 +30,7 @@ export default function Page() {
 
       <H2>Curtains</H2>
       <P>
-        Open outward from the centre — a slit widens until the whole box is
+        Open outward from the centre - a slit widens until the whole box is
         shown.
       </P>
       <Replay>
@@ -40,7 +40,7 @@ export default function Page() {
 
       <Note>
         These entries are registered with <code>text: false</code>, so no{" "}
-        <code>.spawn-text-*</code> SplitText variant is generated for them —
+        <code>.spawn-text-*</code> SplitText variant is generated for them -
         splitting media boxes would be pointless.
       </Note>
       <Code>{`<img class="scroll clip-reveal-up time-2" src="…">

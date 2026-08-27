@@ -8928,7 +8928,7 @@
     // Custom-function animation: counts from the `.spawn-num-N` value (N = the
     // starting number) up to whatever number is in the element (falling back to 0
     // when no `.spawn-num-N` class is present). `play` just wraps a helper from
-    // Animations.js — nothing else is special, so it still gets
+    // Animations.js - nothing else is special, so it still gets
     // order/scroll/leave/appear automatically.
     { sel: ".count", count: true, text: false, from: { opacity: 0 }, play: (el, delay, dur, ease) => countUp(el, delay, dur, ease) },
     // Pure clip-path reveals. `text:false` so the SplitText per-char variant is

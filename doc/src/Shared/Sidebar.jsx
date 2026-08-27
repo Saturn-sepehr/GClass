@@ -58,6 +58,13 @@ const SECTIONS = [
       ["on-*-complete-*", "on-complete"],
     ],
   },
+    {
+    title: "About",
+    items: [
+      ["About (mostly personal)", "about"],
+
+    ],
+  },
 ]
 
 // `cls` lets each call site carry its own engine tunables (e.g. a distinct
@@ -104,7 +111,7 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false)
 
   // Close the drawer whenever the route changes (state-adjust-during-render
-  // pattern — no effect needed), and lock body scroll while it is open.
+  // pattern - no effect needed), and lock body scroll while it is open.
   const [prevPath, setPrevPath] = useState(pathname)
   if (prevPath !== pathname) {
     setPrevPath(pathname)
@@ -124,7 +131,7 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Desktop sidebar — geometry identical to the old aside > nav pair */}
+      {/* Desktop sidebar - geometry identical to the old aside > nav pair */}
       <nav className="sticky top-24 hidden h-fit w-48 shrink-0 lg:block preserve">
         <p className="mb-3 text-xs tracking-[0.25em] opacity-50 typewriter-split appear letter">DOCS</p>
         <NavSections pathname={pathname} cls="priority-0" />

@@ -1,6 +1,6 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — Progress bars" };
+export const metadata = { title: "GClass - Progress bars" };
 
 function Track({ label, barClass }) {
   return (
@@ -23,24 +23,24 @@ export default function Page() {
         They are scroll-driven extras: no spawn class needed on the element.
       </P>
 
-      <H2>Demo — three ranges side by side</H2>
+      <H2>Demo - three ranges side by side</H2>
       <P>
         Scroll down slowly and compare: the early-start bar begins filling as
         soon as it peeks over the bottom edge, the default bar starts at the
         standard range, and the reversed one drains from full to empty. All
-        three scrub with your scrollbar — scroll back up and they rewind.
+        three scrub with your scrollbar - scroll back up and they rewind.
       </P>
       <div className="my-4 space-y-[45vh]">
         <Track
-          label=".progress-bar — default range (top bottom → center center)"
+          label=".progress-bar - default range (top bottom → center center)"
           barClass="progress-bar"
         />
         <Track
-          label=".progress-bar .progress-start-40 — starts filling while still low in the viewport"
+          label=".progress-bar .progress-start-40 - starts filling while still low in the viewport"
           barClass="progress-bar progress-start-40"
         />
         <Track
-          label=".scroll-fill .progress-reverse — full → empty"
+          label=".scroll-fill .progress-reverse - full → empty"
           barClass="scroll-fill progress-reverse"
         />
       </div>
@@ -59,7 +59,7 @@ export default function Page() {
       <Note>
         Both names are aliases of one entry; pick whichever reads better in
         your markup. The fill uses <code>transform-origin: left center</code>,
-        so it never triggers layout — only compositing.
+        so it never triggers layout - only compositing.
       </Note>
     </article>
   );

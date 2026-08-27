@@ -1,6 +1,6 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — Installation" };
+export const metadata = { title: "GClass - Installation" };
 
 export default function Page() {
   return (
@@ -8,7 +8,7 @@ export default function Page() {
       <H1>Installation</H1>
       <P>
         GClass ships as the npm package <code>gclass-anims</code>. GSAP is a regular
-        dependency and is installed automatically — nothing is bundled or
+        dependency and is installed automatically - nothing is bundled or
         redistributed.
       </P>
       <Code>{`npm install gclass-anims`}</Code>

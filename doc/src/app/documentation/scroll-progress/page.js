@@ -1,12 +1,12 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — .scroll-progress" };
+export const metadata = { title: "GClass - .scroll-progress" };
 
 export default function Page() {
   return (
     <article>
-      <H1>.scroll-progress — scrubbed entrances</H1>
+      <H1>.scroll-progress - scrubbed entrances</H1>
       <P>
         While <code>.scroll</code> plays a one-shot tween on enter,{" "}
         <code>.scroll-progress</code> scrubs the entrance timeline directly
@@ -15,12 +15,12 @@ export default function Page() {
       </P>
       <Code>{`<div class="expand-horizontal scroll-progress"></div>`}</Code>
 
-      <H2>Demo — scroll slowly past these blocks</H2>
+      <H2>Demo - scroll slowly past these blocks</H2>
       <div className="h-[30vh]" />
       <div className="my-4 space-y-[55vh]">
         <div>
           <p className="mb-2 text-xs opacity-60">
-            .expand-horizontal .scroll-progress — width follows the scrollbar
+            .expand-horizontal .scroll-progress - width follows the scrollbar
           </p>
           <div className="h-3 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-700">
             <div className="expand-horizontal progress-start-20 progress-end-80 scroll-progress h-full w-full rounded-full bg-cyan-300/80" />
@@ -32,13 +32,13 @@ export default function Page() {
         <Demo className="spawn-up scroll-progress flex min-h-[180px] flex-col items-start justify-center gap-3 p-6 text-sm">
           <span className="text-lg font-bold">Any spawn works here</span>
           <span className="opacity-70">
-            .spawn-up .scroll-progress — position AND opacity track the
+            .spawn-up .scroll-progress - position AND opacity track the
             playhead, so scrolling back up rewinds me mid-motion
           </span>
         </Demo>
       </div>
 
-      <H2>Demo — scrubbed counter</H2>
+      <H2>Demo - scrubbed counter</H2>
       <P>
         Counters compose with the scrub too: the number below IS the scroll
         progress, tracking your scrollbar exactly in both directions.
@@ -63,7 +63,7 @@ export default function Page() {
       <Note>
         Counters have first-class support:{" "}
         <code>&lt;span class=&quot;count scroll-progress spawn-num-0&quot;&gt;100&lt;/span&gt;</code>{" "}
-        counts up/down with the scrub instead of fading — see{" "}
+        counts up/down with the scrub instead of fading - see{" "}
         <b>Counters</b> for the full behavior.
       </Note>
     </article>

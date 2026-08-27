@@ -1,16 +1,16 @@
 import { H1, H2, P, Note, Code } from "@/Shared/DocsUI";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — .scroll-frame" };
+export const metadata = { title: "GClass - .scroll-frame" };
 
 export default function Page() {
   return (
     <article>
-      <H1>.scroll-frame — scoped scroll container</H1>
+      <H1>.scroll-frame - scoped scroll container</H1>
       <P>
         <code>.scroll</code> and <code>.scroll-progress</code> normally track
         the window. Wrap a scrollable box with <code>.scroll-frame</code> and
-        any trigger inside it binds to <b>that box</b> instead — so the
+        any trigger inside it binds to <b>that box</b> instead - so the
         entrance or scrub is driven by the container&apos;s scrollbar, not the
         page. The innermost <code>.scroll-frame</code> ancestor wins (
         <code>closest</code> walk); elements with no frame ancestor keep the
@@ -21,12 +21,12 @@ export default function Page() {
   <div class="spawn-fade scroll-progress">scrubbed by the box scrollbar</div>
 </div>
 
-<!-- Requirements: .scroll-frame must be a real scroller — fixed height + overflow-auto/scroll — or its triggers never fire -->`}</Code>
+<!-- Requirements: .scroll-frame must be a real scroller - fixed height + overflow-auto/scroll - or its triggers never fire -->`}</Code>
 
-      <H2>Demo — .scroll contained to the box</H2>
+      <H2>Demo - .scroll contained to the box</H2>
       <P>
         The box below is a 280px tall <code>.scroll-frame</code> with its own
-        scrollbar. Scroll <b>inside it</b> — the cards slide in and rewind per
+        scrollbar. Scroll <b>inside it</b> - the cards slide in and rewind per
         card, completely independent of the page scroll.
       </P>
       <div className="scroll-frame my-4 h-[280px] overflow-y-auto rounded-xl bg-slate-950/50 p-4 ring-1 ring-slate-700">
@@ -43,7 +43,7 @@ export default function Page() {
           <Demo className="scroll spawn-fade time-1 flex min-h-[90px] items-center justify-center">
             .scroll .spawn-fade
           </Demo>
-          <div className="py-2 text-center text-xs opacity-40">— end of frame —</div>
+          <div className="py-2 text-center text-xs opacity-40">- end of frame -</div>
         </div>
       </div>
       <P className="text-xs opacity-60">
@@ -51,17 +51,17 @@ export default function Page() {
         entirely.
       </P>
 
-      <H2>Demo — .scroll-progress scrubbed by the box</H2>
+      <H2>Demo - .scroll-progress scrubbed by the box</H2>
       <P>
         Same container, scrubbed mode: your scroll position <b>inside the
         frame</b> is the playhead. The bar and fades below are tied to the box
-        scrollbar — scroll the frame up and down to scrub in both directions.
+        scrollbar - scroll the frame up and down to scrub in both directions.
       </P>
       <div className="scroll-frame my-4 h-[320px] overflow-y-auto rounded-xl bg-slate-950/50 p-4 ring-1 ring-slate-700">
         <div className="space-y-[28vh] py-2">
           <div>
             <p className="mb-2 text-xs opacity-60">
-              .expand-horizontal .scroll-progress — width follows the frame
+              .expand-horizontal .scroll-progress - width follows the frame
             </p>
             <div className="h-3 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-700">
               <div className="expand-horizontal scroll-progress progress-start-20 progress-end-80 h-full w-full rounded-full bg-cyan-300/80" />
@@ -79,11 +79,11 @@ export default function Page() {
             </span>
             <span className="text-xl opacity-70">%</span>
           </Demo>
-          <div className="py-2 text-center text-xs opacity-40">— end of frame —</div>
+          <div className="py-2 text-center text-xs opacity-40">- end of frame -</div>
         </div>
       </div>
 
-      <H2>Demo — nested frames</H2>
+      <H2>Demo - nested frames</H2>
       <P>
         When frames are nested, <code>closest(&quot;.scroll-frame&quot;)</code>{" "}
         wins: the inner box drives its own children, the outer box drives
@@ -92,7 +92,7 @@ export default function Page() {
       <Code>{`<div class="scroll-frame outer h-80 overflow-y-auto">
   <div class="spawn-up scroll">uses outer frame</div>
   <div class="scroll-frame inner h-48 overflow-y-auto">
-    <div class="spawn-up scroll">uses inner frame — not outer</div>
+    <div class="spawn-up scroll">uses inner frame - not outer</div>
   </div>
 </div>`}</Code>
 
@@ -100,7 +100,7 @@ export default function Page() {
         <code>.scroll-frame</code> must have a real scrollable geometry (
         <code>height</code> / <code>max-height</code> +{" "}
         <code>overflow: auto</code> or <code>scroll</code>) or ScrollTrigger
-        has no range to scrub — the trigger will never fire. It pairs with all
+        has no range to scrub - the trigger will never fire. It pairs with all
         spawn tunables (<code>progress-start-N</code>,{" "}
         <code>progress-end-N</code>, <code>.progress-reverse</code>) and with
         loops/counters/scramble exactly like window-bound triggers.

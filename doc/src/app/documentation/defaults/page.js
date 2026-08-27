@@ -1,6 +1,6 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — defaults" };
+export const metadata = { title: "GClass - defaults" };
 
 export default function Page() {
   return (
@@ -8,7 +8,7 @@ export default function Page() {
       <H1>defaults</H1>
       <P>
         Every tunable has a fallback in the exported <code>defaults</code>{" "}
-        object — the single source of truth for engine-wide numbers:
+        object - the single source of truth for engine-wide numbers:
       </P>
       <Code>{`import { defaults } from 'gclass-anims'
 
@@ -37,7 +37,7 @@ export default function Page() {
         behaviour without touching a single class.
       </P>
       <Note>
-        Per-element classes always win over defaults —{" "}
+        Per-element classes always win over defaults -{" "}
         <code>.time-2</code> beats <code>effectDuration</code>,{" "}
         <code>.ease-expo</code> beats <code>ease</code>.
       </Note>

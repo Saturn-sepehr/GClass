@@ -2,7 +2,7 @@ import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import Replay from "@/Shared/Replay";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass — Split text" };
+export const metadata = { title: "GClass - Split text" };
 
 export default function Page() {
   return (
@@ -20,9 +20,9 @@ export default function Page() {
       <H2>Granularity</H2>
       <ClassRef
         rows={[
-          ["(none)", "Per word — cheapest, best default"],
-          [".letter", "Per character — most granular"],
-          [".lines", "Per line — great for multi-line headings"],
+          ["(none)", "Per word - cheapest, best default"],
+          [".letter", "Per character - most granular"],
+          [".lines", "Per line - great for multi-line headings"],
         ]}
       />
 
