@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import React, { useState } from "react"
 
 // Presentational building blocks for docs pages.
@@ -163,6 +164,14 @@ export function EntranceDemo({ cls, children = null }) {
     <Demo className={`min-h-[72px] min-w-[180px] ${cls}`}>
       {children}
     </Demo>
+  )
+}
+
+export function QSButtons({link , children}){
+    return (
+    <Link href={link} className="my-3 hover:bg-slate-800 rounded-lg order spawn-down font-extrabold items-center px-10 click-hover compatibility justify-between flex flex-row curtain-horizontal border border-cyan-300/20 bg-cyan-300/5 p-3 text-xs leading-relaxed text-cyan-200/90">
+      {children}
+    </Link>
   )
 }
 
