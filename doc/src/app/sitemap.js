@@ -62,6 +62,7 @@ export default function sitemap() {
     "/documentation/parallax",
     "/documentation/progress-bars",
     "/documentation/loops",
+    "/documentation/marquees",
     "/documentation/dynamic-elements",
     "/documentation/hover-click",
     "/documentation/magnet",

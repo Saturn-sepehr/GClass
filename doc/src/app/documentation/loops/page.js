@@ -34,19 +34,6 @@ export default function Page() {
         <Demo className={BOX + " radiate amount-20 etime-2"}>radiate</Demo>
    
 
-      <H2>Marquee</H2>
-      <P>
-        Infinite tickers in four directions. The content is wrapped into a
-        tiling track automatically; give the host a width (horizontal) or
-        height (vertical).
-      </P>
-      <div className="my-3 overflow-hidden">
-        <div className="marquee-left time-20 gap-8 py-2 text-sm opacity-80">
-                  .marquee-left
-
-        </div>
-      </div>
-
       <H2>Tunables</H2>
       <ClassRef
         rows={[
@@ -54,12 +41,11 @@ export default function Page() {
           ["etime-N", "One cycle duration (seconds)"],
           ["edelay-N", "Pause appended after each cycle"],
           ["ease-NAME", "Ease used by the settle segments"],
-          ["time-N", "Marquee travel duration only"],
           ["radiate-z-N", "z-index for the radiate clone"],
         ]}
       />
       <Code>{`<div class="float amount-10 etime-3">…</div>
-<div class="marquee-up time-30">…</div>`}</Code>
+<div class="pulse etime-2 amount-5">…</div>`}</Code>
     </article>
   );
 }

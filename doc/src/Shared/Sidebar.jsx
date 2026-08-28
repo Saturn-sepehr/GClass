@@ -44,6 +44,8 @@ const SECTIONS = [
       ["Loops", "loops"],
       ["Dynamic elements", "dynamic-elements"],
       ["hover-* / click-*", "hover-click"],
+      ["Marquees", "marquees"],
+      
       ["Magnet", "magnet"],
       ["css-* classes", "css-classes"],
       [".ease-N", "eases"],

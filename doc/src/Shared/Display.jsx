@@ -17,7 +17,7 @@ export default function Display({ children }) {
         {/* tube backdrop - disabled on /draw-svg to avoid paint storm with drawSVG */}
 
         <div
-          className='crt-screen  fixed inset-0 z-0 bg-slate-900'
+          className='crt-screen  fixed inset-0 -z-20 bg-slate-900'
           aria-hidden='true'
         />
      
