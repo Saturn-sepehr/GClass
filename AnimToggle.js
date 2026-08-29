@@ -1,10 +1,10 @@
   import initListeners from './Listeners'
 
 // localStorage key controlling whether the GSAP animation system is mounted.
-const STORAGE_KEY = 'funbyte-animations-enabled'
+const STORAGE_KEY = 'gclass-animations-enabled'
 // localStorage key for a forced reduced-motion override (see
 // enableReducedMotion / disableReducedMotion).
-const REDUCED_KEY = 'funbyte-reduced-motion'
+const REDUCED_KEY = 'gclass-reduced-motion'
 
 const reducedMotionQuery = typeof window !== 'undefined'
   ? window.matchMedia('(prefers-reduced-motion: reduce)')

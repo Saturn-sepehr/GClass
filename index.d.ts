@@ -220,3 +220,15 @@ export function hover(delay: number, target: TweenTarget, amount: number, dur: n
 export function marquee(target: TweenTarget, dir: string, duration: number, xOffset?: number, yOffset?: number, noRepeat?: boolean): any
 export function flip(state: any, ease: string, dur: number): any
 export function animatecss(target: TweenTarget, dur: number, delay: number, ease: string, propertyS: any, propertySValue: any, propertyE: any, propertyEValue: any): any
+// --- Boot ----------------------------------------------------------------
+
+export interface BootOptions {
+  enabled?: boolean
+  time?: number
+  id?: string
+  onDone?: () => void
+}
+export function initBoot(opts?: BootOptions): Promise<() => void>
+export function createBootOverlay(html?: string, opts?: BootOptions): Promise<() => void>
+export default function Boot(opts?: BootOptions): Promise<() => void>
+

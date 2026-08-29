@@ -587,27 +587,43 @@ export function radiate (delay , target , amount , dur , ease , zIndex){
         tick = true
         requestAnimationFrame(() => { tick = false; applyRect() })
     }
+    // Don't animate detached targets — return inert tween
+    if (!target.isConnected) {
+        return gsap.fromTo(clone, {}, { duration: 0 })
+    }
     document.body.appendChild(clone)
     applyRect()
     window.addEventListener("scroll", schedule, { passive: true })
     window.addEventListener("resize", schedule, { passive: true })
     // Killing the tween (teardown, hover/click rebuilds) must clean up exactly
     // like natural completion - otherwise clones + listeners leak.
+    let tween = null
     const cleanup = () => {
         clone.remove()
         window.removeEventListener("scroll", schedule)
         window.removeEventListener("resize", schedule)
+        if (observer) observer.disconnect()
     }
+    // If target is removed from DOM (React unmount, .remove(), SPA navigation),
+    // kill the tween and remove the clone — mirrors React useEffect cleanup
+    const observer = new MutationObserver(() => {
+        if (!target.isConnected) {
+            if (tween) tween.kill()
+            cleanup()
+        }
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
 
-    return gsap.fromTo(clone , {scale:1 , opacity:1} , {
+    tween = gsap.fromTo(clone , {scale:1 , opacity:1} , {
         scale:amount / 10 ,
         opacity:0 ,
         duration:dur ,
         delay:delay ,
         ease:easeOf(ease) ,
-        onComplete: cleanup ,
-        onInterrupt: cleanup ,
+        onComplete: () => { observer.disconnect(); cleanup(); },
+        onInterrupt: () => { observer.disconnect(); cleanup(); },
     })
+    return tween
 }
 
 
