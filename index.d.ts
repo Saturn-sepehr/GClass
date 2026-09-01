@@ -27,8 +27,9 @@ export function registerComplete(name: string, fn: CompleteHandler): CompleteHan
 /**
  * Boot the engine directly, bypassing AnimToggle. Returns a teardown function
  * that removes all listeners/observers/tweens created by this run.
+ * Pass a root to scope to that subtree (used for .boot-up).
  */
-export default function initListeners(): () => void
+export default function initListeners(root?: Document | HTMLElement): () => void
 
 // --- onComplete config -----------------------------------------------------
 
@@ -123,6 +124,7 @@ export interface Defaults {
   minTextPartDuration: number
   revealDelay: number
   characterlist: string
+  bootTime: number
 }
 
 /** Global timing / ease defaults (edit to tweak global behaviour). */
@@ -220,7 +222,4 @@ export function hover(delay: number, target: TweenTarget, amount: number, dur: n
 export function marquee(target: TweenTarget, dir: string, duration: number, xOffset?: number, yOffset?: number, noRepeat?: boolean): any
 export function flip(state: any, ease: string, dur: number): any
 export function animatecss(target: TweenTarget, dur: number, delay: number, ease: string, propertyS: any, propertySValue: any, propertyE: any, propertyEValue: any): any
-
-
-export default function Boot()
 

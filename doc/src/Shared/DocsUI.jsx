@@ -141,7 +141,7 @@ export function Code({ children, lang: langProp }) {
       {/* code body */}
       <pre className="overflow-x-auto  p-4 text-[13.5px] leading-6">
         <code
-          className="block whitespace-pre font-mono text-slate-200 [tab-size:2]"
+          className="block typewriter order whitespace-pre font-mono text-slate-200 [tab-size:2]"
           dangerouslySetInnerHTML={{ __html: highlighted }}
         />
       </pre>

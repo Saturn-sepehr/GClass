@@ -2,6 +2,9 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
+## [1.0.0-beta.19] - 2026-9-1
+- Fixed the SplitText animations formatting and removed Boot.js
+
 ## [1.0.0-beta.18] - 2026-9-1
 - Hopefully finally fixed `.boot-up` properly skipping on path changes
 

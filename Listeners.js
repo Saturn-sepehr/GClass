@@ -484,10 +484,7 @@ export default function initListeners(root = document) {
         // would render it in its connecting form instead of its correct END form),
         // but it should still be split into its own span so it animates too.
         const RTL_LETTER = /[\u0621-\u064A\u066E-\u06D5\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
-        const getRTLCharSplit = (el) => {
-            // Any element using SplitText gets pre-wrap so "\n" and formatting is preserved
-            if (el.style) el.style.whiteSpace = "pre-wrap"
-            return new SplitText(el, {
+        const getRTLCharSplit = (el) => new SplitText(el, {
             type: "words",
             linesClass: "gsap-line",
             wordsClass: "gsap-word",
@@ -570,7 +567,6 @@ export default function initListeners(root = document) {
                 self.words.length = 0
             },
         })
-        }
 
         // Flex targets can't be split directly: the split parts would become
         // flex ITEMS, so justify-content/gap would apply per letter, whitespace-
@@ -611,22 +607,39 @@ export default function initListeners(root = document) {
         }
 
         const getSplit = (el, gran) => {
-            if (el.style) el.style.whiteSpace = "pre-wrap"
             let s = splitCache.get(el)
             const rtlChars = gran === "chars" && isRTLText(el)
             const key = rtlChars ? "rtl-chars" : gran
             if (!s || s.granularity !== key) {
                 if (s) revertSplitInstance(s)
+                const hasN = el.textContent.includes('\n')
+                // only set pre-wrap if element actually contains a newline, so \n renders without breaking other SplitText (flex/lines)
+                if (hasN && el.style) el.style.whiteSpace = 'pre-wrap'
                 s = rtlChars
                     ? getRTLCharSplit(el)
                     : new SplitText(el, {
                         type: gran,
-                        tag: "span",
-                        reduceWhiteSpace: false,
-                        
+                        reduceWhiteSpace: hasN ? false : undefined,
                         linesClass: "gsap-line",
                         wordsClass: "gsap-word",
                         charsClass: "gsap-char",
+                        onSplit(self) {
+                            // make \n actually break line DURING split (not just after revert)
+                            for (const c of self.chars || []) {
+                                if (c.textContent === '\n') {
+                                    c.textContent = ''
+                                    c.style.display = 'block'
+                                    c.style.width = '100%'
+                                    c.style.height = '0'
+                                }
+                            }
+                            // also handle words split where \n is between words
+                            for (const w of self.words || []) {
+                                if (w.textContent.includes('\n')) {
+                                    w.style.whiteSpace = 'pre-wrap'
+                                }
+                            }
+                        }
                     })
                 s._gcFlexUnwrap = wrapFlexTarget(el)
                 s.granularity = key
@@ -642,8 +655,10 @@ export default function initListeners(root = document) {
             // does this automatically for animated elements; Firefox is
             // conservative and otherwise repaints these inline-block parts on the
             // main thread every frame, which is what makes split-text lag there.
+            // A: keep inline flow so <strong> etc stays inline during split
             for (let i = 0; i < parts.length; i++) {
                 parts[i].style.willChange = "transform, opacity"
+                if (gran === "chars" || gran === "words") parts[i].style.display = "inline-block"
             }
             return parts
         }
