@@ -3,8 +3,10 @@ node_modules/
 
 # Dev playground
 dev/
+dev-react-strict/
 next-test/
 playground/
+dev-react-strict/
 #Checklist
 CHECKLIST.txt
 

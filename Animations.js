@@ -79,7 +79,11 @@ export function expandA (target , delay , dur , ease){
 }
 
 export function typewriter (target , text , dur , delay , ease){
-    return gsap.fromTo(target , {text:""} , {ease:easeOf(ease) , duration:dur , delay:delay , text:text})
+    // Any element using TextPlugin gets pre-wrap so "\n" from VSCode Enter or JS strings
+    // renders as a real line break and any innerHTML formatting is preserved.
+    gsap.utils.toArray(target).forEach(el => { if (el.style) el.style.whiteSpace = "pre-wrap" })
+    const value = String(text).replace(/\n/g, "<br>")
+    return gsap.fromTo(target , {text:""} , {ease:easeOf(ease) , duration:dur , delay:delay , text:{value}})
 }
 
 export function spawnSpinCCW (target , delay , dur , ease){

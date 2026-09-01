@@ -2,5 +2,5 @@ export { initAnimations, toggleAnimations, enableReducedMotion, disableReducedMo
 export { default as initListeners, registerComplete } from './Listeners.js'
 export { customAnims } from './CustomAnims.js'
 export { defaults, animations, normalize } from './Config.js'
-export { default as Boot, initBoot, createBootOverlay } from './Boot.js'
+export { Boot } from './Boot.js'
 export * from './Animations.js'

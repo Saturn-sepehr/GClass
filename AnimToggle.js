@@ -1,4 +1,6 @@
   import initListeners from './Listeners'
+  import { defaults, animations } from './Config.js'
+  import gsap from 'gsap'
 
 // localStorage key controlling whether the GSAP animation system is mounted.
 const STORAGE_KEY = 'gclass-animations-enabled'
@@ -111,12 +113,130 @@ export function disableReducedMotion() {
 }
 
 let cleanup = null
+let bootCleanup = null
+let bootTimeout = null
+let bootStyle = null
+let hasBooted = false // true after first hard-load boot, skips boot on SPA path changes (remains false until first boot, resets on hard reload)
+
+const readBootTime = (els, fallback) => {
+  let max = null
+  for (const el of els) {
+    const cls = [...el.classList].find(c => c.startsWith('boot-time-'))
+    if (cls) {
+      const n = Number(cls.slice('boot-time-'.length))
+      if (!Number.isNaN(n)) max = max === null ? n : Math.max(max, n)
+    }
+  }
+  return max ?? fallback
+}
 
 // Boots the GSAP animation system unless animations are disabled (stored "off"
 // or reduced-motion fallback with no explicit choice). Idempotent: calling it
 // again tears down any previous run first.
+// Now also handles boot screen: any HTML/JSX with `.boot-up` anywhere is treated as the boot overlay.
+// No separate initBoot needed - just call initAnimations().
+// Boot stops all DOM rendering for defaults.bootTime (overwritten by boot-time-N class).
 export function initAnimations() {
   if (typeof window === 'undefined' || !getEnabled()) return
-  if (cleanup) cleanup()
+  // boot already in progress (first mount in StrictMode) - ignore second mount
+  if (bootTimeout) {
+    console.log(`[initAnimations] boot already in progress - ignoring duplicate call`)
+    return
+  }
+  if (cleanup) { cleanup(); cleanup = null }
+  if (bootCleanup) { bootCleanup(); bootCleanup = null }
+  if (bootStyle) { bootStyle.remove(); bootStyle = null; document.documentElement.classList.remove('gclass-booting') }
+
+  const hideBootEls = (els) => {
+    // React-safe: don't el.remove() - React owns the nodes and will throw
+    // insertBefore/removeChild on next commit if we mutate outside React.
+    // Hiding keeps React's tree intact but visually removes boot screen.
+    els.forEach(el => {
+      el.style.display = 'none'
+      el.setAttribute('hidden', '')
+      el.setAttribute('data-gclass-boot-hidden', '1')
+    })
+  }
+
+  const bootEls = typeof document !== 'undefined' ? [...document.querySelectorAll(".boot-up")].filter(el => !el.hasAttribute('data-gclass-boot-hidden')) : []
+  if (!bootEls.length) {
+    // no .boot-up -> completely skip boot
+  } else if (bootEls.length > 1) {
+    console.error(`[initAnimations] Multiple .boot-up elements detected (${bootEls.length}) - skipping all boot animations`, bootEls)
+    hideBootEls(bootEls)
+    hasBooted = true
+    // fall through to normal initListeners without pausing DOM
+  } else if (hasBooted && !bootTimeout) {
+    // path change after already booted (SPA navigation) - skip boot, hard reload resets hasBooted
+    console.log(`[initAnimations] skipping boot on path change (already booted)`, bootEls)
+    hideBootEls(bootEls)
+    hasBooted = true
+    // fall through
+  } else {
+    const bootEl = bootEls[0]
+    const hasBootEnd = [...bootEl.classList].some(c => c.startsWith('boot-end-'))
+    if (!hasBootEnd) {
+      // no boot-end-* -> completely skip boot animation (still pause? spec says skip it)
+      // spec: skip boot-end animation if no class, but still do boot pause? user said "completely skip it if no .boot-end-<name> class is present"
+      // interpret as skip the exit animation only, still pause for bootTime
+      // To match "completely skip it" for boot-end, we just don't play exit tween
+    }
+    const bootTime = readBootTime(bootEls, defaults.bootTime ?? 2)
+    console.log(`[initAnimations] .boot-up found: ${bootEls.length} - pausing DOM for ${bootTime}s`, bootEls)
+    hasBooted = true
+    // stop all DOM rendering except .boot-up
+    bootStyle = document.createElement('style')
+    bootStyle.id = 'gclass-boot-style'
+    bootStyle.textContent = `html.gclass-booting{visibility:hidden} html.gclass-booting .boot-up,html.gclass-booting .boot-up *{visibility:visible} html.gclass-booting .boot-up{position:fixed;inset:0;z-index:9999;display:grid;place-items:center}`
+    document.head.appendChild(bootStyle)
+    document.documentElement.classList.add('gclass-booting')
+    // ensure boot els are visible even if nested inside hidden ancestors
+    bootEls.forEach(el => { el.style.visibility = 'visible' })
+
+    // animations inside boot screen must play while rest of DOM is hidden - init scoped to boot-up
+    bootCleanup = initListeners(bootEl)
+
+    bootTimeout = setTimeout(() => {
+      const bootEndCls = [...bootEl.classList].find(c => c.startsWith('boot-end-'))
+      if (!bootEndCls) {
+        // no boot-end -> skip exit animation, just hide
+        bootCleanup?.(); bootCleanup = null
+        document.documentElement.classList.remove('gclass-booting')
+        bootStyle?.remove(); bootStyle = null
+        hideBootEls(bootEls)
+        bootTimeout = null
+        cleanup = initListeners()
+        return
+      }
+      const name = bootEndCls.slice('boot-end-'.length) // e.g. spawn-blur
+      const cfg = animations.find(a => a.sel === '.' + name)
+      const from = cfg?.from
+      const easeCl = [...bootEl.classList].find(c => c.startsWith('ease-'))
+      const ease = easeCl ? easeCl.split('-')[1] : defaults.ease
+      const dur = readBootTime([bootEl], defaults.effectDuration ?? 1) // reuse boot-time- or fallback to effectDuration; if boot-time used for pause, reuse same value for exit unless overridden
+      // Actually use boot-end-time-N if present, else effectDuration
+      const endTimeCls = [...bootEl.classList].find(c => c.startsWith('boot-end-time-'))
+      const endDur = endTimeCls ? Number(endTimeCls.slice('boot-end-time-'.length)) : dur
+
+      const finish = () => {
+        bootCleanup?.(); bootCleanup = null
+        document.documentElement.classList.remove('gclass-booting')
+        bootStyle?.remove(); bootStyle = null
+        hideBootEls(bootEls)
+        bootTimeout = null
+        cleanup = initListeners()
+      }
+
+      if (!cfg || !from) {
+        console.warn(`[initAnimations] boot-end-${name} has no from state - removing without animation`)
+        finish()
+        return
+      }
+      // play spawn in reverse (visible -> hidden) before removing
+      gsap.to(bootEl, { ...from, duration: endDur, ease, onComplete: finish })
+    }, bootTime * 1000)
+    return
+  }
+
   cleanup = initListeners()
 }

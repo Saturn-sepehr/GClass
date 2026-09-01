@@ -2,6 +2,17 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
+## [1.0.0-beta.18] - 2026-9-1
+- Hopefully finally fixed `.boot-up` properly skipping on path changes
+
+## [1.0.0-beta.17] - 2026-9-1
+- Fixed the `.boot-up` class firing on every path change
+
+## [1.0.0-beta.16] - 2026-09-1
+- Added a new `.boot-up` class for boot up animations
+- Fixed text animations not taking formatting into account
+
+
 ## [1.0.0-beta.13] - 2026-08-27
 - Added a new `.fill-svg` modifier for the `.draw` and `.draw-split` classes that fills the SVG after it has been drawn.
 

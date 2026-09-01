@@ -93,8 +93,20 @@ const invokePlay = (config, el, delay, dur, ease) => {
     }
 }
 
-export default function initListeners() {
+export default function initListeners(root = document) {
     gsap.registerPlugin(TextPlugin, ScrollTrigger, SplitText)
+
+    // helper to scope queries to root (for boot screen: only boot-up subtree animates during boot)
+    const qAll = (sel) => {
+        if (root === document || root === document.documentElement || root === document.body) return gsap.utils.toArray(sel)
+        if (sel === "body *") return gsap.utils.toArray(root.querySelectorAll("*"))
+        try {
+            const els = [...(root.querySelectorAll ? root.querySelectorAll(sel) : [])]
+            if (root.matches?.(sel)) els.unshift(root)
+            // handle comma selectors where root itself may match one part
+            return els
+        } catch { return gsap.utils.toArray(sel) }
+    }
 
     const registeredListeners = []
         const onCompleteTweens = []
@@ -358,7 +370,7 @@ export default function initListeners() {
             spawnConfigs.map(({ sel }) => "." + TEXT_PREFIX + sel.slice(1)).join(",")
 
         const getOrderDelay = (el, priority) => {
-            const samepri = gsap.utils.toArray(orderSelector())
+            const samepri = qAll(orderSelector())
                 .filter((e) => {
                     if (!e.classList.contains("order")) return false
                     const match = [...e.classList].find(p => p.startsWith("priority-"))
@@ -472,7 +484,10 @@ export default function initListeners() {
         // would render it in its connecting form instead of its correct END form),
         // but it should still be split into its own span so it animates too.
         const RTL_LETTER = /[\u0621-\u064A\u066E-\u06D5\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
-        const getRTLCharSplit = (el) => new SplitText(el, {
+        const getRTLCharSplit = (el) => {
+            // Any element using SplitText gets pre-wrap so "\n" and formatting is preserved
+            if (el.style) el.style.whiteSpace = "pre-wrap"
+            return new SplitText(el, {
             type: "words",
             linesClass: "gsap-line",
             wordsClass: "gsap-word",
@@ -555,6 +570,7 @@ export default function initListeners() {
                 self.words.length = 0
             },
         })
+        }
 
         // Flex targets can't be split directly: the split parts would become
         // flex ITEMS, so justify-content/gap would apply per letter, whitespace-
@@ -595,6 +611,7 @@ export default function initListeners() {
         }
 
         const getSplit = (el, gran) => {
+            if (el.style) el.style.whiteSpace = "pre-wrap"
             let s = splitCache.get(el)
             const rtlChars = gran === "chars" && isRTLText(el)
             const key = rtlChars ? "rtl-chars" : gran
@@ -604,6 +621,9 @@ export default function initListeners() {
                     ? getRTLCharSplit(el)
                     : new SplitText(el, {
                         type: gran,
+                        tag: "span",
+                        reduceWhiteSpace: false,
+                        
                         linesClass: "gsap-line",
                         wordsClass: "gsap-word",
                         charsClass: "gsap-char",
@@ -739,7 +759,7 @@ export default function initListeners() {
         // created before any scroll/scroll-progress trigger measures its position.
         // Setting them up here (before the trigger pass below) keeps offsets correct
         // and lets the single ScrollTrigger.refresh() at the end reconcile layout.
-        gsap.utils.toArray(".pin").forEach(setupPin)
+        qAll(".pin").forEach(setupPin)
 
         // Scroll-driven extras - class-driven ScrollTrigger behaviours that don't
         // fit the spawn/loop machinery (no `play`/`build`), handled like `.pin`:
@@ -832,7 +852,7 @@ export default function initListeners() {
                 scrollTriggers.push(t.scrollTrigger)
             }
         }
-        gsap.utils.toArray('[class^="parallax-"],[class*=" parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven)
+        qAll('[class^="parallax-"],[class*=" parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven)
 
         // Scroller resolution: a `.scroll`/`.scroll-progress` element inside a
         // `.scroll-frame` container binds its trigger to THAT box instead of the
@@ -1001,7 +1021,7 @@ export default function initListeners() {
             })
             scrollTriggers.push(st)
         }
-        gsap.utils.toArray(".scroll, .scroll-progress").forEach(setupScroll)
+        qAll(".scroll, .scroll-progress").forEach(setupScroll)
 
         // SplitText scroll variants: `.spawn-text-<spawn>.scroll` plays the per-part
         // tween when the element enters the viewport and reverses on exit.
@@ -1009,7 +1029,7 @@ export default function initListeners() {
             if (isTypewriter || text === false) return
             const tSel = "." + TEXT_PREFIX + sel.slice(1)
 
-            gsap.utils.toArray(tSel + ".scroll:not(.scroll-progress)").forEach((el) => {
+            qAll(tSel + ".scroll:not(.scroll-progress)").forEach((el) => {
                 if (isReduced(el)) return
                 const { delay, duration } = readTiming(el)
                 const ease = getEase(el)
@@ -1034,7 +1054,7 @@ export default function initListeners() {
                 }))
             })
 
-            gsap.utils.toArray(tSel + ".scroll-progress").forEach((el) => {
+            qAll(tSel + ".scroll-progress").forEach((el) => {
                 if (isReduced(el)) return
                 const ease = getEase(el)
                 const parts = getParts(el, getGranularity(el))
@@ -1087,7 +1107,7 @@ export default function initListeners() {
 
         spawnConfigs.forEach((config) => {
             const { sel, typewriter: isTypewriter, typewriterSplit } = config
-            gsap.utils.toArray(sel).forEach((el) => {
+            qAll(sel).forEach((el) => {
                 if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
                 if (isPreserved(el)) return
                 if (isReduced(el)) return
@@ -1122,7 +1142,7 @@ export default function initListeners() {
         spawnConfigs.forEach(({ sel, from, typewriter: isTypewriter, text }) => {
             if (isTypewriter || text === false) return
             const tSel = "." + TEXT_PREFIX + sel.slice(1)
-            gsap.utils.toArray(tSel).forEach((el) => {
+            qAll(tSel).forEach((el) => {
                 if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
                 if (isPreserved(el)) return
                 if (isReduced(el)) return
@@ -1487,7 +1507,7 @@ export default function initListeners() {
 
         // Bind click + loop animations to every element present at load, tagging
         // them so the MutationObserver below never double-binds a dynamic one.
-        gsap.utils.toArray("body *").forEach((el) => {
+        qAll("body *").forEach((el) => {
             if (el.dataset?.gsapSetup) return
             el.dataset.gsapSetup = "1"
             setupClicks(el)
@@ -1608,7 +1628,7 @@ export default function initListeners() {
         appearObserver.observe(document.body, { childList: true, subtree: true })
 
         // Capture any .leave elements already present so they can exit later
-        gsap.utils.toArray(".leave").forEach(captureLeave)
+        qAll(".leave").forEach(captureLeave)
 
         const leaveObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
@@ -1625,7 +1645,7 @@ export default function initListeners() {
             if (positionTick) return
             positionTick = true
             requestAnimationFrame(() => {
-                gsap.utils.toArray(".leave").forEach((el) => {
+                qAll(".leave").forEach((el) => {
                     const s = leaveStates.get(el)
                     if (s) s.rect = el.getBoundingClientRect()
                 })
@@ -1666,7 +1686,7 @@ export default function initListeners() {
         // so dynamically-added .appear elements can animate under the new
         // engine run. data-gsap-preserved (cross-reset memory) and
         // data-gsap-ghost (detached .leave clones) are intentionally KEPT.
-        gsap.utils.toArray('[data-gsap-scroll],[data-gsap-setup],[data-gsap-pinned],[data-gsap-scroll-driven]').forEach((el) => {
+        qAll('[data-gsap-scroll],[data-gsap-setup],[data-gsap-pinned],[data-gsap-scroll-driven]').forEach((el) => {
             delete el.dataset.gsapScroll
             delete el.dataset.gsapSetup
             delete el.dataset.gsapPinned
@@ -1681,7 +1701,7 @@ export default function initListeners() {
         document.querySelectorAll('[data-gsap-radiate]').forEach((n) => n.remove())
         cssTweens.forEach((t) => t?.kill())
         cssTweens.length = 0
-        gsap.utils.toArray(".typewriter, .scramble").forEach(el => {
+        qAll(".typewriter, .scramble").forEach(el => {
             // Preserved-region typewriters/scrambles stay as-is (already at
             // their end state); finalize the rest so a mid-type/mid-scramble
             // kill can't strand partial or garbled text where the next run's

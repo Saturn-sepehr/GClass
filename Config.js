@@ -70,7 +70,8 @@ export const defaults = {
   typewriterSplitCharDuration: 0.05,
   minTextPartDuration: 0.3,
   revealDelay:0,
-  characterlist:"AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz"
+  characterlist:"AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz",
+  bootTime: 5,
 }
 
 export const animations = [

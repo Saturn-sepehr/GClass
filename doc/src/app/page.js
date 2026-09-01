@@ -1,8 +1,13 @@
+import Boot from "@/Shared/Boot";
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-full flex items-center justify-center p-5 pt-6 sm:p-10 sm:pt-6 text-center">
+
+    <>
+    <Boot></Boot>
+     <div className="min-h-full flex items-center justify-center p-5 pt-6 sm:p-10 sm:pt-6 text-center">
+       
       <main className="w-full max-w-2xl">
         <h1 className="text-cyan-200 text-4xl font-extrabold order spawn-text-spawn-down letter font-rosemary">GClass</h1>
         <h3 className="text-cyan-200/60 typewriter-split letter order">A Quality of life library for <a href="https://gsap.com/" className="font-extrabold underline text-green-500">GSAP</a></h3>
@@ -31,5 +36,7 @@ export default function Home() {
         </div>
       </main>
     </div>
+    </>
+   
   );
 }

@@ -25,6 +25,7 @@ const SECTIONS = [
       ["Scramble text", "scramble-text"],
       ["Counters", "counter"],
       ["DrawSVG", "draw-svg"],
+      ["Boot up", "boot-up"],
     ],
   },
   {
