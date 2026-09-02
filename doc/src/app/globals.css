@@ -41,13 +41,13 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: calc(100vw + 120vmax);
-  height: calc(100vh + 120vmax);
+  width: calc(100% + 200px);
+  height: calc(100% + 200px);
   transform: translate(-50%, -50%);
   /* inner radius = border-radius − border-width → a 3rem opening that
-     matches ::before's curvature */
-  border: 60vmax solid rgba(4, 7, 12, 0.55);
-  border-radius: calc(60vmax + 3rem);
+      matches ::before's curvature - uses px not vmax so mobile portrait doesn't blow to 96k px */
+  border: 100px solid rgba(4, 7, 12, 0.55);
+  border-radius: calc(100px + 3rem);
 }
 
 @media (prefers-reduced-motion: no-preference) {
