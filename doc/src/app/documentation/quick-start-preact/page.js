@@ -10,12 +10,7 @@ export default function Page() {
         Preact is React-compatible but has no StrictMode double-mount and{" "}
         <code>preact-router</code> has no <code>router.afterEach</code>. Use{" "}
         <code>preact/hooks useEffect</code> + <code>popstate</code> re-init.
-      </P>
-      <Note>
-        Verified in <code>gclass-test-preact</code> (<code>src/main.jsx:9</code>). Compares to <code>dev-react-strict/</code> React 18 — Preact diffs don't double-invoke.
-      </Note>
-
-      <H2>Usage - Preact app</H2>
+      </P><H2>Usage - Preact app</H2>
       <Code>{`import { render } from 'preact'
 import { useEffect } from 'preact/hooks'
 import { initAnimations } from 'gclass-anims'

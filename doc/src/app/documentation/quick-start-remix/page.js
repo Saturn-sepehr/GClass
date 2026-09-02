@@ -11,12 +11,7 @@ export default function Page() {
         <code>useLocation().pathname</code> change — same as Next App Router{" "}
         <code>usePathname</code> pattern in <code>Shared/animInit.js:6</code>, but{" "}
         <code>vite</code> via <code>@remix-run/dev vite:dev</code> (not Turbopack).
-      </P>
-      <Note>
-        Verified in <code>gclass-test-remix</code> (<code>app/root.tsx:10</code>). Fixes <code>AnimToggle.js:1 Listeners.js:2</code> ESM <code>.js</code> extension bug — Vite masks it, Remix Node ESM threw <code>Cannot find module .../Listeners</code>.
-      </Note>
-
-      <H2>Usage - Remix root</H2>
+      </P><H2>Usage - Remix root</H2>
       <Code>{`// app/root.tsx
 import { Outlet, useLocation } from '@remix-run/react'
 import { useEffect } from 'react'

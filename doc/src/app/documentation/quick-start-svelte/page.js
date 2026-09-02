@@ -12,12 +12,7 @@ export default function Page() {
         in the browser; the engine then watches <code>.appear</code> and{" "}
         <code>.scroll</code> elements as the component tree mounts.
       </P>
-      <Note>
-        Placeholder - Svelte quick-start is coming soon. Will cover SvelteKit
-        layout re-init and <code>enhance</code>-safe usage.
-      </Note>
-
-      <H2>Usage - Svelte component</H2>
+<H2>Usage - Svelte component</H2>
       <Code>{`<script>
   import { onMount } from 'svelte'
   import { initAnimations } from 'gclass-anims'

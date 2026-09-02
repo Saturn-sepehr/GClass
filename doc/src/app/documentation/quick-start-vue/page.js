@@ -12,12 +12,7 @@ export default function Page() {
         present; the engine&apos;s MutationObserver handles subsequent{" "}
         <code>.appear</code> mounts and <code>.scroll</code> triggers.
       </P>
-      <Note>
-        Placeholder - Vue quick-start is coming soon. Will cover Options API vs
-        Composition API and Nuxt notes.
-      </Note>
-
-      <H2>Usage - Composition API (SFC)</H2>
+<H2>Usage - Composition API (SFC)</H2>
       <Code>{`<script setup>
 import { onMounted } from 'vue'
 import { initAnimations } from 'gclass-anims'

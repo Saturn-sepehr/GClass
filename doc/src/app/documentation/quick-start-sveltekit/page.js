@@ -12,12 +12,7 @@ export default function Page() {
         <code>afterNavigate</code>. Wrapping a layout in{" "}
         <code>class="preserve"</code> freezes it (uses{" "}
         <code>Listeners.js:145 isPreserved</code>) — remove it to re-animate.
-      </P>
-      <Note>
-        Verified in <code>gclass-test-sveltekit</code> (<code>src/routes/+layout.svelte:5</code>). Plain <code>gclass-test-svelte</code> (Vite) already covers Svelte SPA — this covers SSR + routing.
-      </Note>
-
-      <H2>Usage - SvelteKit layout</H2>
+      </P><H2>Usage - SvelteKit layout</H2>
       <Code>{`// src/routes/+layout.svelte
 <script>
   import { onMount } from 'svelte'

@@ -13,20 +13,7 @@ export default function Page() {
         in <code>app.vue</code> - same pattern as Vue{" "}
         <code>router.afterEach</code> and Svelte <code>afterNavigate</code>.
       </P>
-      <Note>
-        Placeholder - Nuxt quick-start is coming soon. Will cover{" "}
-        <code>.client</code> plugins, SSR guards, and <code>.preserve</code> for
-        layouts.
-      </Note>
-
-      <H2>Usage - Client plugin</H2>
-      <P>
-        Mirrors the verified test in <code>gclass-test-nuxt</code> (
-        <code>plugins/gclass.client.ts:1</code>). The <code>.client</code> suffix
-        ensures it only runs on the browser; dynamic import keeps GSAP off the
-        server bundle.
-      </P>
-      <Code>{`// plugins/gclass.client.ts
+<H2>Usage - Client plugin</H2><Code>{`// plugins/gclass.client.ts
 export default defineNuxtPlugin(() => {
   if (import.meta.client) {
     import('gclass-anims').then(({ initAnimations }) => {

@@ -14,10 +14,9 @@ export default function Page() {
         re-init on <code>astro:after-swap</code> for View Transitions.
       </P>
       <Note>
-        Verified in <code>gclass-test-astro</code> (<code>src/layouts/Base.astro:6</code> + <code>src/pages/index.astro</code>). Without <code>client:load</code> the classes render but stay inert — expected.
+        Without <code>client:load</code> the classes render but stay inert — expected.
       </Note>
-
-      <H2>Usage - Layout with View Transitions</H2>
+<H2>Usage - Layout with View Transitions</H2>
       <Code>{`---
 // src/layouts/Base.astro
 ---

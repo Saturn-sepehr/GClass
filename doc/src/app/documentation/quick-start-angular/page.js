@@ -12,18 +12,7 @@ export default function Page() {
         (checks <code>window</code>) but you should still guard with{" "}
         <code>isPlatformBrowser</code> and run only on the client.
       </P>
-      <Note>
-        Placeholder - Angular quick-start is coming soon. Will cover standalone
-        components, SSR with Angular Universal, and router re-init.
-      </Note>
-
-      <H2>Usage - Standalone root component</H2>
-      <P>
-        Mirrors the verified test in <code>gclass-test-angular</code> (
-        <code>src/app/app.component.ts:21</code>). Uses a dynamic import so
-        GSAP stays client-only.
-      </P>
-      <Code>{`import { Component, AfterViewInit, Inject, PLATFORM_ID } from '@angular/core';
+<H2>Usage - Standalone root component</H2><Code>{`import { Component, AfterViewInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';

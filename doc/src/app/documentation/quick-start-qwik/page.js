@@ -9,12 +9,7 @@ export default function Page() {
       <P>
         Qwik is resumable — no hydration replay. Use{" "}
         <code>useVisibleTask$</code> (client only), not <code>useTask$</code> (runs on server before DOM is visible, <code>gsap.fromTo</code> gets no rect).
-      </P>
-      <Note>
-        Verified in <code>gclass-test-qwik</code> (<code>src/routes/index.tsx:4</code> <code>useVisibleTask$(() =&gt; initAnimations())</code> — needs <code>src/root.tsx</code> + <code>src/entry.ssr.tsx</code> for <code>qwikVite()</code>).
-      </Note>
-
-      <H2>Usage - Qwik City page</H2>
+      </P><H2>Usage - Qwik City page</H2>
       <Code>{`import { component$, useVisibleTask$ } from '@builder.io/qwik'
 import { initAnimations } from 'gclass-anims'
 

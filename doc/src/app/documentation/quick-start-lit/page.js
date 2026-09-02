@@ -10,12 +10,7 @@ export default function Page() {
         Lit defaults to Shadow DOM — <code>Listeners.js:101 qAll</code> queries{" "}
         <code>document</code>, not <code>shadowRoot</code>, so classes inside a{" "}
         <code>LitElement</code> template do not animate unless you opt-out or scope.
-      </P>
-      <Note>
-        Verified in <code>gclass-test-lit</code> (<code>src/gclass-lit-test.js:10</code>). <code>vite build</code> passes but runtime <code>works.txt:3</code> was <code>no</code> until <code>createRenderRoot(){`{return this}`}</code> (light DOM).
-      </Note>
-
-      <H2>Usage - Light DOM (recommended)</H2>
+      </P><H2>Usage - Light DOM (recommended)</H2>
       <Code>{`import { LitElement, html } from 'lit'
 import { initAnimations } from 'gclass-anims'
 

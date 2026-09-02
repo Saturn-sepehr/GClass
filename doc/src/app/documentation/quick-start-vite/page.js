@@ -11,12 +11,7 @@ export default function Page() {
         framework-agnostic and works with any Vite template. Import and call{" "}
         <code>initAnimations()</code> once from your entry module.
       </P>
-      <Note>
-        Placeholder - Vite quick-start is coming soon. Will cover vanilla Vite,
-        Vite + React/Vue/Svelte, and HMR notes.
-      </Note>
-
-      <H2>Usage - Vanilla Vite entry</H2>
+<H2>Usage - Vanilla Vite entry</H2>
       <Code>{`// main.js (Vite entry)
 import { initAnimations } from 'gclass-anims'
 

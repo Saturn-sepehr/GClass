@@ -11,12 +11,7 @@ export default function Page() {
         <code>initAnimations()</code> once after mount and let the MutationObserver
         pick up <code>.appear</code> / <code>.scroll</code> elements as they render.
       </P>
-      <Note>
-        Placeholder - React quick-start is coming soon. Will cover CRA, Vite +
-        React, and re-init on route change.
-      </Note>
-
-      <H2>Usage - Client component / SPA root</H2>
+<H2>Usage - Client component / SPA root</H2>
       <Code>{`import { useEffect } from 'react'
 import { initAnimations } from 'gclass-anims'
 

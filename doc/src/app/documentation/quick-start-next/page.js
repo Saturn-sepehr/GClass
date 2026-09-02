@@ -11,13 +11,7 @@ export default function Page() {
         Re-call <code>initAnimations()</code> on <code>pathname</code> changes
         because the root layout persists across route navigations.
       </P>
-      <Note>
-        Placeholder - Next.js quick-start is coming soon. Will cover App vs
-        Pages Router, SSR guards, and <code>.preserve</code> usage for the
-        header.
-      </Note>
-
-      <H2>Usage - App Router (recommended)</H2>
+<H2>Usage - App Router (recommended)</H2>
       <Code>{`// app/layout.js
 import AnimInit from '@/Shared/animInit'
 

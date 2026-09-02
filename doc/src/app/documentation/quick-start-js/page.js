@@ -11,12 +11,7 @@ export default function Page() {
         package, import <code>initAnimations</code> once the DOM is ready, then
         drive everything with class names - no per-element JS or config.
       </P>
-      <Note>
-        Placeholder - vanilla JS quick-start is coming soon. Full walkthrough,
-        CDN vs ESM examples, and runnable demos will live here.
-      </Note>
-
-      <H2>Usage</H2>
+<H2>Usage</H2>
       <Code>{`// ESM (bundler or <script type="module">)
 import { initAnimations } from 'gclass-anims'
 

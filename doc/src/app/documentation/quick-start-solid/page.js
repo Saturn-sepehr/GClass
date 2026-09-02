@@ -9,12 +9,7 @@ export default function Page() {
       <P>
         Solid has no VDOM — DOM nodes persist via fine-grained signals. Call{" "}
         <code>initAnimations()</code> in <code>onMount</code>. No <code>afterEach</code> needed unless you use <code>@solidjs/router</code> — then re-init on route or reuse the same watcher as Vue.
-      </P>
-      <Note>
-        Verified in <code>gclass-test-solidstart</code> (simplified to <code>vite + vite-plugin-solid</code> SPA — same reactivity as SolidStart 1 Vinxi without the <code>virtual:$vinxi/handler</code> scaffold). Tests <code>Listeners.js:145 isPreserved</code> with never-unmounted nodes.
-      </Note>
-
-      <H2>Usage - Solid component</H2>
+      </P><H2>Usage - Solid component</H2>
       <Code>{`import { onMount } from 'solid-js'
 import { initAnimations } from 'gclass-anims'
 
