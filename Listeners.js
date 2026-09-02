@@ -1,7 +1,7 @@
 import gsap from 'gsap'
-import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText, scrambleVars } from './Animations'
-import { customAnims } from './CustomAnims'
-import { defaults, normalize } from './Config'
+import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText, scrambleVars } from './Animations.js'
+import { customAnims } from './CustomAnims.js'
+import { defaults, normalize } from './Config.js'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
 
 // Prefix for SplitText text-reveal classes. Distinct from the raw `text-*`

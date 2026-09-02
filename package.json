@@ -1,6 +1,6 @@
 {
   "name": "gclass-anims",
-  "version": "1.0.0-beta.19",
+  "version": "1.0.0-beta.20",
   "description": "A Tailwind-style utility layer on top of GSAP. Framework-agnostic - works in vanilla JS, React, Vue, Svelte, or any bundler.",
   "type": "module",
   "main": "index.js",
@@ -34,7 +34,7 @@
     "framework-agnostic",
     "css-classes"
   ],
-  "license": "LGPL-3.0-only",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Saturn-sepehr/GClass.git",

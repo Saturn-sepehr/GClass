@@ -98,5 +98,5 @@ customAnims.push({
 
 ## License
 
-LGPL-3.0-only - except GSAP, which is used under the Webflow Standard No-Charge GSAP
+MIT - except GSAP, which is used under the Webflow Standard No-Charge GSAP
 License and is not bundled or redistributed. See `LICENSE`.

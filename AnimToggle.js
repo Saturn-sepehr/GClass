@@ -1,4 +1,4 @@
-  import initListeners from './Listeners'
+  import initListeners from './Listeners.js'
   import { defaults, animations } from './Config.js'
   import gsap from 'gsap'
 

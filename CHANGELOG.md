@@ -2,6 +2,14 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
+## [1.0.0-beta.20] - 2026-9-2
+- Fix ESM strict import: `AnimToggle.js` and `Listeners.js` now use `.js` extensions (`Remix`/`Qwik` Node ESM `Cannot find module` fix)
+- Fix `Lit` shadow DOM `works.txt` `no` → light DOM default (`createRenderRoot(){return this}`) + `initListeners(shadowRoot)` docs
+- Fix `SvelteKit` `ERESOLVE` (`@sveltejs/vite-plugin-svelte 4` → `5.1` for `vite@6`) + missing `src/app.html`
+- Fix `Qwik` `entry.ssr not found` → add `src/root.tsx`+`entry.ssr.tsx`+`tsconfig.json`
+- Fix `SolidStart` Vinxi `503` → simplified to `vite-plugin-solid` SPA (same fine-grained model)
+- Reverted license `LGPL-3.0-only` → `MIT` (anywhere GSAP is usable)
+
 ## [1.0.0-beta.19] - 2026-9-1
 - Fixed the SplitText animations formatting and removed Boot.js
 
