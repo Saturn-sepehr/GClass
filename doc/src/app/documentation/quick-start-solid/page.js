@@ -7,8 +7,8 @@ export default function Page() {
     <article>
       <H1>Quick start - Solid</H1>
       <P>
-        Solid has no VDOM — DOM nodes persist via fine-grained signals. Call{" "}
-        <code>initAnimations()</code> in <code>onMount</code>. No <code>afterEach</code> needed unless you use <code>@solidjs/router</code> — then re-init on route or reuse the same watcher as Vue.
+        Solid has no VDOM - DOM nodes persist via fine-grained signals. Call{" "}
+        <code>initAnimations()</code> in <code>onMount</code>. No <code>afterEach</code> needed unless you use <code>@solidjs/router</code> - then re-init on route or reuse the same watcher as Vue.
       </P><H2>Usage - Solid component</H2>
       <Code>{`import { onMount } from 'solid-js'
 import { initAnimations } from 'gclass-anims'

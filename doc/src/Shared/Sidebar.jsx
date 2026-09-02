@@ -50,6 +50,7 @@ const SECTIONS = [
       ["Magnet", "magnet"],
       ["css-* classes", "css-classes"],
       [".ease-N", "eases"],
+      ["Randomization", "randomize"],
     ],
   },
   {

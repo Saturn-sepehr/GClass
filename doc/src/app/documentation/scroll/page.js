@@ -54,6 +54,32 @@ export default function Page() {
         </Demo>
       </div>
 
+      <H2>Demo - .scroll-fade-bg - background scrubs</H2>
+      <P>
+        <code>.scroll-fade-bg</code> lerps <code>background-position</code> from <code>0% 0%</code> → <code>100% 100%</code> while the element traverses the viewport (<code>scrub: true</code>). Give it a background larger than the box to see the drift.
+      </P>
+      <div className="scroll-fade-bg flex min-h-[180px] items-center justify-center rounded-xl border border-slate-700" style={{ backgroundImage: "radial-gradient(circle at 0% 0%, rgba(34,211,238,0.5), transparent 55%), linear-gradient(135deg, #0f172a, #1e293b)", backgroundSize: "200% 200%" }}>
+        .scroll-fade-bg - scroll this into view
+      </div>
+      <Code>{`<div class="scroll-fade-bg" style="background: radial-gradient(circle, cyan, transparent) 0% 0% / 200% 200%">…</div>`}</Code>
+
+      <H2>Demo - .scroll-horizontal - pinned pan</H2>
+      <P>
+        <code>.scroll-horizontal</code> pins its section and pans the inner <code>.scroll-track</code> left as you scroll. The track must be wider than the viewport - <code>pin: true</code> + <code>scrub: 1</code> does the rest (<code>Listeners.js:851</code>).
+      </P>
+      <div className="scroll-horizontal my-6 h-[60vh] overflow-hidden rounded-xl border border-slate-700 bg-slate-900">
+        <div className="scroll-track flex h-full items-center gap-4 p-6" style={{ width: "200%" }}>
+          <Demo className="min-w-[45%] flex h-4/5 items-center justify-center bg-slate-800">panel 1 - scroll to pan →</Demo>
+          <Demo className="min-w-[45%] flex h-4/5 items-center justify-center bg-cyan-900/40">panel 2 - pinned while scrubbing</Demo>
+          <Demo className="min-w-[45%] flex h-4/5 items-center justify-center bg-slate-800">panel 3 - end of track</Demo>
+        </div>
+      </div>
+      <Code>{`<section class="scroll-horizontal" style="height:60vh; overflow:hidden">
+  <div class="scroll-track" style="display:flex; width:200%">
+    <div>panel 1</div><div>panel 2</div><div>panel 3</div>
+  </div>
+</section>`}</Code>
+
       <Note>
         Text elements are the exception: their scroll triggers are wired at
         init, so a re-inserted <code>.appear</code> text element animates via

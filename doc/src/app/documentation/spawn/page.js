@@ -55,6 +55,7 @@ export default function Page() {
           ["order", "Sequences all .order elements by DOM position"],
           ["reverse", "Flips the .order sequence"],
           ["delay", "Alias for priority-based delay without .order"],
+          ["preserve", "Freezes an already-wired element (and children) on re-init - new mounts under a preserved ancestor still animate (needs data-gsap-wired)"],
         ]}
       />
       <Code>{`<div class="appear scroll spawn-up time-2 ease-back order">…</div>

@@ -17,12 +17,14 @@ export default function Page() {
       </P>
 
       <H2>The loop pool</H2>
-      <div className="flex flex-row gap-10">
+      <div className="flex flex-row flex-wrap gap-4">
         <Demo className={BOX + " shake"}>shake</Demo>
         <Demo className={BOX + " bounce"}>bounce</Demo>
         <Demo className={BOX + " bell"}>bell</Demo>
         <Demo className={BOX + " pulse"}>pulse</Demo>
         <Demo className={BOX + " float"}>float</Demo>
+        <Demo className={BOX + " spin-cw"}>spin-cw</Demo>
+        <Demo className={BOX + " spin-ccw"}>spin-ccw</Demo>
       </div>
 
       <H2>Radiate</H2>

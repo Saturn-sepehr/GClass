@@ -7,14 +7,14 @@ export default function Page() {
     <article>
       <H1>Quick start - Astro</H1>
       <P>
-        Astro ships zero JS by default — an island without{" "}
+        Astro ships zero JS by default - an island without{" "}
         <code>client:*</code> never hydrates, so <code>initAnimations()</code>{" "}
         never runs. Add <code>client:load</code> (or <code>client:visible</code>) to
         any island that contains <code>.spawn-*</code>/<code>.scroll</code> classes and
         re-init on <code>astro:after-swap</code> for View Transitions.
       </P>
       <Note>
-        Without <code>client:load</code> the classes render but stay inert — expected.
+        Without <code>client:load</code> the classes render but stay inert - expected.
       </Note>
 <H2>Usage - Layout with View Transitions</H2>
       <Code>{`---
@@ -43,7 +43,7 @@ export default function Page() {
 import Counter from '../components/Counter.jsx'
 ---
 <Counter client:load />
-<!-- client:visible works too — animation starts when island scrolls into view -->`}</Code>
+<!-- client:visible works too - animation starts when island scrolls into view -->`}</Code>
 
       <H2>Gotcha - no client directive</H2>
       <P>

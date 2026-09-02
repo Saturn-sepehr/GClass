@@ -3,6 +3,7 @@ import Replay from "@/Shared/Replay";
 import { Demo } from "@/Shared/DocsUI";
 import DynamicDemo from "@/Shared/DynamicDemo";
 import LeaveDemo from "@/Shared/LeaveDemo";
+import FlipDemo from "@/Shared/FlipDemo";
 
 export const metadata = { title: "GClass - Dynamic elements" };
 
@@ -62,6 +63,27 @@ row.remove()   // slides back out, layout held by a spacer`}</Code>
       <Note>
         Combine with any spawn class - the leave animation is simply that
         spawn played in reverse from the element&apos;s captured state.
+      </Note>
+
+      <H2>.flip - FLIP layout morph</H2>
+      <P>
+        <code>.flip</code> is Vanilla FLIP: on insertion the engine captures the element&apos;s document-relative bounds (<code>flipPos</code>), then on the next layout change each <code>.flip</code> under the mutated scope slides from its old to new position (<code>gsap.fromTo x/y</code>). Great for reorders, filters, or masonry shuffles - no manual <code>Flip</code> plugin call needed.
+      </P>
+      <Demo>
+        <FlipDemo />
+      </Demo>
+      <Code>{`<div id="list" class="flex gap-3">
+  <div class="flip spawn-up">A</div>
+  <div class="flip spawn-up">B</div>
+  <div class="flip spawn-up">C</div>
+</div>
+
+<script>
+  // any DOM reorder triggers FLIP - MutationObserver in Listeners.js:272 handles it
+  list.appendChild(list.firstElementChild) // A → end, B and C slide to fill
+</script>`}</Code>
+      <Note>
+        Add <code>.flip</code> alongside any spawn (<code>flip spawn-up</code>). The engine guards re-entrancy (<code>flipping</code> WeakSet) and kills in-flight tweens so rapid shuffles don&apos;t compound.
       </Note>
     </article>
   );

@@ -5,11 +5,11 @@ export const metadata = { title: "GClass - Boot-up" };
 export default function Page() {
   return (
     <article>
-      <H1>.boot-up — Welcome screen</H1>
+      <H1>.boot-up - Welcome screen</H1>
       <P>
         Any HTML or JSX with <code>.boot-up</code> anywhere in the DOM becomes
         the welcome screen. No <code>Boot.html</code> fetch, no{" "}
-        <code>initBoot()</code> — just <code>initAnimations()</code> (
+        <code>initBoot()</code> - just <code>initAnimations()</code> (
         <code>AnimToggle.js:138</code>). On <strong>hard reload</strong> only,
         the engine pauses all DOM rendering except <code>.boot-up</code> and its
         children for <code>bootTime</code>, then removes the boot screen and
@@ -38,7 +38,7 @@ export default function App(){
       <H2>Tuneables</H2>
       <ClassRef
         rows={[
-          [".boot-up", "Any element with this class is the boot screen. Can be anywhere. Only one per page — multiple logs console.error and skips boot."],
+          [".boot-up", "Any element with this class is the boot screen. Can be anywhere. Only one per page - multiple logs console.error and skips boot."],
           ["boot-time-N", "Duration in seconds to show boot screen. Overwrites Config.js:74 defaults.bootTime (default 5). e.g. boot-time-2, boot-time-0.5. Max wins."],
           ["boot-end-<name>", "Exit animation in reverse before removing. <name> is a spawn sel without dot, e.g. boot-end-spawn-blur, boot-end-spawn-up. Plays from state via gsap.to. Skipped if absent."],
           ["boot-end-time-N", "Duration for the exit animation only. Falls back to boot-time-N or defaults.effectDuration."],
@@ -92,7 +92,7 @@ defaults.effectDuration = 1 // fallback for boot-end duration`}</Code>
 <div class="spawn-up">reveals after boot</div>`}</Code>
 
       <Note>
-        Animations inside <code>.boot-up</code> are fully playable — use any{" "}
+        Animations inside <code>.boot-up</code> are fully playable - use any{" "}
         <code>Config.js:77</code> spawn/loop classes (<code>spawn-up</code>,{" "}
         <code>spawn-blur</code>, <code>float</code> etc). They run via scoped{" "}
         <code>initListeners</code> while main DOM is hidden.

@@ -591,7 +591,7 @@ export function radiate (delay , target , amount , dur , ease , zIndex){
         tick = true
         requestAnimationFrame(() => { tick = false; applyRect() })
     }
-    // Don't animate detached targets — return inert tween
+    // Don't animate detached targets - return inert tween
     if (!target.isConnected) {
         return gsap.fromTo(clone, {}, { duration: 0 })
     }
@@ -609,7 +609,7 @@ export function radiate (delay , target , amount , dur , ease , zIndex){
         if (observer) observer.disconnect()
     }
     // If target is removed from DOM (React unmount, .remove(), SPA navigation),
-    // kill the tween and remove the clone — mirrors React useEffect cleanup
+    // kill the tween and remove the clone - mirrors React useEffect cleanup
     const observer = new MutationObserver(() => {
         if (!target.isConnected) {
             if (tween) tween.kill()

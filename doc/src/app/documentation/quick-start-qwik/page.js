@@ -7,7 +7,7 @@ export default function Page() {
     <article>
       <H1>Quick start - Qwik</H1>
       <P>
-        Qwik is resumable — no hydration replay. Use{" "}
+        Qwik is resumable - no hydration replay. Use{" "}
         <code>useVisibleTask$</code> (client only), not <code>useTask$</code> (runs on server before DOM is visible, <code>gsap.fromTo</code> gets no rect).
       </P><H2>Usage - Qwik City page</H2>
       <Code>{`import { component$, useVisibleTask$ } from '@builder.io/qwik'
@@ -22,7 +22,7 @@ export default component$(() => {
 
       <H2>Per-page re-init</H2>
       <P>
-        Qwik City does not replay root — each route component needs its own{" "}
+        Qwik City does not replay root - each route component needs its own{" "}
         <code>useVisibleTask$</code> re-init, same as SvelteKit <code>afterNavigate</code>.
       </P>
       <Code>{`// src/routes/about/index.tsx

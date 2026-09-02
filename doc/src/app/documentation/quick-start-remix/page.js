@@ -8,7 +8,7 @@ export default function Page() {
       <H1>Quick start - Remix</H1>
       <P>
         Remix (React Router 7) client navigation does not reload. Re-init on{" "}
-        <code>useLocation().pathname</code> change — same as Next App Router{" "}
+        <code>useLocation().pathname</code> change - same as Next App Router{" "}
         <code>usePathname</code> pattern in <code>Shared/animInit.js:6</code>, but{" "}
         <code>vite</code> via <code>@remix-run/dev vite:dev</code> (not Turbopack).
       </P><H2>Usage - Remix root</H2>
