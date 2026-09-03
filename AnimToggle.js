@@ -118,6 +118,57 @@ let bootTimeout = null
 let bootStyle = null
 let hasBooted = false // true after first hard-load boot, skips boot on SPA path changes (remains false until first boot, resets on hard reload)
 
+// Runtime config for gclassOpts — 0 = defaults (no throttle, default GSAP ticker)
+let currentThrottle = 0
+let currentFps = 0
+const configSubscribers = new Set()
+function getConfigSnapshot() { return { throttlePerFrame: currentThrottle, fps: currentFps } }
+function emitConfig() { configSubscribers.forEach(fn => fn(getConfigSnapshot())) }
+function applyFps(fps) {
+  const v = Number(fps) || 0
+  currentFps = v
+  if (v > 0) gsap.ticker.fps(v)
+  else gsap.ticker.fps(0) // 0 = remove cap, fallback to rAF (GSAP default)
+  emitConfig()
+}
+function normalizeGclassArgs(throttlePerFrame, fps) {
+  // support gclassOpts({throttlePerFrame, fps}) object overload
+  if (typeof throttlePerFrame === 'object' && throttlePerFrame !== null) {
+    fps = throttlePerFrame.fps
+    throttlePerFrame = throttlePerFrame.throttlePerFrame
+  }
+  const nextThrottle = throttlePerFrame == null ? 0 : Number(throttlePerFrame) || 0
+  const nextFps = fps == null ? 0 : Number(fps) || 0
+  return { nextThrottle, nextFps }
+}
+
+/**
+ * Change GClass runtime options on the fly without reload.
+ * gclassOpts(throttlePerFrame, fps) — both optional numbers.
+ * gclassOpts() or gclassOpts(undefined, undefined) resets to defaults (no throttle, default ticker).
+ * Also accepts gclassOpts({throttlePerFrame, fps}).
+ * Example low-end button: onClick={() => gclassOpts(1, 30)}
+ * Example reset: onClick={() => gclassOpts()} // 0, 60fps rAF
+ */
+export function gclassOpts(throttlePerFrame, fps) {
+  const { nextThrottle, nextFps } = normalizeGclassArgs(throttlePerFrame, fps)
+  currentThrottle = nextThrottle
+  applyFps(nextFps)
+  // re-wire observers with new throttle without full boot reload (if already running)
+  if (typeof window !== 'undefined' && cleanup && !bootTimeout) {
+    try { cleanup() } catch {}
+    cleanup = null
+    if (getEnabled()) cleanup = initListeners(document, currentThrottle)
+  }
+  // if boot is in progress we just store for next initAnimations; if not running, next initAnimations will use stored values
+  return getConfigSnapshot()
+}
+export function getGClassConfig() { return getConfigSnapshot() }
+export function subscribeGClassConfig(cb) {
+  configSubscribers.add(cb)
+  return () => configSubscribers.delete(cb)
+}
+
 const readBootTime = (els, fallback) => {
   let max = null
   for (const el of els) {
@@ -136,7 +187,28 @@ const readBootTime = (els, fallback) => {
 // Now also handles boot screen: any HTML/JSX with `.boot-up` anywhere is treated as the boot overlay.
 // No separate initBoot needed - just call initAnimations().
 // Boot stops all DOM rendering for defaults.bootTime (overwritten by boot-time-N class).
-export function initAnimations() {
+// throttlePerFrame / fps: forwarded to gclassOpts-equivalent runtime.
+//   initAnimations(throttlePerFrame, fps) — positional numbers, 0/undefined = defaults
+//   initAnimations({throttlePerFrame, fps}) — object overload
+//   initAnimations() — uses last gclassOpts values (defaults on first call)
+export function initAnimations(throttlePerFrame, fps) {
+  // gclassOpts-style normalization: (throttle, fps) positional or {throttlePerFrame, fps} object
+  // no args -> fallback to last gclassOpts values (defaults 0 = no throttle, default ticker)
+  let effThrottle = currentThrottle
+  let effFps = currentFps
+  if (throttlePerFrame !== undefined || fps !== undefined) {
+    const { nextThrottle, nextFps } = normalizeGclassArgs(throttlePerFrame, fps)
+    effThrottle = nextThrottle
+    effFps = nextFps
+    currentThrottle = effThrottle
+    currentFps = effFps
+    if (effFps > 0) gsap.ticker.fps(effFps)
+    else gsap.ticker.fps(0)
+    emitConfig()
+  } else {
+    if (effFps > 0) gsap.ticker.fps(effFps)
+    else gsap.ticker.fps(0)
+  }
   if (typeof window === 'undefined' || !getEnabled()) return
   // boot already in progress (first mount in StrictMode) - ignore second mount
   if (bootTimeout) {
@@ -194,7 +266,7 @@ export function initAnimations() {
     bootEls.forEach(el => { el.style.visibility = 'visible' })
 
     // animations inside boot screen must play while rest of DOM is hidden - init scoped to boot-up
-    bootCleanup = initListeners(bootEl)
+    bootCleanup = initListeners(bootEl, effThrottle)
 
     bootTimeout = setTimeout(() => {
       const bootEndCls = [...bootEl.classList].find(c => c.startsWith('boot-end-'))
@@ -205,7 +277,7 @@ export function initAnimations() {
         bootStyle?.remove(); bootStyle = null
         hideBootEls(bootEls)
         bootTimeout = null
-        cleanup = initListeners()
+        cleanup = initListeners(document, effThrottle)
         return
       }
       const name = bootEndCls.slice('boot-end-'.length) // e.g. spawn-blur
@@ -224,7 +296,7 @@ export function initAnimations() {
         bootStyle?.remove(); bootStyle = null
         hideBootEls(bootEls)
         bootTimeout = null
-        cleanup = initListeners()
+        cleanup = initListeners(document, effThrottle)
       }
 
       if (!cfg || !from) {
@@ -238,5 +310,5 @@ export function initAnimations() {
     return
   }
 
-  cleanup = initListeners()
+  cleanup = initListeners(document, effThrottle)
 }

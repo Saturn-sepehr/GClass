@@ -1,6 +1,6 @@
 {
   "name": "gclass-anims",
-  "version": "1.0.0-beta.20",
+  "version": "1.0.0-beta.21",
   "description": "A Tailwind-style utility layer on top of GSAP. Framework-agnostic - works in vanilla JS, React, Vue, Svelte, or any bundler.",
   "type": "module",
   "main": "index.js",

@@ -4,8 +4,28 @@
 
 // --- AnimToggle ------------------------------------------------------------
 
-/** Boots the GSAP animation system (idempotent). */
-export function initAnimations(): void
+export interface GClassConfig {
+  throttlePerFrame: number
+  fps: number
+}
+
+/**
+ * Boots the GSAP animation system (idempotent).
+ * @param throttlePerFrame - number of observer handlers allowed per rAF frame (0 = no throttling, default).
+ *   Also accepts initAnimations({throttlePerFrame, fps}) object overload.
+ * @param fps - GSAP ticker fps cap (0 = default rAF, e.g. 30 for low-end). 0/undefined = no cap.
+ */
+export function initAnimations(throttlePerFrame?: number | GClassConfig, fps?: number): void
+/**
+ * Change GClass runtime options on the fly without reload.
+ * gclassOpts(throttlePerFrame, fps) — both optional numbers, missing -> defaults (0).
+ * gclassOpts() resets to defaults (no throttle, default ticker).
+ * Also accepts gclassOpts({throttlePerFrame, fps}).
+ * Example low-end button: onClick={() => gclassOpts(1, 30)}
+ */
+export function gclassOpts(throttlePerFrame?: number | GClassConfig, fps?: number): GClassConfig
+export function getGClassConfig(): GClassConfig
+export function subscribeGClassConfig(cb: (cfg: GClassConfig) => void): () => void
 /** Toggle animations on/off and reload the page. */
 export function toggleAnimations(): void
 /** Force animations off (wins over any stored preference) and reload. */
@@ -28,8 +48,12 @@ export function registerComplete(name: string, fn: CompleteHandler): CompleteHan
  * Boot the engine directly, bypassing AnimToggle. Returns a teardown function
  * that removes all listeners/observers/tweens created by this run.
  * Pass a root to scope to that subtree (used for .boot-up).
+ * @param root - scope root (Document or HTMLElement)
+ * @param throttlePerFrame - number of observer handlers allowed per rAF frame.
+ *   0/undefined = no throttling (default). 1 = 1 observer per frame round-robin.
+ *   Overload: initListeners(throttlePerFrame) is also supported (root defaults to document).
  */
-export default function initListeners(root?: Document | HTMLElement): () => void
+export default function initListeners(root?: Document | HTMLElement | number, throttlePerFrame?: number): () => void
 
 // --- onComplete config -----------------------------------------------------
 

@@ -8,9 +8,7 @@ export default function Page() {
       <H1>.boot-up - Welcome screen</H1>
       <P>
         Any HTML or JSX with <code>.boot-up</code> anywhere in the DOM becomes
-        the welcome screen. No <code>Boot.html</code> fetch, no{" "}
-        <code>initBoot()</code> - just <code>initAnimations()</code> (
-        <code>AnimToggle.js:138</code>). On <strong>hard reload</strong> only,
+        the welcome screen. On <strong>hard reload</strong> only,
         the engine pauses all DOM rendering except <code>.boot-up</code> and its
         children for <code>bootTime</code>, then removes the boot screen and
         boots the main animations. SPA path changes skip the boot.

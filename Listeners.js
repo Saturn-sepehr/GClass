@@ -93,7 +93,13 @@ const invokePlay = (config, el, delay, dur, ease) => {
     }
 }
 
-export default function initListeners(root = document) {
+export default function initListeners(root = document, throttlePerFrame) {
+    // overload: initListeners(1) -> throttle only, root defaults to document
+    if (typeof root === 'number') {
+        throttlePerFrame = root
+        root = document
+    }
+    throttlePerFrame = Number(throttlePerFrame) || 0 // 0 = no throttling (default)
     gsap.registerPlugin(TextPlugin, ScrollTrigger, SplitText)
 
     // helper to scope queries to root (for boot screen: only boot-up subtree animates during boot)
@@ -1539,38 +1545,28 @@ export default function initListeners(root = document) {
         // stops the observer<->morph feedback loop.
         let flipRoots = new Set()
         let flipPendingRaf = null
-        const flipObserver = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.type !== "childList") continue
-                const target = mutation.target
-                if (target.nodeType !== 1) continue
-                flipRoots.add(target)
-            }
-            if (!flipPendingRaf) {
-                flipPendingRaf = requestAnimationFrame(() => {
-                    flipPendingRaf = null
-                    if (!flipRoots.size) return
-                    // A single frame can register several scopes for the SAME
-                    // element: removing a `.leave` node re-attaches a fixed ghost
-                    // to <body>, which adds `body` as a second scope alongside the
-                    // node's former parent. Running animateFlip per scope re-enters
-                    // playFlip on the same element, killing the in-flight tween and
-                    // clearing its transform - snapping the element into place.
-                    // Dedupe across scopes so each element flips exactly once.
-                    const toFlip = new Set()
-                    flipRoots.forEach((scope) => {
-                        if (!scope) return
-                        gsap.utils.toArray(scope.querySelectorAll?.(".flip") || [])
-                            .forEach((el) => { if (el.isConnected) toFlip.add(el) })
-                    })
-                    toFlip.forEach(playFlip)
-                    // Refresh baselines for any .flip that settled this frame.
-                    gsap.utils.toArray(document.body.querySelectorAll?.(".flip") || []).forEach(captureFlip)
-                    flipRoots = new Set()
-                })
-            }
-        })
-        flipObserver.observe(document.body, { childList: true, subtree: true })
+        const flushFlipRoots = () => {
+            if (!flipRoots.size) return
+            // A single frame can register several scopes for the SAME
+            // element: removing a `.leave` node re-attaches a fixed ghost
+            // to <body>, which adds `body` as a second scope alongside the
+            // node's former parent. Running animateFlip per scope re-enters
+            // playFlip on the same element, killing the in-flight tween and
+            // clearing its transform - snapping the element into place.
+            // Dedupe across scopes so each element flips exactly once.
+            const toFlip = new Set()
+            flipRoots.forEach((scope) => {
+                if (!scope) return
+                gsap.utils.toArray(scope.querySelectorAll?.(".flip") || [])
+                    .forEach((el) => { if (el.isConnected) toFlip.add(el) })
+            })
+            toFlip.forEach(playFlip)
+            // Refresh baselines for any .flip that settled this frame.
+            gsap.utils.toArray(document.body.querySelectorAll?.(".flip") || []).forEach(captureFlip)
+            flipRoots = new Set()
+        }
+        let flipObserver = null
+        // flipObserver is created conditionally below (hub vs direct)
 
 
 
@@ -1609,7 +1605,23 @@ export default function initListeners(root = document) {
             }
         }
 
-        const appearObserver = new MutationObserver((mutations) => {
+        let appearObserver = null
+        let leaveObserver = null
+        let hubObserver = null
+        let hubRaf = null
+        let hubQueue = []
+        let hubCurrentBatch = null
+        let hubCursor = 0
+
+        const handleFlipBatch = (mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.type !== "childList") continue
+                const target = mutation.target
+                if (target.nodeType !== 1) continue
+                flipRoots.add(target)
+            }
+        }
+        const handleAppearBatch = (mutations) => {
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType !== 1) return
@@ -1639,20 +1651,77 @@ export default function initListeners(root = document) {
                     if (pinned) ScrollTrigger.refresh()
                 })
             })
-        })
-        appearObserver.observe(document.body, { childList: true, subtree: true })
-
-        // Capture any .leave elements already present so they can exit later
-        qAll(".leave").forEach(captureLeave)
-
-        const leaveObserver = new MutationObserver((mutations) => {
+        }
+        const handleLeaveBatch = (mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type !== "childList") return
                 mutation.addedNodes.forEach((n) => collectLeave(n).forEach(captureLeave))
                 mutation.removedNodes.forEach((n) => collectLeave(n).forEach(playLeave))
             })
-        })
-        leaveObserver.observe(document.body, { childList: true, subtree: true })
+        }
+        const hubHandlers = [handleFlipBatch, handleAppearBatch, handleLeaveBatch]
+        const hubDrain = () => {
+            hubRaf = null
+            if (!hubCurrentBatch) {
+                if (!hubQueue.length) return
+                hubCurrentBatch = hubQueue.splice(0, hubQueue.length)
+                hubCursor = 0
+            }
+            const end = Math.min(hubCursor + throttlePerFrame, hubHandlers.length)
+            for (let i = hubCursor; i < end; i++) {
+                hubHandlers[i](hubCurrentBatch)
+                if (hubHandlers[i] === handleFlipBatch) flushFlipRoots()
+            }
+            hubCursor = end
+            if (hubCursor < hubHandlers.length) {
+                hubRaf = requestAnimationFrame(hubDrain)
+            } else {
+                hubCurrentBatch = null
+                hubCursor = 0
+                if (hubQueue.length) hubRaf = requestAnimationFrame(hubDrain)
+            }
+        }
+        const scheduleHub = () => {
+            if (hubRaf) return
+            hubRaf = requestAnimationFrame(hubDrain)
+        }
+
+        if (throttlePerFrame > 0) {
+            hubObserver = new MutationObserver((mutations) => {
+                hubQueue.push(...mutations)
+                scheduleHub()
+            })
+            hubObserver.observe(document.body, { childList: true, subtree: true })
+        } else {
+            flipObserver = new MutationObserver((mutations) => {
+                handleFlipBatch(mutations)
+                if (!flipPendingRaf) {
+                    flipPendingRaf = requestAnimationFrame(() => {
+                        flipPendingRaf = null
+                        flushFlipRoots()
+                    })
+                }
+            })
+            flipObserver.observe(document.body, { childList: true, subtree: true })
+
+            appearObserver = new MutationObserver((mutations) => {
+                handleAppearBatch(mutations)
+            })
+            appearObserver.observe(document.body, { childList: true, subtree: true })
+
+            // Capture any .leave elements already present so they can exit later
+            qAll(".leave").forEach(captureLeave)
+
+            leaveObserver = new MutationObserver((mutations) => {
+                handleLeaveBatch(mutations)
+            })
+            leaveObserver.observe(document.body, { childList: true, subtree: true })
+            // leave capture for throttled path is done below after branch
+        }
+        if (throttlePerFrame > 0) {
+            // capture for throttled path (was inside else branch above for non-throttled)
+            qAll(".leave").forEach(captureLeave)
+        }
 
         // Keep the captured position fresh (throttled to one pass per frame)
         let positionTick = false
@@ -1671,9 +1740,12 @@ export default function initListeners(root = document) {
         window.addEventListener("resize", refreshLeavePositions, { passive: true })
 
     return () => {
-        appearObserver.disconnect()
-        leaveObserver.disconnect()
-        flipObserver.disconnect()
+        appearObserver?.disconnect()
+        leaveObserver?.disconnect()
+        flipObserver?.disconnect()
+        if (hubObserver) hubObserver.disconnect()
+        if (hubRaf) cancelAnimationFrame(hubRaf)
+        if (flipPendingRaf) cancelAnimationFrame(flipPendingRaf)
         window.removeEventListener("scroll", refreshLeavePositions)
         window.removeEventListener("resize", refreshLeavePositions)
         window.removeEventListener("load", ScrollTrigger.refresh)

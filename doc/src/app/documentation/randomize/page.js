@@ -17,7 +17,7 @@ export default function Page() {
       <H2>Demo - same spawn, different roll every Replay</H2>
       <P>Press Replay - the three cards below share <code>.spawn-up</code> but each has a different <code>.randomize-rotation-[-30]-[30]</code> and <code>.randomize-x-[-40]-[40]</code> roll, so their entry pose is never identical.</P>
       <Replay>
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3">
           <Demo className={BOX + " appear spawn-up randomize-rotation-[-30]-[30] randomize-x-[-40]-[40]"}>roll A</Demo>
           <Demo className={BOX + " appear spawn-up randomize-rotation-[-30]-[30] randomize-x-[-40]-[40]"}>roll B</Demo>
           <Demo className={BOX + " appear spawn-up randomize-rotation-[-30]-[30] randomize-x-[-40]-[40]"}>roll C</Demo>

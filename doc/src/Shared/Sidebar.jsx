@@ -51,6 +51,7 @@ const SECTIONS = [
       ["css-* classes", "css-classes"],
       [".ease-N", "eases"],
       ["Randomization", "randomize"],
+      ["Optimization", "optimization"],
     ],
   },
   {

@@ -1,4 +1,4 @@
-export { initAnimations, toggleAnimations, enableReducedMotion, disableReducedMotion } from './AnimToggle.js'
+export { initAnimations, gclassOpts, getGClassConfig, subscribeGClassConfig, toggleAnimations, enableReducedMotion, disableReducedMotion } from './AnimToggle.js'
 export { default as initListeners, registerComplete } from './Listeners.js'
 export { customAnims } from './CustomAnims.js'
 export { defaults, animations, normalize } from './Config.js'
