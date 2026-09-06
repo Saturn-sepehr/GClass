@@ -1,19 +1,22 @@
 {
   "name": "gclass-anims",
-  "version": "1.0.0-beta.21",
+  "version": "1.0.0-beta.22.1",
   "description": "A Tailwind-style utility layer on top of GSAP. Framework-agnostic - works in vanilla JS, React, Vue, Svelte, or any bundler.",
   "type": "module",
-  "main": "index.js",
-  "module": "index.js",
+  "main": "./dist/gclass.cjs",
+  "module": "./dist/gclass.esm.js",
   "types": "index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "import": "./index.js",
-      "default": "./index.js"
+      "import": "./dist/gclass.esm.js",
+      "require": "./dist/gclass.cjs",
+      "default": "./dist/gclass.esm.js"
     }
   },
   "files": [
+    "dist/",
     "index.js",
     "index.d.ts",
     "AnimToggle.js",
@@ -25,6 +28,10 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "scripts": {
+    "build": "vite build --config vite.lib.config.js",
+    "prepublishOnly": "npm run build"
+  },
   "keywords": [
     "gsap",
     "animation",

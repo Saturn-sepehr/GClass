@@ -12,6 +12,8 @@ const SECTIONS = [
       ["Installation", "installation"],
       ["Quick start", "quick-start"],
       ["Toggle & reduced motion", "toggle-reduced-motion"],
+            ["Optimization", "optimization"],
+            ["Responsive design", "responsive-design"],
     ],
   },
   {
@@ -51,7 +53,7 @@ const SECTIONS = [
       ["css-* classes", "css-classes"],
       [".ease-N", "eases"],
       ["Randomization", "randomize"],
-      ["Optimization", "optimization"],
+
     ],
   },
   {

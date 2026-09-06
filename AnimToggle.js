@@ -1,6 +1,6 @@
   import initListeners from './Listeners.js'
   import { defaults, animations } from './Config.js'
-  import gsap from 'gsap'
+  import { gsap } from 'gsap'
 
 // localStorage key controlling whether the GSAP animation system is mounted.
 const STORAGE_KEY = 'gclass-animations-enabled'

@@ -1,4 +1,4 @@
-import gsap from 'gsap'
+import { gsap } from 'gsap'
 import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText, scrambleVars } from './Animations.js'
 import { customAnims } from './CustomAnims.js'
 import { defaults, normalize } from './Config.js'
@@ -12,7 +12,79 @@ const TEXT_PREFIX_LEN = TEXT_PREFIX.length
 // The engine is fully config-driven. All animation definitions live in
 // Config.js; here we just normalise them into the two internal views the
 // machinery consumes (spawn/entrance + loop) plus the raw `all` list.
-const { all: animAll, spawnConfigs, loopConfigs } = normalize(customAnims)
+// NOTE: normalized inside initListeners per-call (see beta.22) so runtime
+// customAnims.push() before next init is picked up.
+
+// --- Breakpoint support (non-conflicting with Tailwind/Bootstrap) -----------
+// defaults.breakpoints = {xs:475, s:640, m:768, l:1024, xl:1280}  -> min-width
+// Single-letter s/m/l avoids collision with Tailwind's sm/md/lg. Usage:
+//   <div class="spawn-up"> always
+//   <div class="m:spawn-up"> from 768px up
+//   <div class="l:spawn-up"> from 1024px up
+//   <div class="xs:spawn-up"> from 475px up
+// Colon is valid in classList (class="m:spawn-up") and checked via
+// classList.contains - never via unescaped querySelector (":pseudo" would break).
+const bpEntries = Object.entries(defaults.breakpoints || {}).sort((a, b) => a[1] - b[1])
+const bpNames = bpEntries.map(([k]) => k)
+const bpMap = Object.fromEntries(bpEntries)
+const bpPrefixRE = bpNames.length ? new RegExp(`^(${bpNames.join('|')}):(.+)$`) : /^$^/
+const isBreakpointActive = (bp) => {
+    if (!bp) return true
+    const px = bpMap[bp]
+    if (px == null) return true
+    if (typeof window === 'undefined' || !window.matchMedia) return true
+    return window.matchMedia(`(min-width: ${px}px)`).matches
+}
+const mqForBp = (bp) => `(min-width: ${bpMap[bp]}px)`
+// Does el carry `bp:base` and is that bp currently active? Also handles base without prefix.
+const elementMatchesSel = (el, sel) => {
+    const base = sel.slice(1) // ".spawn-up" -> "spawn-up"
+    if (el.classList.contains(base)) return true
+    for (const bp of bpNames) {
+        if (el.classList.contains(`${bp}:${base}`) && isBreakpointActive(bp)) return true
+    }
+    return false
+}
+const hasGClass = (el, name) => {
+    if (el.classList.contains(name)) return true
+    for (const bp of bpNames) if (el.classList.contains(`${bp}:${name}`) && isBreakpointActive(bp)) return true
+    return false
+}
+// If el has ANY bp:* class, it is breakpoint-gated. When gated, require at least one active variant.
+const isElBreakpointActive = (el) => {
+    let hasBp = false
+    for (const c of el.classList) {
+        const m = c.match(bpPrefixRE)
+        if (!m) continue
+        hasBp = true
+        if (isBreakpointActive(m[1])) return true
+    }
+    return !hasBp // no bp prefix -> always active
+}
+// Collect all elements matching sel OR its bp variants that are currently active.
+// Uses manual classList scan instead of querySelector(".m\\:spawn-up") to avoid escaping issues.
+const qAllBp = (sel, qAll) => {
+    const base = sel.slice(1)
+    const all = qAll("body *")
+    return all.filter(el => elementMatchesSel(el, sel) || (() => {
+        // also handle spawn-text-* where TEXT_PREFIX is retained: sel=".spawn-text-spawn-up" -> base="spawn-text-spawn-up"
+        // already covered by elementMatchesSel
+        return false
+    })())
+}
+// For generic qAll(sel) calls that should be breakpoint-aware, use this wrapper.
+// Preserves DOM order (critical for .order stagger) and respects root scoping (boot screen).
+const wrapQAll = (qAll) => (sel) => {
+    if (sel === "body *") return qAll(sel)
+    const parts = sel.split(',').map(s => s.trim()).filter(Boolean)
+    // Filter all candidates in DOM order, matching base or active bp: variant via elementMatchesSel
+    // This keeps .order sequence top-to-bottom instead of grouping by sel type.
+    return qAll("body *").filter(el => parts.some(p => {
+        // p is like ".spawn-up" or ".spawn-text-spawn-up"
+        // elementMatchesSel handles both base and bp:base when active
+        try { return elementMatchesSel(el, p) } catch { return false }
+    }))
+}
 
 // --- Named onComplete handler registry -------------------------------------
 // `on-<kind>-complete-<name>` classes resolve `<name>` to a function here
@@ -101,6 +173,8 @@ export default function initListeners(root = document, throttlePerFrame) {
     }
     throttlePerFrame = Number(throttlePerFrame) || 0 // 0 = no throttling (default)
     gsap.registerPlugin(TextPlugin, ScrollTrigger, SplitText)
+    // Re-normalize per init so runtime customAnims.push() is picked up (beta.22)
+    const { all: animAll, spawnConfigs, loopConfigs } = normalize(customAnims)
 
     // helper to scope queries to root (for boot screen: only boot-up subtree animates during boot)
     const qAll = (sel) => {
@@ -113,6 +187,44 @@ export default function initListeners(root = document, throttlePerFrame) {
             return els
         } catch { return gsap.utils.toArray(sel) }
     }
+    // breakpoint-aware helpers (s/m/l/xl) - s/m/l avoids Tailwind sm/md/lg collision
+    const mm = gsap.matchMedia()
+    const breakpointContexts = [] // track mm contexts for teardown
+    const getGateBpForSel = (el, sel) => {
+        const base = sel.slice(1)
+        for (const bp of bpNames) if (el.classList.contains(`${bp}:${base}`)) return bp
+        return null
+    }
+    const getElGateBp = (el) => {
+        for (const c of el.classList) {
+            const m = c.match(bpPrefixRE)
+            if (m) return m[1]
+        }
+        return null
+    }
+    const runWithBreakpoint = (el, fn) => {
+        const bp = getElGateBp(el)
+        if (!bp) { fn(); return }
+        const mq = mqForBp(bp)
+        const ret = mm.add(mq, fn)
+        breakpointContexts.push(ret)
+    }
+    const runWithBreakpointForSel = (el, sel, fn) => {
+        const bp = getGateBpForSel(el, sel)
+        if (!bp) { fn(); return }
+        const mq = mqForBp(bp)
+        const ret = mm.add(mq, fn)
+        breakpointContexts.push(ret)
+    }
+    // All elements that have base OR any bp:base (regardless of active) - for mm registration
+    const qAllAllVariants = (sel) => {
+        const base = sel.slice(1)
+        // include base + any variant
+        const all = qAll("body *")
+        return all.filter(el => el.classList.contains(base) || bpNames.some(bp => el.classList.contains(`${bp}:${base}`)))
+    }
+    // Active-only view (used for order calculations that must reflect current viewport)
+    const qAllActive = wrapQAll(qAll)
 
     const registeredListeners = []
         const onCompleteTweens = []
@@ -120,13 +232,41 @@ export default function initListeners(root = document, throttlePerFrame) {
             el.addEventListener(type, fn)
             registeredListeners.push({ el, type, fn })
         }
+        // --- Breakpoint-aware modifiers (amount-N, time-N, priority-N, etc.) --------
+        // Supports `m:amount-20`, `l:time-2`, `xl:ease-bounce` etc.
+        // Mobile-first: larger active breakpoint wins over smaller/base.
+        // e.g. class="amount-10 m:amount-20 l:amount-30" -> 10@xs/s, 20@m, 30@l/xl
+        const getActivePrefixedClass = (el, prefix) => {
+            let best = null
+            let bestPx = -2
+            for (const c of el.classList) {
+                let bp = null
+                let core = c
+                const m = c.match(bpPrefixRE)
+                if (m) { bp = m[1]; core = m[2] }
+                if (!core.startsWith(prefix)) continue
+                if (bp && !isBreakpointActive(bp)) continue
+                const px = bp ? bpMap[bp] : -1 // base = -1, xs=475 etc.
+                if (px > bestPx) { best = c; bestPx = px; }
+            }
+            return best
+        }
+        const extractNumber = (cls, prefix) => {
+            const idx = cls.indexOf(prefix)
+            if (idx === -1) return NaN
+            return Number(cls.slice(idx + prefix.length))
+        }
         const readClassNumber = (el, prefix, fallback) => {
-            const match = [...el.classList].find(c => c.startsWith(prefix))
-            return match ? Number(match.slice(prefix.length)) : fallback
+            const match = getActivePrefixedClass(el, prefix)
+            if (!match) return fallback
+            const n = extractNumber(match, prefix)
+            return Number.isNaN(n) ? fallback : n
         }
         const getEase = (el) => {
-            const match = [...el.classList].find(c => c.startsWith("ease-"))
-            return match ? match.split("-")[1] : defaults.ease
+            const match = getActivePrefixedClass(el, "ease-")
+            if (!match) return defaults.ease
+            const idx = match.indexOf("ease-")
+            return match.slice(idx + "ease-".length) || defaults.ease
         }
 
         // Reduced-motion support. `.reduced` is a per-element opt-out: when the
@@ -134,7 +274,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // completely un-animated (its spawn/loop/click/scroll/setup all skip).
         const reducedMotion = () =>
             (typeof window !== "undefined" && window.matchMedia?.(`(prefers-reduced-motion: reduce)`)?.matches) ?? false
-        const isReduced = (el) => reducedMotion() && el.classList.contains("reduced")
+        const isReduced = (el) => reducedMotion() && hasGClass(el, "reduced")
 
         // `.preserve` keeps an already-rendered element (e.g. one that persists
         // in a shared layout across route changes) from being re-animated when
@@ -177,11 +317,20 @@ export default function initListeners(root = document, throttlePerFrame) {
         // Leave animations derive from spawnConfigs so adding an entry here
         // automatically enables its leave/exit reverse too (single source of truth).
         const findSpawn = (el) => {
-            const direct = spawnConfigs.find(({ sel }) => el.matches?.(sel))
+            const direct = spawnConfigs.find(({ sel }) => elementMatchesSel(el, sel))
             if (direct) return direct
-            const cls = [...el.classList].find(c => c.startsWith(TEXT_PREFIX))
-            if (!cls) return null
-            return spawnConfigs.find(({ sel }) => sel === "." + cls.slice(TEXT_PREFIX_LEN))
+            // handle TEXT_PREFIX with optional bp: prefix (e.g. "m:spawn-text-spawn-up")
+            for (const c of el.classList) {
+                let base = c
+                let bp = null
+                const m = c.match(bpPrefixRE)
+                if (m) { bp = m[1]; base = m[2] }
+                if (!base.startsWith(TEXT_PREFIX)) continue
+                if (bp && !isBreakpointActive(bp)) continue
+                const found = spawnConfigs.find(({ sel }) => sel === "." + base.slice(TEXT_PREFIX_LEN))
+                if (found) return found
+            }
+            return null
         }
 
         const isGhost = (el) => el?.dataset?.gsapGhost === "1"
@@ -196,7 +345,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         const leaveStates = new WeakMap()
 
         const captureLeave = (node) => {
-            if (!node.classList?.contains("leave")) return
+            if (!hasGClass(node, "leave")) return
             const config = findSpawn(node)
             if (!config || config.typewriter) return
             leaveStates.set(node, {
@@ -227,7 +376,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // Capture the element's first (resting) bounds. A later layout change
         // morphs from this snapshot to the live position - a vanilla FLIP.
         const captureFlip = (node) => {
-            if (!node.classList?.contains("flip")) return
+            if (!hasGClass(node, "flip")) return
             const config = findSpawn(node)
             if (!config || config.typewriter) return
             if (flipping.has(node)) return
@@ -350,8 +499,14 @@ export default function initListeners(root = document, throttlePerFrame) {
 
         const collectLeave = (node) => {
             if (!node || node.nodeType !== 1) return []
-            if (node.classList?.contains("leave")) return [node]
-            return gsap.utils.toArray(node.querySelectorAll?.(".leave"))
+            if (node.classList && hasGClass(node, "leave")) return [node]
+            // also consider bp:leave variants - fallback to manual filter
+            const found = gsap.utils.toArray(node.querySelectorAll?.(".leave") || [])
+            // add bp:leave matches
+            qAll("body *").filter(el => hasGClass(el, "leave") && node.contains?.(el) && !found.includes(el)).forEach(el => found.push(el))
+            // check for bp:leave on node itself via manual scan if not in found
+            if (hasGClass(node, "leave") && !found.includes(node)) found.unshift(node)
+            return found
         }
 
         // Refresh the cached rect to the element's RESTING position (after its
@@ -376,14 +531,14 @@ export default function initListeners(root = document, throttlePerFrame) {
             spawnConfigs.map(({ sel }) => "." + TEXT_PREFIX + sel.slice(1)).join(",")
 
         const getOrderDelay = (el, priority) => {
-            const samepri = qAll(orderSelector())
+            const samepri = qAllActive(orderSelector())
                 .filter((e) => {
-                    if (!e.classList.contains("order")) return false
+                    if (!hasGClass(e, "order")) return false
                     const match = [...e.classList].find(p => p.startsWith("priority-"))
                     return (match ? Number(match.split("-")[1]) : 0) === priority
                 })
             let order = samepri.indexOf(el)
-            if (el.classList.contains("reverse")) {
+            if (hasGClass(el, "reverse")) {
                 order = samepri.length - 1 - order
             }
             return order / defaults.orderDivide
@@ -392,7 +547,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         const readTiming = (el) => {
             const priority = readClassNumber(el, "priority-", 0)
             return {
-                delay: el.classList.contains("order")
+                delay: hasGClass(el, "order")
                     ? getOrderDelay(el, priority)
                     : priority * defaults.spawnDelayMultiplier,
                 duration: readClassNumber(el, "time-", 1),
@@ -465,9 +620,9 @@ export default function initListeners(root = document, throttlePerFrame) {
         // default). Default (no class) is per-WORD: far fewer split nodes, so
         // the per-part spawn is much cheaper to animate and paint.
         const getGranularity = (el) => {
-            if (el.classList.contains("lines")) return "lines"
-            if (el.classList.contains("words")) return "words"
-            if (el.classList.contains("letter")) return "chars"
+            if (hasGClass(el, "lines")) return "lines"
+            if (hasGClass(el, "words")) return "words"
+            if (hasGClass(el, "letter")) return "chars"
             return "words"
         }
         // Cursive RTL scripts (Arabic/Persian) render each letter as a distinct
@@ -673,7 +828,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // finishes. Unless the author opts out with `.no-revert`, this frees the
         // hundreds of per-letter elements so the browser stops reflowing them.
         const revertSplit = (el) => {
-            if (el.classList.contains("no-revert")) return
+            if (hasGClass(el, "no-revert")) return
             const s = splitCache.get(el)
             if (!s) return
             splitCache.delete(el)
@@ -722,7 +877,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             return gsap.fromTo(parts, effFrom, {
                 ...computeTo(effFrom), ease, duration, delay, stagger,
                 onComplete: () => {
-                    if (el.classList.contains("leave")) refreshLeaveRect(el)
+                    if (hasGClass(el, "leave")) refreshLeaveRect(el)
                     revertSplit(el)
                     fireOnComplete(el, "spawn")
                 },
@@ -758,7 +913,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // classes are present (N = how many % into view to engage, and how far
         // out of view to release), else the full `top top` -> `bottom bottom`.
         const setupPin = (el) => {
-            if (!el.classList.contains("pin") || el.dataset.gsapPinned) return
+            if (!hasGClass(el, "pin") || el.dataset.gsapPinned) return
             const clamp = (n) => Math.min(100, Math.max(0, n))
             const startClass = readClassNumber(el, "progress-start-", null)
             const endClass = readClassNumber(el, "progress-end-", null)
@@ -780,7 +935,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // created before any scroll/scroll-progress trigger measures its position.
         // Setting them up here (before the trigger pass below) keeps offsets correct
         // and lets the single ScrollTrigger.refresh() at the end reconcile layout.
-        qAll(".pin").forEach(setupPin)
+        qAllAllVariants(".pin").forEach(el => runWithBreakpointForSel(el, ".pin", () => setupPin(el)))
 
         // Scroll-driven extras - class-driven ScrollTrigger behaviours that don't
         // fit the spawn/loop machinery (no `play`/`build`), handled like `.pin`:
@@ -803,9 +958,9 @@ export default function initListeners(root = document, throttlePerFrame) {
             const cls = [...el.classList]
             const clamp = (n) => Math.min(100, Math.max(0, n))
 
-            const parallaxCls = cls.find((c) => c.startsWith("parallax-"))
+            const parallaxCls = getActivePrefixedClass(el, "parallax-")
             if (parallaxCls) {
-                const factor = parseFloat(parallaxCls.slice("parallax-".length)) || 1
+                const factor = parseFloat(parallaxCls.slice(parallaxCls.indexOf("parallax-") + "parallax-".length)) || 1
                 if (factor === 1) return
                 const amt = (factor - 1) * 50
                 const t = gsap.fromTo(el,
@@ -819,13 +974,13 @@ export default function initListeners(root = document, throttlePerFrame) {
                 return
             }
 
-            if (el.classList.contains("progress-bar") || el.classList.contains("scroll-fill")) {
+            if (hasGClass(el, "progress-bar") || hasGClass(el, "scroll-fill")) {
                 const startClass = readClassNumber(el, "progress-start-", null)
                 const endClass = readClassNumber(el, "progress-end-", null)
                 // `.progress-reverse` runs the fill in reverse (full -> empty).
                 // GSAP's ScrollTrigger has no `reversed` config; swap the from/to
                 // so the scrub maps in the opposite direction instead.
-                const reverse = el.classList.contains("progress-reverse")
+                const reverse = hasGClass(el, "progress-reverse")
                 const t = gsap.fromTo(el,
                     { scaleX: reverse ? 1 : 0 },
                     {
@@ -842,7 +997,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 return
             }
 
-            if (el.classList.contains("scroll-fade-bg")) {
+            if (hasGClass(el, "scroll-fade-bg")) {
                 const t = gsap.fromTo(el,
                     { backgroundPosition: "0% 0%" },
                     {
@@ -854,7 +1009,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 return
             }
 
-            if (el.classList.contains("scroll-horizontal")) {
+            if (hasGClass(el, "scroll-horizontal")) {
                 const track = el.querySelector(".scroll-track")
                 if (!track) return
                 const getAmount = () => track.scrollWidth - el.clientWidth
@@ -873,7 +1028,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 scrollTriggers.push(t.scrollTrigger)
             }
         }
-        qAll('[class^="parallax-"],[class*=" parallax-"], .progress-bar, .scroll-fill, .scroll-fade-bg, .scroll-horizontal').forEach(setupScrollDriven)
+        qAll("body *").filter(el => hasGClass(el,"progress-bar") || hasGClass(el,"scroll-fill") || hasGClass(el,"scroll-fade-bg") || hasGClass(el,"scroll-horizontal") || [...el.classList].some(c=>c.startsWith("parallax-") || bpNames.some(bp=>c.startsWith(`${bp}:parallax-`)))).forEach(el => setupScrollDriven(el))
 
         // Scroller resolution: a `.scroll`/`.scroll-progress` element inside a
         // `.scroll-frame` container binds its trigger to THAT box instead of the
@@ -899,7 +1054,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             if (!config) return
             const { from, typewriter: isTypewriter, typewriterSplit, play } = config
 
-            if (el.classList.contains("scroll-progress")) {
+            if (hasGClass(el, "scroll-progress")) {
                 const ease = isTypewriter
                     ? ([...el.classList].find(c => c.startsWith("ease-"))?.split("-")[1] ?? "none")
                     : getEase(el)
@@ -920,7 +1075,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 // `.progress-reverse` runs the scrub in reverse (revealed -> hidden).
                 // GSAP's ScrollTrigger ignores a `reversed` config; swap from/to so
                 // the scrub maps in the opposite direction instead.
-                const reverse = el.classList.contains("progress-reverse")
+                const reverse = hasGClass(el, "progress-reverse")
                 // .randomize-* applies to the HIDDEN start only (non-reverse):
                 // a scrub's resting end must stay deterministic or the element
                 // would sit permanently off-pose after being scrolled through.
@@ -966,7 +1121,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 } else if (typewriterSplit) {
                     const parts = getParts(el, getGranularity(el))
                     if (parts.length) tl.fromTo(parts, { opacity: reverse ? 1 : 0 }, { opacity: reverse ? 0 : 1, ease })
-                } else if (el.classList.contains("fill-svg") && (el.classList.contains("draw") || el.classList.contains("draw-split"))) {
+                } else if (hasGClass(el, "fill-svg") && (hasGClass(el, "draw") || hasGClass(el, "draw-split"))) {
                     // fill-svg modifier for draw: stroke first, then fill, sequential scrub.
                     // For scrub the two phases are sequential tweens so scroll maps
                     // draw → fill. Reverse swaps order so unfill happens before undraw.
@@ -991,7 +1146,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 return
             }
 
-            if (!el.classList.contains("scroll")) return
+            if (!hasGClass(el, "scroll")) return
             const { delay, duration } = readTiming(el)
             const ease = isTypewriter
                 ? ([...el.classList].find(c => c.startsWith("ease-"))?.split("-")[1] ?? "none")
@@ -1042,7 +1197,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             })
             scrollTriggers.push(st)
         }
-        qAll(".scroll, .scroll-progress").forEach(setupScroll)
+        qAll("body *").filter(el => hasGClass(el, "scroll") || hasGClass(el, "scroll-progress")).forEach(el => runWithBreakpoint(el, () => setupScroll(el)))
 
         // SplitText scroll variants: `.spawn-text-<spawn>.scroll` plays the per-part
         // tween when the element enters the viewport and reverses on exit.
@@ -1050,7 +1205,8 @@ export default function initListeners(root = document, throttlePerFrame) {
             if (isTypewriter || text === false) return
             const tSel = "." + TEXT_PREFIX + sel.slice(1)
 
-            qAll(tSel + ".scroll:not(.scroll-progress)").forEach((el) => {
+            qAll("body *").filter(el => elementMatchesSel(el, tSel) && hasGClass(el, "scroll") && !hasGClass(el, "scroll-progress")).forEach((el) => {
+                const run = () => {
                 if (isReduced(el)) return
                 const { delay, duration } = readTiming(el)
                 const ease = getEase(el)
@@ -1073,9 +1229,11 @@ export default function initListeners(root = document, throttlePerFrame) {
                     onLeave: reverseToStart,
                     onLeaveBack: reverseToStart,
                 }))
+                }; runWithBreakpoint(el, run)
             })
 
-            qAll(tSel + ".scroll-progress").forEach((el) => {
+            qAll("body *").filter(el => elementMatchesSel(el, tSel) && hasGClass(el, "scroll-progress")).forEach((el) => {
+                const run = () => {
                 if (isReduced(el)) return
                 const ease = getEase(el)
                 const parts = getParts(el, getGranularity(el))
@@ -1096,11 +1254,12 @@ export default function initListeners(root = document, throttlePerFrame) {
                 // `.progress-reverse` runs the split scrub in reverse; swap from/to.
                 // Randomize applies to the hidden (non-reverse) start only, same
                 // rule as the element-level scrub above.
-                const reverse = el.classList.contains("progress-reverse")
+                const reverse = hasGClass(el, "progress-reverse")
                 const rnd = !reverse && hasRandom(el) ? randomVars(el) : null
                 tl.fromTo(parts, { ...(reverse ? to : from), ...rnd },
                     { ...(rnd ? randomEnds(Object.keys(rnd)) : null), ...(reverse ? from : to), ease })
                 scrollTriggers.push(tl.scrollTrigger)
+                }; runWithBreakpoint(el, run)
             })
         })
         ScrollTrigger.refresh()
@@ -1128,14 +1287,18 @@ export default function initListeners(root = document, throttlePerFrame) {
 
         spawnConfigs.forEach((config) => {
             const { sel, typewriter: isTypewriter, typewriterSplit } = config
-            qAll(sel).forEach((el) => {
-                if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
+            qAllAllVariants(sel).forEach((el) => {
+                const run = () => {
+                if (hasGClass(el, "scroll") || hasGClass(el, "scroll-progress")) return
                 if (isPreserved(el)) return
                 if (isReduced(el)) return
+                // if this sel is gated via bp:sel and not active, elementMatchesSel will have already filtered,
+                // but qAllAllVariants includes inactive; check active before building
+                if (!elementMatchesSel(el, sel)) return
                 const { delay, duration } = readTiming(el)
                 if (isTypewriter) {
-                    const easeClass = [...el.classList].find(c => c.startsWith("ease-"))
-                    const elEase = easeClass ? easeClass.split("-")[1] : "none"
+                    const easeClass = getActivePrefixedClass(el, "ease-") || [...el.classList].find(c => c.startsWith("ease-"))
+                    const elEase = easeClass ? easeClass.slice(easeClass.indexOf("ease-") + 5) : "none"
                     if (typewriterSplit) {
                         el._spawnTween = playTypewriterSplit(el, delay, duration, elEase)
                     } else {
@@ -1145,8 +1308,8 @@ export default function initListeners(root = document, throttlePerFrame) {
                 } else {
                     el._spawnTween = invokePlay(config, el, delay, duration, getEase(el))
                     el._spawnTween.eventCallback("onComplete", () => {
-                        if (el.classList.contains("leave")) refreshLeaveRect(el)
-                        if (el.classList.contains("flip")) captureFlip(el)
+                        if (hasGClass(el, "leave")) refreshLeaveRect(el)
+                        if (hasGClass(el, "flip")) captureFlip(el)
                         if (isCompatibility(el)) resumeCompatLoops(el)
                         scheduleRefresh()
                         fireOnComplete(el, "spawn")
@@ -1154,6 +1317,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 }
                 markPreserved(el)
                 el.dataset.gsapWired = "1"
+                }; runWithBreakpointForSel(el, sel, run)
             })
         })
 
@@ -1163,14 +1327,17 @@ export default function initListeners(root = document, throttlePerFrame) {
         spawnConfigs.forEach(({ sel, from, typewriter: isTypewriter, text }) => {
             if (isTypewriter || text === false) return
             const tSel = "." + TEXT_PREFIX + sel.slice(1)
-            qAll(tSel).forEach((el) => {
-                if (el.classList.contains("scroll") || el.classList.contains("scroll-progress")) return
+            qAllAllVariants(tSel).forEach((el) => {
+                const run = () => {
+                if (hasGClass(el, "scroll") || hasGClass(el, "scroll-progress")) return
                 if (isPreserved(el)) return
                 if (isReduced(el)) return
+                if (!elementMatchesSel(el, tSel)) return
                 const { delay, duration } = readTiming(el)
                 el._spawnTween = playText(el, from, delay, duration, getEase(el))
                 markPreserved(el)
                 el.dataset.gsapWired = "1"
+                }; runWithBreakpointForSel(el, tSel, run)
             })
         })
 
@@ -1218,8 +1385,8 @@ export default function initListeners(root = document, throttlePerFrame) {
         }
 
         const setupMagnet = (el) => {
-            if (!el.classList.contains("magnet") && !el.classList.contains("magnet3d")) return
-            const threeD = el.classList.contains("magnet3d")
+            if (!hasGClass(el, "magnet") && !hasGClass(el, "magnet3d")) return
+            const threeD = hasGClass(el, "magnet3d")
             const duration = readClassNumber(el, "mtime-", 0.4)
             const pull = readClassNumber(el, "amount-", 0.3)
             const grow = readClassNumber(el, "mgrow-", 1.1)
@@ -1244,7 +1411,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // a hover/click is active we pause every tracked loop tween on the element
         // and resume it once the interaction ends. Loops are only tracked when the
         // `.compatibility` class is present, so nothing else changes behaviour.
-        const isCompatibility = (el) => el.classList.contains("compatibility")
+        const isCompatibility = (el) => hasGClass(el, "compatibility")
         const compatLoopsOf = (el) => {
             if (!el._gsapCompatLoops) el._gsapCompatLoops = []
             return el._gsapCompatLoops
@@ -1259,7 +1426,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         const setupClicks = (el) => {
             if (isReduced(el)) return
             setupMagnet(el)
-            if (el.classList.contains("click-hover")) {
+            if (hasGClass(el, "click-hover")) {
                 const area = wrapTarget(el)
                 let touch = false
                 const duration = readClassNumber(el, "ctime-", defaults.clickDuration)
@@ -1276,7 +1443,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                     touch = true, verticalmove(el, 0, duration, elEase), setTimeout(() => { touch = false }, 0)
                 })
             }
-            if (el.classList.contains("click-expand")) {
+            if (hasGClass(el, "click-expand")) {
                 let touch = false
                 const duration = readClassNumber(el, "ctime-", defaults.clickDuration)
                 const lift = readClassNumber(el, "amount-", defaults.clickExpandOffset)
@@ -1313,7 +1480,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             if (isReduced(el)) return
             const ctx = readLoopCtx(el)
             loopConfigs.forEach(({ sel, build, key, loop }) => {
-                if (el.matches(sel)) {
+                if (elementMatchesSel(el, sel)) {
                     el[key]?.kill()
                     el[key] = trackCompatLoop(el, build(el, ctx))
                     if (loop) el[key].repeat(-1)
@@ -1368,7 +1535,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // shifts under the cursor. Marquee is skipped (its build restructures the
         // DOM).
         const wrapTarget = (el) => {
-            if (!el.classList.contains("wrapdiv")) return el
+            if (!hasGClass(el, "wrapdiv")) return el
             if (el._gsapWrap) return el._gsapWrap
             const area = document.createElement("div")
             el.before(area)
@@ -1383,7 +1550,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             loopConfigs.forEach(({ sel, build, key }) => {
                 if (sel.startsWith(".marquee")) return
                 const name = sel.slice(1)
-                if (el.classList.contains("hover-" + name)) {
+                if (hasGClass(el, "hover-" + name)) {
                     const area = wrapTarget(el)
                     addListener(area, "mouseenter", () => {
                         pauseCompatLoops(el)
@@ -1396,7 +1563,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                         el[key] = reset(el, readClassNumber(el, "etime-", defaults.effectDuration), getEase(el))
                         resumeCompatLoops(el)
                     })
-                } else if (el.classList.contains("click-" + name)) {
+                } else if (hasGClass(el, "click-" + name)) {
                     const area = wrapTarget(el)
                     addListener(area, "mousedown", () => {
                         pauseCompatLoops(el)
@@ -1519,7 +1686,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             if (isReduced(el)) return
             const ctx = readLoopCtx(el)
             animAll.forEach((a) => {
-                if (a.setup && el.matches?.(a.sel)) {
+                if (a.setup && elementMatchesSel(el, a.sel)) {
                     const teardown = a.setup(el, ctx)
                     if (typeof teardown === "function") setupTeardowns.push(teardown)
                 }
@@ -1571,13 +1738,13 @@ export default function initListeners(root = document, throttlePerFrame) {
 
 
         const animateAppear = (el) => {
-            if (!el.classList.contains("appear") || el._appeared) return
+            if (!hasGClass(el, "appear") || el._appeared) return
             // A `.scroll`/`.scroll-progress` element is owned by its ScrollTrigger
             // (see setupScroll); `.appear` must not also fire, or it plays on mount
             // AND again on scroll-enter. Text elements are the exception: their
             // `.scroll` triggers are wired once at init, so a re-added (reset) text
             // element has no trigger to conflict with and must animate via `.appear`.
-            if (!isTextElement(el) && (el.classList.contains("scroll") || el.classList.contains("scroll-progress"))) return
+            if (!isTextElement(el) && (hasGClass(el, "scroll") || hasGClass(el, "scroll-progress"))) return
             if (isReduced(el)) return
             el._appeared = true
             const { delay, duration, ease } = readTiming(el)
@@ -1598,8 +1765,8 @@ export default function initListeners(root = document, throttlePerFrame) {
             } else {
                 el._spawnTween = invokePlay(config, el, delay, duration, ease)
                 el._spawnTween.eventCallback("onComplete", () => {
-                    if (el.classList.contains("leave")) refreshLeaveRect(el)
-                    if (el.classList.contains("flip")) captureFlip(el)
+                    if (hasGClass(el, "leave")) refreshLeaveRect(el)
+                    if (hasGClass(el, "flip")) captureFlip(el)
                     fireOnComplete(el, "spawn")
                 })
             }
@@ -1630,7 +1797,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                     els.forEach((el) => {
                         // `.appear` is the opt-in gate for dynamically-added
                         // elements: without it a newly inserted node is ignored.
-                        if (!el.classList?.contains("appear")) return
+                        if (!hasGClass(el, "appear")) return
                         animateAppear(el)
                         setupScroll(el)
                         setupScrollDriven(el)
@@ -1710,7 +1877,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             appearObserver.observe(document.body, { childList: true, subtree: true })
 
             // Capture any .leave elements already present so they can exit later
-            qAll(".leave").forEach(captureLeave)
+            qAll("body *").filter(el => hasGClass(el, "leave")).forEach(captureLeave)
 
             leaveObserver = new MutationObserver((mutations) => {
                 handleLeaveBatch(mutations)
@@ -1720,16 +1887,17 @@ export default function initListeners(root = document, throttlePerFrame) {
         }
         if (throttlePerFrame > 0) {
             // capture for throttled path (was inside else branch above for non-throttled)
-            qAll(".leave").forEach(captureLeave)
+            qAll("body *").filter(el => hasGClass(el, "leave")).forEach(captureLeave)
         }
 
-        // Keep the captured position fresh (throttled to one pass per frame)
+        // Keep the captured position fresh (throttled to one pass per frame) - include bp:leave
+        const qAllLeaves = () => qAll("body *").filter(el => hasGClass(el, "leave"))
         let positionTick = false
         const refreshLeavePositions = () => {
             if (positionTick) return
             positionTick = true
             requestAnimationFrame(() => {
-                qAll(".leave").forEach((el) => {
+                qAllLeaves().forEach((el) => {
                     const s = leaveStates.get(el)
                     if (s) s.rect = el.getBoundingClientRect()
                 })
@@ -1738,6 +1906,18 @@ export default function initListeners(root = document, throttlePerFrame) {
         }
         window.addEventListener("scroll", refreshLeavePositions, { passive: true })
         window.addEventListener("resize", refreshLeavePositions, { passive: true })
+        // Breakpoint reactivity: when crossing a breakpoint, modifiers like m:amount-20 or m:time-2
+        // need to be re-evaluated (GSAP tweens built with old values are stale). Each breakpoint
+        // matchMedia entry is naturally handled by runWithBreakpoint/mm.add for gated animations,
+        // but modifier-only changes (e.g. `amount-10 m:amount-30` on same element) require a rebuild.
+        // Listen to all breakpoints and refresh ScrollTrigger + re-evaluate active prefixed classes.
+        const bpMqls = bpEntries.map(([bp, px]) => {
+            const mql = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(`(min-width: ${px}px)`) : null
+            if (!mql) return null
+            const fn = () => ScrollTrigger.refresh()
+            mql.addEventListener?.('change', fn)
+            return { mql, fn }
+        }).filter(Boolean)
 
     return () => {
         appearObserver?.disconnect()
@@ -1748,6 +1928,8 @@ export default function initListeners(root = document, throttlePerFrame) {
         if (flipPendingRaf) cancelAnimationFrame(flipPendingRaf)
         window.removeEventListener("scroll", refreshLeavePositions)
         window.removeEventListener("resize", refreshLeavePositions)
+        bpMqls.forEach(({ mql, fn }) => mql.removeEventListener?.('change', fn))
+        mm.revert()
         window.removeEventListener("load", ScrollTrigger.refresh)
         clearTimeout(refreshTimer)
         scrollTriggers.forEach((t) => {

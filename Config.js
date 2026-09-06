@@ -72,6 +72,7 @@ export const defaults = {
   revealDelay:0,
   characterlist:"AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz",
   bootTime: 5,
+  breakpoints : {xs : 475 , s:640 , m:768 , l:1024 , xl:1280}
 }
 
 export const animations = [

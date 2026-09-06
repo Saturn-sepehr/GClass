@@ -1,5 +1,5 @@
 import { DrawSVGPlugin, Flip, MotionPathPlugin, ScrambleTextPlugin, SplitText, TextPlugin } from "gsap/all";
-import gsap from "gsap";
+import { gsap } from "gsap";
 import { defaults } from './Config.js'
 
 gsap.registerPlugin(Flip)
@@ -8,6 +8,44 @@ gsap.registerPlugin(TextPlugin)
 gsap.registerPlugin(DrawSVGPlugin)
 gsap.registerPlugin(MotionPathPlugin)
 gsap.registerPlugin(ScrambleTextPlugin)
+
+// --- Breakpoint helpers for modifiers (xs/s/m/l/xl) -------------------------
+// Lazy to avoid circular init (Config.js <-> Animations.js)
+const getBpDataMod = () => {
+    const entries = Object.entries(defaults.breakpoints || {}).sort((a,b)=>a[1]-b[1])
+    const names = entries.map(([k])=>k)
+    const map = Object.fromEntries(entries)
+    const re = names.length ? new RegExp(`^(${names.join('|')}):(.+)$`) : /^$^/
+    return { entries, names, map, re }
+}
+const isBreakpointActiveMod = (bp) => {
+    if (!bp) return true
+    const { map } = getBpDataMod()
+    const px = map[bp]
+    if (px == null) return true
+    if (typeof window === 'undefined' || !window.matchMedia) return true
+    return window.matchMedia(`(min-width: ${px}px)`).matches
+}
+const hasGClassMod = (el, name) => {
+    if (el.classList.contains(name)) return true
+    const { names } = getBpDataMod()
+    for (const bp of names) if (el.classList.contains(`${bp}:${name}`) && isBreakpointActiveMod(bp)) return true
+    return false
+}
+const getActivePrefixedClassMod = (el, prefix) => {
+    const { names, map, re } = getBpDataMod()
+    let best = null, bestPx = -2
+    for (const c of el.classList) {
+        let bp = null, core = c
+        const m = c.match(re)
+        if (m) { bp = m[1]; core = m[2] }
+        if (!core.startsWith(prefix)) continue
+        if (bp && !isBreakpointActiveMod(bp)) continue
+        const px = bp ? map[bp] : -1
+        if (px > bestPx) { best = c; bestPx = px }
+    }
+    return best
+}
 
 // A tasteful fallback whenever a call site omits an ease, so the animation
 // never lapses into the raw "none" look. Callers still override this freely.
@@ -210,9 +248,9 @@ export function countTargetVars (target){
     const end = match ? parseFloat(match[0]) : 0
     const decimals = match?.[0].includes(".") ? (match[0].split(".")[1] || "").length : 0
     // Count FROM `.spawn-num-N` (N = the starting number) up to `end`. When the
-    // class is absent, fall back to 0.
-    const startCls = [...target.classList].find(c => c.startsWith("spawn-num-"))
-    const start = startCls ? parseFloat(startCls.slice("spawn-num-".length)) : 0
+    // class is absent, fall back to 0. Supports `m:spawn-num-10` etc. (mobile-first)
+    const startCls = getActivePrefixedClassMod(target, "spawn-num-")
+    const start = startCls ? parseFloat(startCls.slice(startCls.indexOf("spawn-num-") + "spawn-num-".length)) : 0
     return target._countTarget = { start, end, decimals }
 }
 
@@ -231,12 +269,12 @@ export function countUp (target , delay , dur, ease){
 // the interior fills. `fill-time-N` / `fill-ease-NAME` override the fill
 // phase; otherwise the fill takes half of `dur` and reuses the draw ease.
 const fillTimeOf = (el , fallback) => {
-    const m = [...el.classList].find(c => c.startsWith("fill-time-"))
-    return m ? Number(m.slice("fill-time-".length)) : fallback * 0.5
+    const m = getActivePrefixedClassMod(el, "fill-time-")
+    return m ? Number(m.slice(m.indexOf("fill-time-") + "fill-time-".length)) : fallback * 0.5
 }
 const fillEaseOf = (el , fallbackEase) => {
-    const m = [...el.classList].find(c => c.startsWith("fill-ease-"))
-    return m ? m.slice("fill-ease-".length) : fallbackEase
+    const m = getActivePrefixedClassMod(el, "fill-ease-")
+    return m ? m.slice(m.indexOf("fill-ease-") + "fill-ease-".length) : fallbackEase
 }
 
 // Stroke-draw reveal (strokes only - filled SVGs are deliberately out of
@@ -248,13 +286,13 @@ const fillEaseOf = (el , fallbackEase) => {
 export function drawsvg (target , delay , dur , ease){
     const e = easeOf(ease)
     const first = gsap.utils.toArray(target)[0]
-    const hasFill = !!first?.classList?.contains("fill-svg")
+    const hasFill = !!first && hasGClassMod(first, "fill-svg")
     if (!hasFill) {
         return gsap.fromTo(target , {drawSVG:"0%"} , {ease:e , duration:dur , delay:delay , drawSVG:"100%"})
     }
     const fillDur = fillTimeOf(first , dur)
     const fillEase = fillEaseOf(first , ease)
-    const fillTargets = gsap.utils.toArray(target).filter(el => el.classList.contains("fill-svg"))
+    const fillTargets = gsap.utils.toArray(target).filter(el => hasGClassMod(el, "fill-svg"))
     const tl = gsap.timeline({ delay })
     // Keep fill invisible while the stroke draws
     if (fillTargets.length) gsap.set(fillTargets , { fillOpacity: 0 })
@@ -332,7 +370,7 @@ export function splitPaths (paths){
 export function drawsvgSplit (target , delay , dur , ease){
     const e = easeOf(ease)
     const first = gsap.utils.toArray(target)[0]
-    const hasFill = !!first?.classList?.contains("fill-svg")
+    const hasFill = !!first && hasGClassMod(first, "fill-svg")
     const fillDur = hasFill ? fillTimeOf(first , dur) : 0
     const fillEase = hasFill ? fillEaseOf(first , ease) : ease
     const tl = gsap.timeline({ delay })
@@ -397,13 +435,29 @@ export const scrambleSegments = (target) => {
 //   .reveal-delay-N  -> revealDelay in seconds (default defaults.revealDelay)
 //   .chars-[...]     -> character pool taken verbatim from inside the brackets
 //                       (default defaults.characterlist)
+//   Supports `m:amount-N`, `l:chars-[...]` etc. (largest active wins)
 export function scrambleVars (target){
     const num = (prefix , fallback) => {
-        const match = [...target.classList].find(c => c.startsWith(prefix))
-        return match ? Number(match.slice(prefix.length)) : fallback
+        const c = getActivePrefixedClassMod(target, prefix)
+        if (!c) return fallback
+        const idx = c.indexOf(prefix)
+        const n = Number(c.slice(idx + prefix.length))
+        return Number.isNaN(n) ? fallback : n
     }
     // Greedy up to the LAST "]" so pools containing "]" survive intact.
-    const charsCls = [...target.classList].find(c => /^chars-\[(.*)\]$/.test(c))
+    // Check for `m:chars-[...]` then fallback to `chars-[...]`
+    let charsCls = null
+    let bestPx = -2
+    const { re: reChars, map: mapChars } = getBpDataMod()
+    for (const c of target.classList) {
+        let bp = null, core = c
+        const m = c.match(reChars)
+        if (m) { bp = m[1]; core = m[2] }
+        if (!/^chars-\[(.*)\]$/.test(core)) continue
+        if (bp && !isBreakpointActiveMod(bp)) continue
+        const px = bp ? mapChars[bp] : -1
+        if (px > bestPx) { charsCls = core; bestPx = px }
+    }
     return {
         segs: scrambleSegments(target) ,
         chars: charsCls ? charsCls.slice("chars-[".length , -1) : defaults.characterlist ,
@@ -411,7 +465,7 @@ export function scrambleVars (target){
         revealDelay: num("reveal-delay-" , defaults.revealDelay) ,
         // .scramble-rtl flips the reveal direction (ScrambleTextPlugin's
         // rightToLeft) so the sweep travels right -> left.
-        rtl: target.classList.contains("scramble-rtl") ,
+        rtl: hasGClassMod(target, "scramble-rtl") ,
     }
 }
 
@@ -430,9 +484,9 @@ export function scrambleVars (target){
 //                       ScrambleTextPlugin resolve).
 //   .scramble-rtl     - reveal travels right -> left.
 export function scramble (target , delay , dur , ease){
-    const e = [...target.classList].some(c => c.startsWith("ease-")) ? easeOf(ease) : "none"
+    const e = getActivePrefixedClassMod(target, "ease-") ? easeOf(ease) : "none"
     const { segs , chars , speed , revealDelay , rtl } = scrambleVars(target)
-    const all = target.classList.contains("scramble-all")
+    const all = hasGClassMod(target, "scramble-all")
     const tl = gsap.timeline({ delay })
     segs.forEach(({ t , text }) => {
         if (all) {

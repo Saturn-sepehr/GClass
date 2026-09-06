@@ -2,6 +2,19 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
+## [1.0.0-beta.22.1] - 2026-09-06
+- Fixed `.order` stagger grouping bug — `Listeners.js:76` `wrapQAll` now preserves DOM order via `body *` filter + `elementMatchesSel` (was `Set([...spawn-up], [...spawn-down])` grouping by type, now top-to-bottom as `qAll` does). Fixes `doc` `spawn` and landing `order` appearing all over.
+- No API change from `beta.22`.
+
+## [1.0.0-beta.22] - 2026-09-06
+- Added responsive breakpoints — `Config.js:75` `defaults.breakpoints {xs:475,s:640,m:768,l:1024,xl:1280}` (single-letter `s/m/l` avoids Tailwind `sm/md/lg` collision). Usage `m:spawn-up`, `l:float`, `xs:spawn-up`. Gating is live via `gsap.matchMedia` (`Listeners.js:26,202`).
+- Added breakpoint-aware modifiers — `m:amount-20`, `m:time-2`, `m:ease-bounce`, `m:priority-3`, `m:chars-[...]`, `m:spawn-num-10` etc. Mobile-first largest active wins (`Listeners.js:237` `getActivePrefixedClass`, `Animations.js:13` lazy helpers). Covers `amount-`, `time-`, `priority-`, `edelay-`, `etime-`, `stagger-`, `fill-time-`, `reveal-delay-`, `spawn-num-`, `progress-start-`, etc.
+- Fixed runtime `customAnims` re-normalization — `Listeners.js:190` now calls `normalize(customAnims)` inside `initListeners()` so `customAnims.push()` before next `init` is picked up.
+- Added ESM + CJS dual build — `vite.lib.config.js` (Vite lib) builds `dist/gclass.esm.js` + `dist/gclass.cjs` (`gsap` external); `package.json:4` bumped to `beta.22`, `main/module` point to `dist/`, `exports: {import, require}`, `sideEffects:false`, `prepublishOnly: build`.
+- Fixed CJS `gsap` interop — `Animations.js:2`/`Listeners.js:1`/`AnimToggle.js:3`/`CustomAnims.js:1` now `import {gsap} from 'gsap'` (named import) for correct `require('gsap').gsap` interop.
+- Added `dev-react-strict` test harness — `vitest` + `jsdom` + `src/__tests__/breakpoints.test.jsx` (14 tests: gating, modifiers, Tailwind coexistence, StrictMode) + `BreakpointHarness.jsx` visual; `vite.config.js` test config.
+- Documented breakpoints — `doc/src/app/documentation/responsive-design/page.js` (was duplicate `optimization`).
+
 ## [1.0.0-beta.21] - 2026-9-3
 - Added a `gclassOpts()` function that controls the animation fps and observer throttling
 

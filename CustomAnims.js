@@ -1,4 +1,4 @@
-import gsap from "gsap";
+import { gsap } from "gsap";
 
 // A custom animation is just an entry with the SAME shape as one in
 // Listeners.js' `spawnConfigs`. Give it:
