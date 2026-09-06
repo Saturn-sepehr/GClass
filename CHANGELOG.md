@@ -2,6 +2,9 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
+## [1.0.0-beta.22.2] - 2026-09-06
+- Fixed `m:order` (and any `bp:order` / `bp:priority-*` / `bp:ease-*` / `bp:time-*`) disabling the entire `scroll` animation on smaller screens — `Listeners.js:1200,1232,1262` previously wrapped `setupScroll` / `playText` scroll variants in generic `runWithBreakpoint(el, ...)` which gated on *any* `bp:*` class on the element (so `m:order` gated `scroll`). Now uses per-animation `qAllAllVariants` + `runWithBreakpointForSel` (`".scroll"`, `".scroll-progress"`, `tSel`) so only a true `m:scroll` / `m:spawn-*` gates its own animation; unrelated modifiers like `m:order` only affect `hasGClass("order")` / `readTiming` (stagger) and `spawn-*` + `scroll` still play on all sizes (without stagger on <m). Keeps live `gsap.matchMedia` handling for true breakpoint-gated scroll. Reverts `HowWorkSection.jsx` workaround from `m:order` back to plain `order` for the default staggered landing.
+
 ## [1.0.0-beta.22.1] - 2026-09-06
 - Fixed `.order` stagger grouping bug — `Listeners.js:76` `wrapQAll` now preserves DOM order via `body *` filter + `elementMatchesSel` (was `Set([...spawn-up], [...spawn-down])` grouping by type, now top-to-bottom as `qAll` does). Fixes `doc` `spawn` and landing `order` appearing all over.
 - No API change from `beta.22`.

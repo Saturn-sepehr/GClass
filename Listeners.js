@@ -1197,7 +1197,18 @@ export default function initListeners(root = document, throttlePerFrame) {
             })
             scrollTriggers.push(st)
         }
-        qAll("body *").filter(el => hasGClass(el, "scroll") || hasGClass(el, "scroll-progress")).forEach(el => runWithBreakpoint(el, () => setupScroll(el)))
+        // scroll / scroll-progress are breakpoint-gated per-animation, not per-element generic
+        // (m:order must not disable a plain `scroll` + `spawn-*` on <m)
+        const scrollSel = ".scroll"
+        const progressSel = ".scroll-progress"
+        qAllAllVariants(scrollSel).forEach(el => runWithBreakpointForSel(el, scrollSel, () => {
+            if (!hasGClass(el, "scroll")) return
+            setupScroll(el)
+        }))
+        qAllAllVariants(progressSel).forEach(el => runWithBreakpointForSel(el, progressSel, () => {
+            if (!hasGClass(el, "scroll-progress")) return
+            setupScroll(el)
+        }))
 
         // SplitText scroll variants: `.spawn-text-<spawn>.scroll` plays the per-part
         // tween when the element enters the viewport and reverses on exit.
@@ -1205,8 +1216,9 @@ export default function initListeners(root = document, throttlePerFrame) {
             if (isTypewriter || text === false) return
             const tSel = "." + TEXT_PREFIX + sel.slice(1)
 
-            qAll("body *").filter(el => elementMatchesSel(el, tSel) && hasGClass(el, "scroll") && !hasGClass(el, "scroll-progress")).forEach((el) => {
+            qAllAllVariants(tSel).filter(el => hasGClass(el, "scroll") && !hasGClass(el, "scroll-progress")).forEach((el) => {
                 const run = () => {
+                if (!elementMatchesSel(el, tSel)) return
                 if (isReduced(el)) return
                 const { delay, duration } = readTiming(el)
                 const ease = getEase(el)
@@ -1229,10 +1241,10 @@ export default function initListeners(root = document, throttlePerFrame) {
                     onLeave: reverseToStart,
                     onLeaveBack: reverseToStart,
                 }))
-                }; runWithBreakpoint(el, run)
+                }; runWithBreakpointForSel(el, tSel, run)
             })
 
-            qAll("body *").filter(el => elementMatchesSel(el, tSel) && hasGClass(el, "scroll-progress")).forEach((el) => {
+            qAllAllVariants(tSel).filter(el => hasGClass(el, "scroll-progress")).forEach((el) => {
                 const run = () => {
                 if (isReduced(el)) return
                 const ease = getEase(el)
@@ -1259,7 +1271,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 tl.fromTo(parts, { ...(reverse ? to : from), ...rnd },
                     { ...(rnd ? randomEnds(Object.keys(rnd)) : null), ...(reverse ? from : to), ease })
                 scrollTriggers.push(tl.scrollTrigger)
-                }; runWithBreakpoint(el, run)
+                }; runWithBreakpointForSel(el, tSel, run)
             })
         })
         ScrollTrigger.refresh()
