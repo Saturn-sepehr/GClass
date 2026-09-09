@@ -32,7 +32,7 @@ export default function Home() {
             </Link>
           </div>
           <br></br>
-          <p className="text-red-500 typewriter order">GCLASS IS STILL IN BETA, EXPECT A LOT BUGS</p>
+          <p className="text-red-500 typewriter order">GCLASS IS STILL IN BETA, EXPECT A LOT OF BUGS</p>
         </div>
       </main>
     </div>

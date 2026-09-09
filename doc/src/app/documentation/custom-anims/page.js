@@ -15,7 +15,7 @@ export default function Page() {
         tween or timeline.
       </P>
       <Code>{`import { customAnims } from 'gclass-anims'
-import gsap from 'gsap'
+import { gsap } from 'gsap'
 
 customAnims.push({
   sel: '.whirl',
@@ -51,6 +51,15 @@ customAnims.push({
         reversal to look right - it is the state the engine returns the element
         to. Loop-style entries use a <code>build(el, ctx)</code> callback plus a{" "}
         storage <code>key</code> instead of <code>play</code>.
+      </Note>
+      <Note>
+        Use named import <code>import {"{ gsap }"} from &apos;gsap&apos;</code>{" "}
+        for correct CJS interop with <code>require(&apos;gsap&apos;).gsap</code>{" "}
+        (fixed beta.22: <code>Animations.js:2</code>, <code>Listeners.js:1</code>,{" "}
+        <code>AnimToggle.js:3</code>). Runtime <code>customAnims.push()</code>{" "}
+        is picked up on the next <code>initAnimations()</code> or{" "}
+        <code>initListeners()</code> call - <code>Listeners.js:177 normalize(customAnims)</code> re-normalizes inside{" "}
+        <code>initListeners</code> (beta.22), so you can push before a re-init.
       </Note>
     </article>
   );

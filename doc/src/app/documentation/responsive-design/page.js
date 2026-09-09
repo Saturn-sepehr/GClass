@@ -108,8 +108,19 @@ initAnimations() // reads breakpoints at init`}</Code>
           ["No xp: prefix", "Always runs - same as before."],
           ["Unknown bp - xl2:spawn-up", "Ignored (not in defaults.breakpoints)."],
           ["Multiple same modifier - amount-10 m:amount-20 m:amount-30", "Last largest active wins (mobile-first)."],
+          ["m:order with scroll - m:order + scroll", "Only stagger is gated; scroll still fires below m (fixed beta.22.2 per-animation runWithBreakpointForSel)"],
         ]}
       />
+      <Note>
+        Fixed beta.22.2: <code>m:order</code> and other{" "}
+        <code>bp:order</code> / <code>bp:priority-*</code> /{" "}
+        <code>bp:ease-*</code> / <code>bp:time-*</code> modifiers no longer
+        gate <code>scroll</code> or <code>scroll-progress</code>. Before{" "}
+        <code>Listeners.js:1200</code> used a generic per-element gate so any{" "}
+        <code>bp:*</code> on the element disabled its scroll animation on small
+        screens. Now <code>runWithBreakpointForSel</code> gates per animation
+        selector, so only <code>m:scroll</code> gates scroll.
+      </Note>
     </article>
   );
 }

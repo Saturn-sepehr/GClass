@@ -1,7 +1,8 @@
   import initListeners from './Listeners.js'
   import { defaults, animations } from './Config.js'
   import { gsap } from 'gsap'
-
+import { GSDevTools } from 'gsap/all'
+gsap.registerPlugin(GSDevTools)
 // localStorage key controlling whether the GSAP animation system is mounted.
 const STORAGE_KEY = 'gclass-animations-enabled'
 // localStorage key for a forced reduced-motion override (see
@@ -179,6 +180,43 @@ const readBootTime = (els, fallback) => {
     }
   }
   return max ?? fallback
+}
+
+/**
+ * Create GSDevTools UI styled like doc/ (Header.jsx:8 slate-800/50 ring + layout.js:85 slate-950).
+ * Accepts: gclassDev() | gclassDev("width:50%; bottom:30px") | gclassDev({width:"50%"}) | gclassDev({css:{}, minimal:true, animation:tl})
+ */
+export function gclassDev(cssOrOpts){
+  const docCss = {
+    backgroundColor: "rgba(15,23,42,0.96)", // slate-900 ~ doc bg-slate-950/900
+    border: "1px solid rgba(51,65,85,0.8)", // ring-slate-700 Header.jsx:8
+    borderRadius: "12px", // rounded-xl
+    boxShadow: "0 0 0 1px rgba(51,65,85,0.5), 0 8px 32px rgba(0,0,0,0.45)",
+    backdropFilter: "blur(8px)",
+    color: "#e2e8f0", // slate-200
+    bottom: "16px",
+    width: "92%",
+    maxWidth: "860px",
+    left: "50%",
+    transform: "translateX(-50%)",
+  }
+  let opts = {}
+  let css = docCss
+  if (typeof cssOrOpts === "string") {
+    css = cssOrOpts // verbatim string: "width:50%; bottom:30px"
+  } else if (cssOrOpts && typeof cssOrOpts === "object") {
+    // {width:"50%", bottom:"30px"} shorthand OR {css:{}, animation, minimal,...} full opts
+    const hasFullOpts = "css" in cssOrOpts || "animation" in cssOrOpts || "container" in cssOrOpts || "minimal" in cssOrOpts || "id" in cssOrOpts
+    if (hasFullOpts) {
+      const { css: userCss, ...rest } = cssOrOpts
+      opts = rest
+      if (typeof userCss === "string") css = userCss
+      else if (userCss && typeof userCss === "object") css = { ...docCss, ...userCss }
+    } else {
+      css = { ...docCss, ...cssOrOpts }
+    }
+  }
+  return GSDevTools.create({ css, ...opts })
 }
 
 // Boots the GSAP animation system unless animations are disabled (stored "off"

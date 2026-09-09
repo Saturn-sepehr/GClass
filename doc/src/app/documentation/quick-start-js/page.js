@@ -21,11 +21,25 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
 // or simply at the end of <body>:
-initAnimations()`}</Code>
+initAnimations()
+
+// CJS (Node, Jest, legacy bundlers)
+const { initAnimations } = require('gclass-anims')
+initAnimations()
+// or direct path:
+// const { initAnimations } = require('gclass-anims/dist/gclass.cjs')`}</Code>
       <Code>{`<!-- then everything is class-driven -->
 <div class="appear scroll spawn-up">reveals on scroll</div>
 <div class="float">loops forever</div>
 <button class="magnet click-expand">magnet + click</button>`}</Code>
+      <Note>
+        Dual build: ESM is <code>dist/gclass.esm.js</code> (
+        <code>package.json:10 exports import</code>) and CJS is{" "}
+        <code>dist/gclass.cjs</code> (<code>package.json:13 exports require</code>).
+        Both are built by <code>vite.lib.config.js</code> with{" "}
+        <code>gsap</code> external and <code>sideEffects: false</code> for
+        tree-shaking.
+      </Note>
 
       <H2>What&apos;s next</H2>
       <P>

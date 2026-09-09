@@ -42,10 +42,17 @@ ReactDOM.createRoot(document.getElementById('root')).render(<Root />)`}</Code>
       <H2>Compatibility</H2>
       <P>
         Works with any bundler (Vite, Webpack, Turbopack, esbuild). The package
-        is fully ESM (<code>package.json:5</code>). If you use another bundler,
-        the same <code>import {"{ initAnimations }"}</code> entry works -
+        ships dual ESM + CJS (<code>package.json:6 main ./dist/gclass.cjs</code>,{" "}
+        <code>:7 module ./dist/gclass.esm.js</code>,{" "}
+        <code>:10 exports import/require</code>) built by{" "}
+        <code>vite.lib.config.js</code> (formats es + cjs, external gsap). It
+        is tree-shakable with <code>sideEffects: false</code> and{" "}
+        <code>prepublishOnly: build</code>. If you use another bundler, the
+        same <code>import {"{ initAnimations }"}</code> entry works - for CJS
+        use <code>require(&apos;gclass-anims&apos;)</code> or{" "}
+        <code>require(&apos;gclass-anims/dist/gclass.cjs&apos;)</code>.
         Vite-specific guidance here is just for the dev server / HMR setup. Any
-        ES-module environment should be compatible.
+        ES-module or CJS environment should be compatible.
       </P>
     </article>
   );

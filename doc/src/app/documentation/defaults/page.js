@@ -12,12 +12,13 @@ export default function Page() {
       </P>
       <Code>{`import { defaults } from 'gclass-anims'
 
+// Config.js:56 exact snapshot
 {
-  orderDivide: 5,              // .order sequence: index / 5 → seconds
-  spawnDelayMultiplier: 0.2,   // priority-N → N × 0.2s delay
+  orderDivide: 5,              // .order sequence: index / 5 -> seconds
+  spawnDelayMultiplier: 0.2,   // priority-N -> N x 0.2s delay
   spawnOffset: 20,             // px travelled by directional spawns
   clickOffset: 10,             // click-hover lift (px)
-  clickExpandOffset: 15,       // click-expand scale×10
+  clickExpandOffset: 15,       // click-expand scale x10
   clickDuration: 0.2,
   ease: "back",                // default ease-* when absent
   effectDelay: 0.5,            // loop edelay
@@ -28,6 +29,10 @@ export default function Page() {
   textStagger: 0.03,
   typewriterSplitCharDuration: 0.05,
   minTextPartDuration: 0.3,    // floor for back-solved split durations
+  revealDelay: 0,              // scramble reveal delay
+  characterlist: "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz",
+  bootTime: 5,                 // boot overlay pause (s)
+  breakpoints: { xs: 475, s: 640, m: 768, l: 1024, xl: 1280 },
 }`}</Code>
 
       <H2>Reading vs mutating</H2>

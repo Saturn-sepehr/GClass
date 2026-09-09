@@ -32,6 +32,11 @@ export function toggleAnimations(): void
 export function enableReducedMotion(): void
 /** Clear the forced reduced-motion override and reload. */
 export function disableReducedMotion(): void
+/**
+ * Create GSDevTools UI styled like doc/ (slate-900 / slate-800 ring).
+ * Accepts: gclassDev() | gclassDev("width:50%; bottom:30px") | gclassDev({width:"50%"}) | gclassDev({css, animation, minimal, ...GSDevTools opts})
+ */
+export function gclassDev(cssOrOpts?: string | Record<string, string> | Record<string, any>): any
 
 // --- Listeners -------------------------------------------------------------
 

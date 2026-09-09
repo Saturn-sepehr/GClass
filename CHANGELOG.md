@@ -2,6 +2,9 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
+## [1.0.0-beta.23] - 2026-09-09
+- Added `gclassDev()` helper — `AnimToggle.js:185` `gclassDev(cssOrOpts)` wraps `GSDevTools.create()` with doc-styled defaults (`slate-900` `rgba(15,23,42,0.96)`, `slate-700` border, `rounded-xl`, `backdrop-blur`). Accepts `gclassDev()` (defaults), `gclassDev("width:50%; bottom:30px")` (CSS string), `gclassDev({width:"50%"})` (style object shorthand), or `gclassDev({css, animation, minimal, ...})` (full `GSDevTools` opts). Registers `GSDevTools` via `gsap.registerPlugin(GSDevTools)` (`AnimToggle.js:4`), re-exported from `index.js:1` and typed in `index.d.ts:35`.
+
 ## [1.0.0-beta.22.2] - 2026-09-06
 - Fixed `m:order` (and any `bp:order` / `bp:priority-*` / `bp:ease-*` / `bp:time-*`) disabling the entire `scroll` animation on smaller screens — `Listeners.js:1200,1232,1262` previously wrapped `setupScroll` / `playText` scroll variants in generic `runWithBreakpoint(el, ...)` which gated on *any* `bp:*` class on the element (so `m:order` gated `scroll`). Now uses per-animation `qAllAllVariants` + `runWithBreakpointForSel` (`".scroll"`, `".scroll-progress"`, `tSel`) so only a true `m:scroll` / `m:spawn-*` gates its own animation; unrelated modifiers like `m:order` only affect `hasGClass("order")` / `readTiming` (stagger) and `spawn-*` + `scroll` still play on all sizes (without stagger on <m). Keeps live `gsap.matchMedia` handling for true breakpoint-gated scroll. Reverts `HowWorkSection.jsx` workaround from `m:order` back to plain `order` for the default staggered landing.
 

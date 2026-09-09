@@ -63,6 +63,7 @@ const SECTIONS = [
       ["customAnims", "custom-anims"],
       ["registerComplete", "register-complete"],
       ["on-*-complete-*", "on-complete"],
+      ["gclassDev", "gclass-dev"],
     ],
   },
     {

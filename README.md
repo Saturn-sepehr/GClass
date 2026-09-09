@@ -78,6 +78,24 @@ import { initAnimations, toggleAnimations } from 'gclass-anims'
 toggleAnimations() // persists the choice to localStorage and reloads
 ```
 
+### Distribution
+
+The package ships dual ESM + CJS via `vite.lib.config.js`:
+
+- ESM: `dist/gclass.esm.js` (`package.json:7 module`, `exports import`)
+- CJS: `dist/gclass.cjs` (`package.json:6 main`, `exports require`)
+- `gsap` is external (not bundled), `sideEffects: false` for tree-shaking,
+  `prepublishOnly: build` generates `dist/` on publish
+- CJS interop uses named import: `import { gsap } from 'gsap'` (fixed beta.22)
+
+```js
+// ESM
+import { initAnimations } from 'gclass-anims'
+
+// CJS
+const { initAnimations } = require('gclass-anims')
+```
+
 ### Custom animations
 
 Add entries to `customAnims` (a class, `from` state, and a `play` callback) and
@@ -85,6 +103,7 @@ they integrate with the existing scroll/leave/order/delay/ease machinery.
 
 ```js
 import { customAnims } from 'gclass-anims'
+import { gsap } from 'gsap'
 
 customAnims.push({
   sel: '.whirl',
@@ -94,6 +113,14 @@ customAnims.push({
       ease, duration: dur, delay, rotation: 0, scale: 1, opacity: 1,
     }),
 })
+// push is picked up on next initAnimations() via Listeners.js:177 re-normalize (beta.22)
+```
+
+### Dev tools
+
+```js
+import { gclassDev } from 'gclass-anims'
+gclassDev() // styled GSDevTools.create() bar (beta.23)
 ```
 
 ## License
