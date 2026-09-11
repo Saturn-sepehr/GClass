@@ -33,7 +33,7 @@ click-css-<prop>-<to>           go to value while pressed`}</Code>
       <ClassRef
         rows={[
           ["numbers", "Integers or decimals, negatives allowed: css-x--20-20"],
-          ["hex colors", "#RGB / #RRGGBB / #RRGGBBAA: css-background-color-#1e293b-#0ea5e9"],
+          ["hex colours", "#RGB / #RRGGBB / #RRGGBBAA: css-background-color-#1e293b-#0ea5e9"],
           ["rest state", "For loops/hovers, `from` should equal the resting value"],
         ]}
       />

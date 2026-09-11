@@ -32,7 +32,7 @@ export default function Page() {
       </P>
       <div className="my-4 space-y-[45vh]">
         <Track
-          label=".progress-bar - default range (top bottom → center center)"
+          label=".progress-bar - default range (top bottom → centre centre)"
           barClass="progress-bar"
         />
         <Track

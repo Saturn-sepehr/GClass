@@ -77,7 +77,7 @@ export default function sitemap() {
     "/documentation/eases",
     "/documentation/randomize",
     "/documentation/defaults",
-    "/documentation/optimization",
+    "/documentation/optimisation",
     "/documentation/responsive-design",
     "/documentation/boot-up",
     "/documentation/custom-anims",

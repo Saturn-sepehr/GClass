@@ -44,7 +44,7 @@ export default function App(){
         ]}
       />
 
-      <H2>Behavior</H2>
+      <H2>Behaviour</H2>
       <P>
         <strong>No .boot-up:</strong> boot completely skipped,{" "}
         <code>initListeners()</code> runs immediately (<code>AnimToggle.js:146</code>).

@@ -107,9 +107,9 @@ export default function Page() {
         <code>.fill-svg</code> is a modifier for <code>.draw</code> and{" "}
         <code>.draw-split</code> - add it alongside either class and the
         interior fills after the stroke finishes (<code>draw → fill</code>).
-        Requires a fill color on the element (<code>fill</code> attribute or
+        Requires a fill colour on the element (<code>fill</code> attribute or
         CSS); the modifier animates <code>fillOpacity: 0 → 1</code> so the
-        color appears only once the outline is complete. Leave / scroll
+        colour appears only once the outline is complete. Leave / scroll
         reversal un-fills before un-drawing, and <code>.scroll-progress</code>{" "}
         scrubs draw then fill sequentially.
       </P>
@@ -191,8 +191,8 @@ export default function Page() {
         Stroke only - for outline-only reveals keep{" "}
         <code>fill=&quot;none&quot;</code> with a visible{" "}
         <code>stroke</code>/<code>stroke-width</code>. Add{" "}
-        <code>.fill-svg</code> with a <code>fill</code> color (
-        <code>fill=&quot;currentColor&quot;</code> inherits the text color) to
+        <code>.fill-svg</code> with a <code>fill</code> colour (
+        <code>fill=&quot;currentColor&quot;</code> inherits the text colour) to
         fill after the stroke; it animates <code>fillOpacity</code>. Markers
         and multi-path groups are untouched. Draw state is{" "}
         <code>drawSVG: 0% → 100%</code> - the stroke IS the reveal. Splitting

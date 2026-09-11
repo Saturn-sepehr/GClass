@@ -12,7 +12,7 @@ const SECTIONS = [
       ["Installation", "installation"],
       ["Quick start", "quick-start"],
       ["Toggle & reduced motion", "toggle-reduced-motion"],
-            ["Optimization", "optimization"],
+            ["Optimisation", "optimisation"],
             ["Responsive design", "responsive-design"],
     ],
   },

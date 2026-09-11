@@ -14,7 +14,7 @@ export default function Page() {
       </P>
       <Code>{`import { gclassDev } from 'gclass-anims'
 
-// defaults - slate-900 bg, slate-700 border, centered
+// defaults - slate-900 bg, slate-700 border, centred
 gclassDev()
 
 // CSS string verbatim
@@ -36,7 +36,7 @@ gclassDev({ css: "width:50%;", container: "#dev", animation: tl })`}</Code>
           ["boxShadow", "0 0 0 1px rgba(51,65,85,0.5), 0 8px 32px rgba(0,0,0,0.45)"],
           ["backdropFilter", "blur(8px)"],
           ["color", "#e2e8f0 slate-200"],
-          ["bottom / width / maxWidth / left / transform", "16px / 92% / 860px / 50% / translateX(-50%) centered bottom bar"],
+          ["bottom / width / maxWidth / left / transform", "16px / 92% / 860px / 50% / translateX(-50%) centred bottom bar"],
         ]}
       />
       <Note>

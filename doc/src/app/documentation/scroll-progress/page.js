@@ -56,7 +56,7 @@ export default function Page() {
       <ClassRef
         rows={[
           ["progress-start-N", "Scrub starts when top hits (100−N)% of viewport"],
-          ["progress-end-N", "Scrub ends at (100−N)% instead of center-center"],
+          ["progress-end-N", "Scrub ends at (100−N)% instead of centre-centre"],
           [".progress-reverse", "Inverts the mapping: revealed → hidden as you scroll"],
         ]}
       />
@@ -64,7 +64,7 @@ export default function Page() {
         Counters have first-class support:{" "}
         <code>&lt;span class=&quot;count scroll-progress spawn-num-0&quot;&gt;100&lt;/span&gt;</code>{" "}
         counts up/down with the scrub instead of fading - see{" "}
-        <b>Counters</b> for the full behavior.
+        <b>Counters</b> for the full behaviour.
       </Note>
     </article>
   );

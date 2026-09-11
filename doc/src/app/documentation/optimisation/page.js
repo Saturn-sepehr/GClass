@@ -1,12 +1,12 @@
 import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 import { Demo } from "@/Shared/DocsUI";
 
-export const metadata = { title: "GClass - Optimization" };
+export const metadata = { title: "GClass - Optimisation" };
 
 export default function Page() {
   return (
     <article>
-      <H1>Optimization - throttling for low end devices</H1>
+      <H1>Optimisation - throttling for low end devices</H1>
       <P>
         GClass runs at full speed by default. No observer throttling and the
         GSAP ticker follows <code>requestAnimationFrame</code>. On low end
