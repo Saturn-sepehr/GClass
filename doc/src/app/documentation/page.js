@@ -10,7 +10,7 @@ export default function Documentation() {
   } , [])
   return (
     <div>
-      <h1 className="text-3xl font-extrabold font-rosemary">Documentation</h1>
+      <h1 className="text-3xl font-extrabold font-comic-neue">Documentation</h1>
       
       <Link
         href="/"

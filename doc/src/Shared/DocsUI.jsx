@@ -7,7 +7,7 @@ import React, { useState } from "react"
 // Palette: slate surfaces + cyan accents.
 
 export function H1({ children }) {
-  return <h1 className="mb-2 text-3xl order spawn-text-spawn-down letter font-extrabold font-rosemary">{children}</h1>
+  return <h1 className="mb-2 text-3xl order spawn-text-spawn-down letter font-extrabold font-comic-neue">{children}</h1>
 }
 
 export function H2({ children }) {

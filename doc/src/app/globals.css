@@ -1,9 +1,9 @@
 
-@import url('https://fonts.cdnfonts.com/css/rosemary');
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300..700;1,300..700&display=swap');
 @import "tailwindcss";
 
 @theme{
-  --font-rosemary: 'Rosemary', sans-serif;
+  --font-comic-neue: 'Comic Neue', sans-serif;
 }
 
 
@@ -15,6 +15,7 @@
     repeating-linear-gradient(0deg,
       rgba(0, 0, 0, 0.22) 0 1px,
       transparent 1px 3px);
+
 }
 
 /* Fake fisheye, two layers:
