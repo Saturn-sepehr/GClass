@@ -20,7 +20,7 @@ export default function Page() {
         that scroll position - no gap, no jump.
       </P>
       <div className="h-[30vh]" />
-      <Demo className="pin flex h-[60vh] items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-center ring-1 ring-slate-600">
+      <Demo className="pin flex h-[60vh] items-center justify-center bg-slate-800 text-center ring-1 ring-slate-600">
         <div>
           <p className="text-lg font-bold">Pinned panel 1</p>
           <p className="mt-2 text-xs opacity-60">
@@ -28,7 +28,7 @@ export default function Page() {
           </p>
         </div>
       </Demo>
-      <Demo className="pin mt-0 flex h-[60vh] items-center justify-center rounded-xl bg-gradient-to-br from-cyan-900/40 to-slate-900 text-center ring-1 ring-cyan-700/50">
+      <Demo className="pin mt-0 flex h-[60vh] items-center justify-center bg-cyan-900/40 text-center ring-1 ring-cyan-700/50">
         <div>
           <p className="text-lg font-bold">Pinned panel 2</p>
           <p className="mt-2 text-xs opacity-60">
@@ -51,7 +51,7 @@ export default function Page() {
         feel the difference.
       </P>
       <div className="h-[30vh]" />
-      <Demo className="pin progress-end-25 flex h-[55vh] items-center justify-center rounded-xl bg-slate-800/60 text-center ring-1 ring-amber-500/40">
+      <Demo className="pin progress-end-25 flex h-[55vh] items-center justify-center bg-slate-800/60 text-center ring-1 ring-amber-500/40">
         <div>
           <p className="text-lg font-bold">.pin .progress-end-25</p>
           <p className="mt-2 text-xs opacity-60">releases 25% early</p>

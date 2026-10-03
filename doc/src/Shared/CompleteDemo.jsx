@@ -28,14 +28,14 @@ export default function CompleteDemo() {
       <button
         type="button"
         onClick={replayAll}
-        className="h-fit self-start rounded-lg border border-cyan-200/25 bg-cyan-200/5 px-3 py-1 text-xs font-bold tracking-wide text-cyan-200 hover:bg-cyan-200/15"
+        className="h-fit self-start border border-cyan-200/25 bg-cyan-200/5 px-3 py-1 text-xs font-bold tracking-wide text-cyan-200 hover:bg-cyan-200/15"
       >
         ⟲ re-mount demos
       </button>
 
       <div
         data-complete-demo
-        className="appear spawn-fade time-1 on-spawn-complete-docsPing min-w-[220px] rounded-xl bg-slate-800 p-4 text-sm ring-1 ring-slate-700"
+        className="appear spawn-fade time-1 on-spawn-complete-docsPing min-w-[220px] bg-slate-800 p-4 text-sm ring-1 ring-slate-700"
       >
         on-spawn-complete-docsPing
         <div className="stamp mt-2 text-xs opacity-70">waiting…</div>
@@ -43,7 +43,7 @@ export default function CompleteDemo() {
 
       <div
         data-complete-demo
-        className="appear bounce-in time-1 on-spawn-complete-docsPing min-w-[220px] rounded-xl bg-slate-800 p-4 text-sm ring-1 ring-slate-700"
+        className="appear bounce-in time-1 on-spawn-complete-docsPing min-w-[220px] bg-slate-800 p-4 text-sm ring-1 ring-slate-700"
       >
         timeline + complete hook
         <div className="stamp mt-2 text-xs opacity-70">waiting…</div>

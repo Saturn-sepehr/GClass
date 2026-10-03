@@ -28,7 +28,7 @@ export default function Page() {
         engine that is indistinguishable from app code mounting new content:
       </P>
       <Replay>
-        <div className="appear spawn-blur rounded-xl bg-slate-800 px-5 py-4 text-sm ring-1 ring-slate-700">
+        <div className="appear spawn-blur bg-slate-800 px-5 py-4 text-sm ring-1 ring-slate-700">
           re-mounted on every replay
         </div>
       </Replay>

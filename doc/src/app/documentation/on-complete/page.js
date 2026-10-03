@@ -33,7 +33,7 @@ export default function Page() {
         Both boxes register their completion through the shared{" "}
         <code>docsPing</code> handler. Re-mount them and watch the stamps.
       </P>
-      <div className="my-4 rounded-xl border border-slate-700 bg-slate-800/30 p-5">
+      <div className="my-4 border border-slate-700 bg-slate-800/30 p-5">
         <CompleteDemo />
       </div>
 

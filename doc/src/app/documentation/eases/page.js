@@ -3,7 +3,7 @@ import Replay from "@/Shared/Replay";
 
 export const metadata = { title: "GClass - Eases" };
 
-const BOX = "flex min-h-[80px] min-w-[150px] flex-col items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700 text-xs";
+const BOX = "flex min-h-[80px] min-w-[150px] flex-col items-center justify-center bg-slate-800 ring-1 ring-slate-700 text-xs";
 const LABEL = "font-bold text-cyan-200";
 
 export default function Page() {

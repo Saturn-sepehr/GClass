@@ -26,22 +26,22 @@ export default function FlipDemo() {
   return (
     <div>
       <div ref={list} className="flex flex-wrap gap-3">
-        <div className="flip flex h-20 w-20 items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700">A</div>
-        <div className="flip flex h-20 w-20 items-center justify-center rounded-xl bg-slate-700">B</div>
-        <div className="flip flex h-20 w-20 items-center justify-center rounded-xl bg-cyan-900/50">C</div>
+        <div className="flip flex h-20 w-20 items-center justify-center bg-slate-800 ring-1 ring-slate-700">A</div>
+        <div className="flip flex h-20 w-20 items-center justify-center bg-slate-700">B</div>
+        <div className="flip flex h-20 w-20 items-center justify-center bg-cyan-900/50">C</div>
       </div>
       <div className="mt-4 flex gap-2">
         <button
           type="button"
           onClick={shuffle}
-          className="rounded-lg bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-500"
+          className=" bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-500"
         >
           Shuffle - rotate A-B-C
         </button>
         <button
           type="button"
           onClick={random}
-          className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+          className=" border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
         >
           Randomize
         </button>

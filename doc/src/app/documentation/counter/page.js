@@ -5,7 +5,7 @@ import Replay from "@/Shared/Replay";
 export const metadata = { title: "GClass - Counters" };
 
 const CARD =
-  "rounded-xl bg-slate-800 p-5 text-center ring-1 ring-slate-700";
+  " bg-slate-800 p-5 text-center ring-1 ring-slate-700";
 
 export default function Page() {
   return (

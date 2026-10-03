@@ -4,7 +4,7 @@ import { EntranceDemo } from "@/Shared/DocsUI";
 
 export const metadata = { title: "GClass - Typewriter" };
 
-const BOX = "flex min-h-[72px] w-full items-center rounded-xl bg-slate-800 px-5 ring-1 ring-slate-700 text-sm";
+const BOX = "flex min-h-[72px] w-full items-center bg-slate-800 px-5 ring-1 ring-slate-700 text-sm";
 
 export default function Page() {
   return (
@@ -35,10 +35,10 @@ export default function Page() {
         keeps already-typed words individually animatable.
       </P>
       <Replay>
-        <div className="appear scroll typewriter-split letter time-3 w-full rounded-xl bg-slate-800 px-6 py-7 text-base leading-relaxed ring-1 ring-slate-700">
+        <div className="appear scroll typewriter-split letter time-3 w-full bg-slate-800 px-6 py-7 text-base leading-relaxed ring-1 ring-slate-700">
           Letter by letter, like a terminal boot log.
         </div>
-        <div className="appear scroll typewriter-split time-3 w-full rounded-xl bg-slate-900 px-6 py-7 text-base leading-relaxed text-cyan-200/90 ring-1 ring-slate-700/70">
+        <div className="appear scroll typewriter-split time-3 w-full bg-slate-900 px-6 py-7 text-base leading-relaxed text-cyan-200/90 ring-1 ring-slate-700/70">
           Word by word - cheaper for long paragraphs.
         </div>
       </Replay>

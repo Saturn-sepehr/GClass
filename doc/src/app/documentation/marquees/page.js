@@ -2,7 +2,7 @@ import { H1, H2, P, Note, Code, ClassRef } from "@/Shared/DocsUI";
 
 export const metadata = { title: "GClass - Marquees" };
 
-const TILE = "rounded-lg px-6 py-3 text-xs font-bold";
+const TILE = " px-6 py-3 text-xs font-bold";
 
 export default function Page() {
   return (
@@ -27,10 +27,10 @@ export default function Page() {
         <code>.marquee-right</code> toward the right. The track is a row.
       </P>
       <div className="my-3 flex flex-col order spawn-down gap-3">
-        <div className="marquee-left time-20 overflow-hidden rounded-xl bg-slate-800 ring-1 ring-slate-700">
+        <div className="marquee-left time-20 overflow-hidden bg-slate-800 ring-1 ring-slate-700">
           <span className={`mx-3 ${TILE} bg-cyan-900`}>marquee-left</span>
         </div>
-        <div className="marquee-right time-20 overflow-hidden rounded-xl bg-slate-800 ring-1 ring-slate-700">
+        <div className="marquee-right time-20 overflow-hidden bg-slate-800 ring-1 ring-slate-700">
           <span className={`mx-3 ${TILE} bg-cyan-900`}>marquee-right</span>
 
         </div>
@@ -50,10 +50,10 @@ export default function Page() {
         fill.
       </P>
       <div className="my-3 grid spawn-down order grid-cols-2 gap-3">
-        <div className="marquee-up time-10 h-32 overflow-hidden rounded-xl bg-slate-800 ring-1 ring-slate-700">
+        <div className="marquee-up time-10 h-32 overflow-hidden bg-slate-800 ring-1 ring-slate-700">
           <span className={`my-2 block ${TILE} bg-cyan-900 text-center`}>marquee-up</span>
         </div>
-        <div className="marquee-down time-10 h-32 overflow-hidden rounded-xl bg-slate-800 ring-1 ring-slate-700">
+        <div className="marquee-down time-10 h-32 overflow-hidden bg-slate-800 ring-1 ring-slate-700">
           <span className={`my-2 block ${TILE} bg-cyan-900 text-center`}>marquee-down</span>
 
         </div>

@@ -139,7 +139,7 @@ export default function Page() {
         time they mount.
       </P>
       <Replay>
-        <div className="appear scroll spawn-up flex min-h-[72px] min-w-[220px] items-center justify-center rounded-xl bg-slate-800 p-5 ring-1 ring-slate-700">
+        <div className="appear scroll spawn-up flex min-h-[72px] min-w-[220px] items-center justify-center bg-slate-800 p-5 ring-1 ring-slate-700">
           .appear.scroll.spawn-up
         </div>
       </Replay>

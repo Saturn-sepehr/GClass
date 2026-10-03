@@ -94,7 +94,7 @@ function NavSections({ pathname, cls = "" }) {
                 <li key={slug}>
                   <Link
                     href={href}
-                    className={`block appear compatibility spawn-left click-hover amount-2 rounded-md px-2 py-1 text-sm transition-colors ${cls} ${
+                    className={`block appear compatibility spawn-left click-hover amount-2 px-2 py-1 text-sm transition-colors ${cls} ${
                       active
                         ? "bg-cyan-300/10 font-bold"
                         : "opacity-75 hover:bg-slate-700/50 hover:opacity-100"
@@ -151,7 +151,7 @@ export default function Sidebar() {
         onClick={() => setOpen(true)}
         aria-label="Open docs navigation"
         aria-expanded={open}
-        className="fixed bottom-6 right-6 z-40 rounded-full border border-cyan-200/25 bg-slate-800/90 p-3.5 text-cyan-200 shadow-lg backdrop-blur transition-colors hover:bg-cyan-200/15 lg:hidden"
+        className="fixed bottom-6 right-6 z-40 border border-cyan-200/25 bg-slate-800/90 p-3.5 text-cyan-200 shadow-lg backdrop-blur transition-colors hover:bg-cyan-200/15 lg:hidden"
       >
         <Menu className="h-6 w-6" />
       </button>
@@ -172,7 +172,7 @@ export default function Sidebar() {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close docs navigation"
-                className="rounded-md p-1.5 transition-colors hover:bg-slate-700/60"
+                className=" p-1.5 transition-colors hover:bg-slate-700/60"
               >
                 <X className="h-5 w-5" />
               </button>

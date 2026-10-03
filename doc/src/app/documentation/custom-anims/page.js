@@ -38,10 +38,10 @@ customAnims.push({
 
       <H2>Live demo</H2>
       <Replay>
-        <Demo className="appear whirl flex min-h-[80px] min-w-[160px] items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700 text-xs">
+        <Demo className="appear whirl flex min-h-[80px] min-w-[160px] items-center justify-center bg-slate-800 ring-1 ring-slate-700 text-xs">
           .whirl
         </Demo>
-        <Demo className="appear bounce-in flex min-h-[80px] min-w-[160px] items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700 text-xs">
+        <Demo className="appear bounce-in flex min-h-[80px] min-w-[160px] items-center justify-center bg-slate-800 ring-1 ring-slate-700 text-xs">
           .bounce-in (timeline)
         </Demo>
       </Replay>

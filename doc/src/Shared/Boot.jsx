@@ -1,16 +1,19 @@
+import Image from 'next/image'
 import React from 'react'
-
+import Logo from '../../public/GClassBeta.svg'
 export default function Boot() {
   return (
-    <div className='fixed h-screen w-screen boot-up boot-time-4'>
-        <div
-          className='crt-screen  fixed inset-0 -z-20 bg-slate-900'
-          aria-hidden='true'
-        />
+    <div className='fixed h-screen w-screen boot-up boot-time-2'>
+      <div
+        className='crt-screen  fixed inset-0 -z-20 bg-slate-900'
+        aria-hidden='true'
+      />
      
-
-      <div className='relative font-mono text-cyan-200 w-screen h-screen text-xs leading-4 whitespace-pre-wrap max-h-[70vh] overflow-hidden p-4'>
-        <p className='typewriter time-3.5 w-screen h-screen'>{`[  OK  ] Starting GClass Boot Sequence - GNU/GClass
+      <div>
+        <Image src={Logo} alt='error' className='fixed right-10 top-10 spawn-right ease-back'></Image>
+      </div>
+      <div className='relative font-mono text-cyan-200 w-screen h-screen text-xs whitespace-pre-wrap overflow-hidden p-4'>
+        <p className='spawn-text-spawn-left lines time-2 ease-bounce w-screen h-screen'>{`[  OK  ] Starting GClass Boot Sequence - GNU/GClass
 [  OK  ] Listening on Journal Socket (/dev/log).
 [  OK  ] Listening on Journal Socket.
 [  OK  ] Mounted Huge Pages File System.

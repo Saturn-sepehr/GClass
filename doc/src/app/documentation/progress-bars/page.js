@@ -6,8 +6,8 @@ function Track({ label, barClass }) {
   return (
     <div>
       <p className="mb-2 text-xs opacity-60">{label}</p>
-      <div className="h-3 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-700">
-        <div className={`${barClass} h-full w-full rounded-full bg-cyan-300/80`} />
+      <div className="h-3 overflow-hidden bg-slate-800 ring-1 ring-slate-700">
+        <div className={`${barClass} h-full w-full bg-cyan-300/80`} />
       </div>
     </div>
   );

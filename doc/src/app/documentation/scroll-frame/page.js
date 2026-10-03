@@ -29,7 +29,7 @@ export default function Page() {
         scrollbar. Scroll <b>inside it</b> - the cards slide in and rewind per
         card, completely independent of the page scroll.
       </P>
-      <div className="scroll-frame my-4 h-[280px] overflow-y-auto rounded-xl bg-slate-950/50 p-4 ring-1 ring-slate-700">
+      <div className="scroll-frame my-4 h-[280px] overflow-y-auto bg-slate-950/50 p-4 ring-1 ring-slate-700">
         <div className="space-y-6 py-2">
           <Demo className="scroll spawn-up time-1 flex min-h-[90px] items-center justify-center">
             .scroll .spawn-up
@@ -57,14 +57,14 @@ export default function Page() {
         frame</b> is the playhead. The bar and fades below are tied to the box
         scrollbar - scroll the frame up and down to scrub in both directions.
       </P>
-      <div className="scroll-frame my-4 h-[320px] overflow-y-auto rounded-xl bg-slate-950/50 p-4 ring-1 ring-slate-700">
+      <div className="scroll-frame my-4 h-[320px] overflow-y-auto bg-slate-950/50 p-4 ring-1 ring-slate-700">
         <div className="space-y-[28vh] py-2">
           <div>
             <p className="mb-2 text-xs opacity-60">
               .expand-horizontal .scroll-progress - width follows the frame
             </p>
-            <div className="h-3 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-700">
-              <div className="expand-horizontal scroll-progress progress-start-20 progress-end-80 h-full w-full rounded-full bg-cyan-300/80" />
+            <div className="h-3 overflow-hidden bg-slate-800 ring-1 ring-slate-700">
+              <div className="expand-horizontal scroll-progress progress-start-20 progress-end-80 h-full w-full bg-cyan-300/80" />
             </div>
           </div>
           <Demo className="spawn-fade scroll-progress progress-start-20 progress-end-80 flex min-h-[140px] items-center justify-center text-sm">

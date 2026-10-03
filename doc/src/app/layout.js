@@ -3,6 +3,7 @@ import Display from "@/Shared/Display";
 import "./globals.css";
 import AnimInit from "@/Shared/animInit";
 import Boot from "@/Shared/Boot";
+import Line from "@/Shared/Line";
 
 // --- SEO: HOW THIS WORKS (read this to redo it without AI) ---
 // Next.js App Router reads the exported `metadata` object below and turns it
@@ -87,6 +88,7 @@ export default function RootLayout({ children }) {
         <AnimInit />
         <Display>
           <Header />
+          <Line></Line>
           {children}
         </Display>
       </body>

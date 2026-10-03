@@ -4,7 +4,7 @@ import { Demo } from "@/Shared/DocsUI";
 
 export const metadata = { title: "GClass - .randomize" };
 
-const BOX = "flex min-h-[90px] min-w-[160px] items-center justify-center rounded-xl bg-slate-800 ring-1 ring-slate-700 text-xs";
+const BOX = "flex min-h-[90px] min-w-[160px] items-center justify-center bg-slate-800 ring-1 ring-slate-700 text-xs";
 
 export default function Page() {
   return (

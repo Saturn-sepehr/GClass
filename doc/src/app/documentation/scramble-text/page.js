@@ -66,7 +66,7 @@ export default function Page() {
       <Replay>
         <Demo className="flex min-h-[72px] items-center justify-center text-center text-sm">
           <p className="scramble appear time-2">
-            Visit <a href="#" className="font-bold text-cyan-200 underline">docs</a> for <span className="rounded bg-cyan-200/20 px-1.5 py-0.5 text-xs">gclass-anims</span> →
+            Visit <a href="#" className="font-bold text-cyan-200 underline">docs</a> for <span className=" bg-cyan-200/20 px-1.5 py-0.5 text-xs">gclass-anims</span> →
           </p>
         </Demo>
       </Replay>

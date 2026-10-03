@@ -14,7 +14,7 @@ export default function Documentation() {
       
       <Link
         href="/"
-        className="inline-block mt-8 p-2 font-bold bg-slate-700/80 hover:bg-slate-600/80 transition-colors text-cyan-200 rounded-xl"
+        className="inline-block mt-8 p-2 font-bold bg-slate-700/80 hover:bg-slate-600/80 transition-colors text-cyan-200"
       >
         ← Back home
       </Link>

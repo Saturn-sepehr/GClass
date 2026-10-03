@@ -12,7 +12,7 @@ export default function Replay({ label = "Replay", children }) {
       <button
         type="button"
         onClick={() => setRun((v) => v + 1)}
-        className="rounded-lg border border-cyan-200/25 bg-cyan-200/5 px-3 py-1 text-xs font-bold tracking-wide text-cyan-200 hover:bg-cyan-200/15"
+        className=" border border-cyan-200/25 bg-cyan-200/5 px-3 py-1 text-xs font-bold tracking-wide text-cyan-200 hover:bg-cyan-200/15"
       >
         ⟲ {label}
       </button>

@@ -35,7 +35,7 @@ export default function Page() {
 <div class="s:spawn-text-spawn-up"> SplitText variant also gates - s:spawn-text-spawn-up </div>
 <div class="m:pin"> pin only on tablet+ </div>`}</Code>
       <Replay>
-        <EntranceDemo cls="appear spawn-up"><div className="flex h-20 w-32 items-center justify-center rounded bg-indigo-600 text-xs">spawn-up</div></EntranceDemo>
+        <EntranceDemo cls="appear spawn-up"><div className="flex h-20 w-32 items-center justify-center bg-indigo-600 text-xs">spawn-up</div></EntranceDemo>
         <div className="flex flex-col gap-1 text-xs opacity-60"><span>resize to &lt;768 - m:spawn-up stays static</span><span>resize to &gt;=768 - spawns via gsap.matchMedia</span></div>
       </Replay>
       <Note>

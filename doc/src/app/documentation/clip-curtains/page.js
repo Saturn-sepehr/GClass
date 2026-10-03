@@ -4,7 +4,7 @@ import { EntranceDemo, Demo } from "@/Shared/DocsUI";
 
 export const metadata = { title: "GClass - Clip & curtains" };
 
-const BOX = "flex min-h-[90px] w-full items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 ring-1 ring-slate-600 text-xs";
+const BOX = "flex min-h-[90px] w-full items-center justify-center bg-slate-700 ring-1 ring-slate-600 text-xs";
 
 export default function Page() {
   return (

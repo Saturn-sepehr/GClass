@@ -75,7 +75,7 @@ export default function Page() {
       <Replay>
         <div
           style={{ contain: "paint", contentVisibility: "auto", isolation: "isolate" }}
-          className="flex-1 rounded-xl border border-slate-700 bg-slate-800/40 p-5 flex min-h-[120px] items-center justify-center isolate will-change-transform"
+          className="flex-1 border border-slate-700 bg-slate-800/40 p-5 flex min-h-[120px] items-center justify-center isolate will-change-transform"
         >
           <svg
             viewBox="0 0 24 24"
@@ -142,7 +142,7 @@ export default function Page() {
       <Replay>
         <div
           style={{ contain: "paint", contentVisibility: "auto", isolation: "isolate" }}
-          className="flex-1 rounded-xl border border-slate-700 bg-slate-800/40 p-5 flex min-h-[120px] items-center justify-center gap-6 isolate will-change-transform"
+          className="flex-1 border border-slate-700 bg-slate-800/40 p-5 flex min-h-[120px] items-center justify-center gap-6 isolate will-change-transform"
         >
           <svg
             viewBox="0 0 24 24"
