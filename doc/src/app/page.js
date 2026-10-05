@@ -18,9 +18,8 @@ export default function Home() {
           <Code>{`npm install gclass-anims`}</Code>
           <h2 className="text-slate-400 font-bold text-left mt-4 order typewriter">Usage</h2>
           <p className="text-slate-400 text-left order typewriter">Framework agnostic</p>
-          <Code>{`<script>
-   InitAnimations()
-</script>`}</Code>
+          <Code>{`
+   InitAnimations()`}</Code>
           <br></br>
           <div className="mt-4 order spawn-down bounce click-hover wrap-div compatibility cursor-pointer">
             <Link
