@@ -167,7 +167,7 @@ export function EntranceDemo({ cls, children = null }) {
 
 export function QSButtons({link , children}){
   return (
-    <Link href={link} className="my-3 hover:bg-slate-800 order spawn-down font-extrabold items-center px-10 click-hover compatibility justify-between flex flex-row curtain-horizontal border border-cyan-300/20 bg-cyan-300/5 p-3 text-xs leading-relaxed text-cyan-200/90">
+    <Link href={link} className="my-3 hover:bg-slate-800 order spawn-down font-extrabold items-center px-10 click-hover compatibility justify-between flex flex-row curtain-horizontal border-x border-cyan-300/20 bg-cyan-300/5 p-3 text-xs leading-relaxed text-cyan-200/90">
       {children}
     </Link>
   )
