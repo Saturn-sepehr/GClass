@@ -11,14 +11,14 @@ export interface GClassConfig {
 
 /**
  * Boots the GSAP animation system (idempotent).
- * @param throttlePerFrame - number of observer handlers allowed per rAF frame (0 = no throttling, default).
+ * @param throttlePerFrame-number of observer handlers allowed per rAF frame (0 = no throttling, default).
  *   Also accepts initAnimations({throttlePerFrame, fps}) object overload.
- * @param fps - GSAP ticker fps cap (0 = default rAF, e.g. 30 for low-end). 0/undefined = no cap.
+ * @param fps-GSAP ticker fps cap (0 = default rAF, e.g. 30 for low-end). 0/undefined = no cap.
  */
 export function initAnimations(throttlePerFrame?: number | GClassConfig, fps?: number): void
 /**
  * Change GClass runtime options on the fly without reload.
- * gclassOpts(throttlePerFrame, fps) — both optional numbers, missing -> defaults (0).
+ * gclassOpts(throttlePerFrame, fps)-both optional numbers, missing -> defaults (0).
  * gclassOpts() resets to defaults (no throttle, default ticker).
  * Also accepts gclassOpts({throttlePerFrame, fps}).
  * Example low-end button: onClick={() => gclassOpts(1, 30)}
@@ -53,12 +53,12 @@ export function registerComplete(name: string, fn: CompleteHandler): CompleteHan
  * Boot the engine directly, bypassing AnimToggle. Returns a teardown function
  * that removes all listeners/observers/tweens created by this run.
  * Pass a root to scope to that subtree (used for .boot-up).
- * @param root - scope root (Document or HTMLElement)
- * @param throttlePerFrame - number of observer handlers allowed per rAF frame.
+ * @param root-scope root (Document or HTMLElement)
+ * @param throttlePerFrame-number of observer handlers allowed per rAF frame.
  *   0/undefined = no throttling (default). 1 = 1 observer per frame round-robin.
  *   Overload: initListeners(throttlePerFrame) is also supported (root defaults to document).
  */
-export default function initListeners(root?: Document | HTMLElement | number, throttlePerFrame?: number): () => void
+export function initListeners(root?: Document | HTMLElement | number, throttlePerFrame?: number): () => void
 
 // --- onComplete config -----------------------------------------------------
 
@@ -148,12 +148,17 @@ export interface Defaults {
   effectOffset: number
   progressStart: string
   progressEnd: string
-  textStagger: number
   typewriterSplitCharDuration: number
   minTextPartDuration: number
   revealDelay: number
   characterlist: string
   bootTime: number
+  /**
+   * Responsive breakpoint widths keyed by prefix, applied as `min-width`.
+   * Prefixes are single letters to avoid colliding with Tailwind's
+   * `sm` / `md` / `lg`. Editable at runtime.
+   */
+  breakpoints: Record<string, number>
 }
 
 /** Global timing / ease defaults (edit to tweak global behaviour). */
@@ -167,11 +172,12 @@ export function normalize(extra?: AnimationConfig[]): NormalizedConfig
 
 // --- CustomAnims -----------------------------------------------------------
 
-/** User-supplied animations, merged into the engine at init time. */
+/**
+ * User-supplied animations, merged into the engine at init time.
+ * Push entries here and re-run `initAnimations()` (or `initListeners()`) to
+ * pick them up-the config is re-normalised on every init.
+ */
 export const customAnims: AnimationConfig[]
-
-/** Example manual helper (not wired into listeners). */
-export function Example(target: any, customVars: object): any
 
 // --- Animations ------------------------------------------------------------
 
@@ -182,6 +188,26 @@ export type TweenTarget = any
 export function SpawnV(target: TweenTarget, delay: number, dir: number, dur: number, ease: string): any
 /** Spawn an element horizontally by `dir` px. */
 export function SpawnH(target: TweenTarget, delay: number, dir: number, dur: number, ease: string): any
+/**
+ * Reads an element's live resting value for one property, via
+ * `getComputedStyle`, so end states stay theme/breakpoint responsive.
+ * Falls back to `fallback` when the property resolves to something
+ * non-numeric and no fallback was supplied.
+ */
+export function finalOpacity(target: TweenTarget): number
+/**
+ * Captures (and caches on `el._gcText`) an element's full innerHTML so a
+ * mid-flight TextPlugin teardown cannot strand the text as `""`. Safe to
+ * call repeatedly-it refuses to overwrite a settled stash while a
+ * typewriter / spawn / scroll tween is still active.
+ */
+export function stashText(target: TweenTarget): string
+/** Clip-path wipe reveal from one edge. `dir` is up | down | left | right. */
+export function spawnClipReveal(target: TweenTarget, delay: number, dur: number, ease: string, dir?: "up" | "down" | "left" | "right"): any
+/** Opens a clip-path curtain from the centre outwards, horizontally. */
+export function curtainHorizontal(target: TweenTarget, delay: number, dur: number, ease: string): any
+/** Opens a clip-path curtain from the centre outwards, vertically. */
+export function curtainVertical(target: TweenTarget, delay: number, dur: number, ease: string): any
 export function expandV(target: TweenTarget, delay: number, dur: number, ease: string): any
 export function expandH(target: TweenTarget, delay: number, dur: number, ease: string): any
 export function expandA(target: TweenTarget, delay: number, dur: number, ease: string): any
@@ -220,11 +246,17 @@ export function scrambleVars(target: TweenTarget): {
  * Scramble spawn: the text starts empty and resolves into its real content
  * through garbage characters (ScrambleTextPlugin). No opacity change; nested
  * elements are preserved. Defaults to a linear ease so `.time-N` is the true
- * total reveal time - an explicit `.ease-*` class overrides. Modifiers read
+ * total reveal time-an explicit `.ease-*` class overrides. Modifiers read
  * from the element: .reveal-delay-N, .chars-[...], .amount-N, .scramble-all
  * (whole-string scramble-and-sweep, no empty-start typing), .scramble-rtl.
  */
 export function scramble(target: TweenTarget, delay: number, dur: number, ease: string): any
+/**
+ * Splits an element's top-level text runs into `<span>` wrappers, trimming
+ * edge whitespace, and caches the result on `el._gcScrambleSegs`. Only
+ * top-level runs are wrapped so nested elements stay untouched.
+ */
+export function scrambleSegments(target: TweenTarget): { t: TweenTarget; text: string }[]
 /** Progressively draws the target's SVG stroke from 0% to 100% (strokes only). */
 export function drawsvg(target: TweenTarget, delay: number, dur: number, ease: string): any
 /**

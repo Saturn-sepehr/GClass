@@ -66,7 +66,6 @@ export const defaults = {
   effectOffset: 20,
   progressStart: "top bottom",
   progressEnd: "center center",
-  textStagger: 0.03,
   typewriterSplitCharDuration: 0.05,
   minTextPartDuration: 0.3,
   revealDelay:0,

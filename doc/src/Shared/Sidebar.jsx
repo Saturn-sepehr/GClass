@@ -51,6 +51,7 @@ const SECTIONS = [
       
       ["Magnet", "magnet"],
       ["css-* classes", "css-classes"],
+      [".gc-* escape hatch", "gc-classes"],
       [".ease-N", "eases"],
       ["Randomization", "randomize"],
 

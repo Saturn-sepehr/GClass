@@ -1,5 +1,5 @@
 import { gsap } from 'gsap'
-import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText, scrambleVars } from './Animations.js'
+import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText, scrambleVars, registerPlugins } from './Animations.js'
 import { customAnims } from './CustomAnims.js'
 import { defaults, normalize } from './Config.js'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
@@ -24,37 +24,60 @@ const TEXT_PREFIX_LEN = TEXT_PREFIX.length
 //   <div class="xs:spawn-up"> from 475px up
 // Colon is valid in classList (class="m:spawn-up") and checked via
 // classList.contains - never via unescaped querySelector (":pseudo" would break).
-const bpEntries = Object.entries(defaults.breakpoints || {}).sort((a, b) => a[1] - b[1])
-const bpNames = bpEntries.map(([k]) => k)
-const bpMap = Object.fromEntries(bpEntries)
-const bpPrefixRE = bpNames.length ? new RegExp(`^(${bpNames.join('|')}):(.+)$`) : /^$^/
+// Derived from defaults.breakpoints, but LAZILY and memoised on the identity
+// of that object. These used to be module-scope consts, which meant the tables
+// were frozen at import time: assigning defaults.breakpoints after the module
+// loaded was silently ignored by every helper below. The cache key is the
+// breakpoints object itself, so replacing or mutating it invalidates the tables
+// and they are rebuilt on the next read. (Mutating in place still reuses the
+// cache - assign a new object to pick up changes.)
+let bpCacheSource = null
+let bpCache = null
+const bpData = () => {
+    const src = defaults.breakpoints || {}
+    if (bpCache && bpCacheSource === src) return bpCache
+    const entries = Object.entries(src).sort((a, b) => a[1] - b[1])
+    bpCacheSource = src
+    bpCache = {
+        entries,
+        names: entries.map(([k]) => k),
+        map: Object.fromEntries(entries),
+        re: entries.length ? new RegExp(`^(${entries.map(([k]) => k).join('|')}):(.+)$`) : /^$^/,
+    }
+    return bpCache
+}
+// Live accessors - always go through bpData() so a late edit to
+// defaults.breakpoints is honoured.
+const bpNames = () => bpData().names
+const bpMap = () => bpData().map
+const bpPrefixRE = () => bpData().re
 const isBreakpointActive = (bp) => {
     if (!bp) return true
-    const px = bpMap[bp]
+    const px = bpMap()[bp]
     if (px == null) return true
     if (typeof window === 'undefined' || !window.matchMedia) return true
     return window.matchMedia(`(min-width: ${px}px)`).matches
 }
-const mqForBp = (bp) => `(min-width: ${bpMap[bp]}px)`
+const mqForBp = (bp) => `(min-width: ${bpMap()[bp]}px)`
 // Does el carry `bp:base` and is that bp currently active? Also handles base without prefix.
 const elementMatchesSel = (el, sel) => {
     const base = sel.slice(1) // ".spawn-up" -> "spawn-up"
     if (el.classList.contains(base)) return true
-    for (const bp of bpNames) {
+    for (const bp of bpNames()) {
         if (el.classList.contains(`${bp}:${base}`) && isBreakpointActive(bp)) return true
     }
     return false
 }
 const hasGClass = (el, name) => {
     if (el.classList.contains(name)) return true
-    for (const bp of bpNames) if (el.classList.contains(`${bp}:${name}`) && isBreakpointActive(bp)) return true
+    for (const bp of bpNames()) if (el.classList.contains(`${bp}:${name}`) && isBreakpointActive(bp)) return true
     return false
 }
 // If el has ANY bp:* class, it is breakpoint-gated. When gated, require at least one active variant.
 const isElBreakpointActive = (el) => {
     let hasBp = false
     for (const c of el.classList) {
-        const m = c.match(bpPrefixRE)
+        const m = c.match(bpPrefixRE())
         if (!m) continue
         hasBp = true
         if (isBreakpointActive(m[1])) return true
@@ -172,7 +195,17 @@ export default function initListeners(root = document, throttlePerFrame) {
         root = document
     }
     throttlePerFrame = Number(throttlePerFrame) || 0 // 0 = no throttling (default)
+    // Every plugin the engine can emit a tween for is registered HERE, once,
+    // rather than at module scope in Animations.js. Two reasons:
+    //   1. package.json declares "sideEffects": false, so a consumer bundler
+    //      is told it may drop a module that only registers plugins on import.
+    //      Module-scope registration + that flag = silently un-registered
+    //      plugins and runtime crashes in someone else's app.
+    //   2. Importing the package for helpers alone stays free of side effects.
+    // TextPlugin/SplitText are also in this call for the sake of one obvious
+    // list; registerPlugins() owns the remaining five.
     gsap.registerPlugin(TextPlugin, ScrollTrigger, SplitText)
+    registerPlugins()
     // Re-normalize per init so runtime customAnims.push() is picked up (beta.22)
     const { all: animAll, spawnConfigs, loopConfigs } = normalize(customAnims)
 
@@ -192,12 +225,12 @@ export default function initListeners(root = document, throttlePerFrame) {
     const breakpointContexts = [] // track mm contexts for teardown
     const getGateBpForSel = (el, sel) => {
         const base = sel.slice(1)
-        for (const bp of bpNames) if (el.classList.contains(`${bp}:${base}`)) return bp
+        for (const bp of bpNames()) if (el.classList.contains(`${bp}:${base}`)) return bp
         return null
     }
     const getElGateBp = (el) => {
         for (const c of el.classList) {
-            const m = c.match(bpPrefixRE)
+            const m = c.match(bpPrefixRE())
             if (m) return m[1]
         }
         return null
@@ -221,7 +254,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         const base = sel.slice(1)
         // include base + any variant
         const all = qAll("body *")
-        return all.filter(el => el.classList.contains(base) || bpNames.some(bp => el.classList.contains(`${bp}:${base}`)))
+        return all.filter(el => el.classList.contains(base) || bpNames().some(bp => el.classList.contains(`${bp}:${base}`)))
     }
     // Active-only view (used for order calculations that must reflect current viewport)
     const qAllActive = wrapQAll(qAll)
@@ -242,11 +275,11 @@ export default function initListeners(root = document, throttlePerFrame) {
             for (const c of el.classList) {
                 let bp = null
                 let core = c
-                const m = c.match(bpPrefixRE)
+                const m = c.match(bpPrefixRE())
                 if (m) { bp = m[1]; core = m[2] }
                 if (!core.startsWith(prefix)) continue
                 if (bp && !isBreakpointActive(bp)) continue
-                const px = bp ? bpMap[bp] : -1 // base = -1, xs=475 etc.
+                const px = bp ? bpMap()[bp] : -1 // base = -1, xs=475 etc.
                 if (px > bestPx) { best = c; bestPx = px; }
             }
             return best
@@ -323,7 +356,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             for (const c of el.classList) {
                 let base = c
                 let bp = null
-                const m = c.match(bpPrefixRE)
+                const m = c.match(bpPrefixRE())
                 if (m) { bp = m[1]; base = m[2] }
                 if (!base.startsWith(TEXT_PREFIX)) continue
                 if (bp && !isBreakpointActive(bp)) continue
@@ -546,10 +579,16 @@ export default function initListeners(root = document, throttlePerFrame) {
 
         const readTiming = (el) => {
             const priority = readClassNumber(el, "priority-", 0)
+            // `.delay-N` (beta.24) is a plain additive offset applied AFTER the
+            // order/priority delay, so it composes with both rather than
+            // replacing them: `order delay-2` shifts the stagger 2s later,
+            // `priority-3 delay-1` likewise. Previously `delay` was promised in
+            // the Config.js schema comment but no code read it.
+            const extra = readClassNumber(el, "delay-", 0)
             return {
-                delay: hasGClass(el, "order")
+                delay: (hasGClass(el, "order")
                     ? getOrderDelay(el, priority)
-                    : priority * defaults.spawnDelayMultiplier,
+                    : priority * defaults.spawnDelayMultiplier) + extra,
                 duration: readClassNumber(el, "time-", 1),
                 ease: getEase(el),
             }
@@ -1028,7 +1067,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 scrollTriggers.push(t.scrollTrigger)
             }
         }
-        qAll("body *").filter(el => hasGClass(el,"progress-bar") || hasGClass(el,"scroll-fill") || hasGClass(el,"scroll-fade-bg") || hasGClass(el,"scroll-horizontal") || [...el.classList].some(c=>c.startsWith("parallax-") || bpNames.some(bp=>c.startsWith(`${bp}:parallax-`)))).forEach(el => setupScrollDriven(el))
+        qAll("body *").filter(el => hasGClass(el,"progress-bar") || hasGClass(el,"scroll-fill") || hasGClass(el,"scroll-fade-bg") || hasGClass(el,"scroll-horizontal") || [...el.classList].some(c=>c.startsWith("parallax-") || bpNames().some(bp=>c.startsWith(`${bp}:parallax-`)))).forEach(el => setupScrollDriven(el))
 
         // Scroller resolution: a `.scroll`/`.scroll-progress` element inside a
         // `.scroll-frame` container binds its trigger to THAT box instead of the
@@ -1604,14 +1643,49 @@ export default function initListeners(root = document, throttlePerFrame) {
         const CSS_ANIM_RE = new RegExp(`^((spawn|hover|click)-)?css-([a-zA-Z]+)-${CSS_VAL}-${CSS_VAL}$`)
         const CSS_SINGLE_RE = new RegExp(`^((hover|click)-)css-([a-zA-Z]+)-${CSS_VAL}$`)
         const parseCssVal = (s) => /^#/.test(s) ? s : Number(s)
+        // Collects EVERY css-* class on the element rather than returning on
+        // the first match (beta.24). Previously one element could carry only a
+        // single css-* animation and any further classes were silently ignored;
+        // merging means `css-rotate-0-8 css-scale-1-1.1` now both apply.
+        //
+        // Merge rules, in precedence order:
+        //   - two-value form contributes `from` + `to`
+        //   - single-value form contributes `to` only
+        //   - a later class for the same prop wins (classList order)
+        //   - the FIRST mode encountered decides spawn/hover/click/loop for the
+        //     whole element, so `css-x-0-1 spawn-css-y-0-1` stays coherent
         const parseCssAnim = (el) => {
+            // mode = the first trigger prefix seen (loop/spawn/hover/click);
+            // props = every prop found, later classes winning per prop.
+            let mode = null
+            let single = false
+            const props = {}
             for (const c of el.classList) {
-                let m = c.match(CSS_ANIM_RE)
-                if (m) return { mode: m[2] || "loop", prop: m[3], from: parseCssVal(m[4]), to: parseCssVal(m[5]) }
-                m = c.match(CSS_SINGLE_RE)
-                if (m) return { mode: m[2], prop: m[3], to: parseCssVal(m[4]), single: true }
+                const m2 = c.match(CSS_ANIM_RE)
+                if (m2) {
+                    if (mode === null) mode = m2[2] || "loop"
+                    props[m2[3]] = { from: parseCssVal(m2[4]), to: parseCssVal(m2[5]) }
+                    continue
+                }
+                const m1 = c.match(CSS_SINGLE_RE)
+                if (m1) {
+                    if (mode === null) mode = m1[2]
+                    // A single-value class means "hold at this value", which is
+                    // a hold-style animation rather than a from/to ping-pong.
+                    single = true
+                    props[m1[3]] = { to: parseCssVal(m1[4]) }
+                }
             }
-            return null
+            if (mode === null) return null
+            const keys = Object.keys(props)
+            const primary = keys[0]
+            const merged = { mode, prop: primary, single }
+            const p = props[primary]
+            if (p.from !== undefined) merged.from = p.from
+            merged.to = p.to
+            merged.extras = {}
+            for (const k of keys.slice(1)) merged.extras[k] = props[k]
+            return merged
         }
         const cssTweens = []
         const setupCssAnims = (el) => {
@@ -1621,14 +1695,22 @@ export default function initListeners(root = document, throttlePerFrame) {
             const dur = readClassNumber(el, "time-", 1)
             const ease = getEase(el)
             const key = "_cssAnim"
-            const loopVars = { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: -1 }
+            // Every merged prop goes into the same vars object, so a second
+            // `css-scale-1-1.1` animates alongside the primary one.
+            const primaryVars = { [anim.prop]: anim.to }
+            const primaryFrom = { [anim.prop]: anim.from }
+            for (const [k, v] of Object.entries(anim.extras || {})) {
+                primaryVars[k] = v.to
+                if (v.from !== undefined) primaryFrom[k] = v.from
+            }
+            const loopVars = { ...primaryVars, duration: dur, ease, yoyo: true, repeat: -1 }
             if (anim.mode === "loop") {
                 el[key]?.kill()
-                el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, loopVars)
+                el[key] = gsap.fromTo(el, { ...primaryFrom }, loopVars)
                 cssTweens.push(el[key])
             } else if (anim.mode === "spawn") {
                 el[key]?.kill()
-                el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease })
+                el[key] = gsap.fromTo(el, { ...primaryFrom }, { ...primaryVars, duration: dur, ease })
                 cssTweens.push(el[key])
             } else if (anim.mode === "hover") {
                 const area = wrapTarget(el)
@@ -1636,26 +1718,27 @@ export default function initListeners(root = document, throttlePerFrame) {
                     // Single-value hover: tween to the target and HOLD for as long
                     // as it's hovered; on leave, revert to the element's original
                     // value (captured at setup, before any animation touched it).
-                    const original = gsap.getProperty(el, anim.prop)
+                    const original = {}
+                    for (const k of [anim.prop, ...Object.keys(anim.extras || {})]) original[k] = gsap.getProperty(el, k)
                     addListener(area, "mouseenter", () => {
                         el[key]?.kill()
-                        el[key] = gsap.to(el, { [anim.prop]: anim.to, duration: dur, ease })
+                        el[key] = gsap.to(el, { ...primaryVars, duration: dur, ease })
                         cssTweens.push(el[key])
                     })
                     addListener(area, "mouseleave", () => {
                         el[key]?.kill()
-                        el[key] = gsap.to(el, { [anim.prop]: original, duration: dur, ease })
+                        el[key] = gsap.to(el, { ...original, duration: dur, ease })
                         cssTweens.push(el[key])
                     })
                 } else {
                     addListener(area, "mouseenter", () => {
                         el[key]?.kill()
-                        el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { ...loopVars })
+                        el[key] = gsap.fromTo(el, { ...primaryFrom }, { ...loopVars })
                         cssTweens.push(el[key])
                     })
                     addListener(area, "mouseleave", () => {
                         el[key]?.kill()
-                        el[key] = gsap.to(el, { [anim.prop]: anim.from, duration: dur, ease })
+                        el[key] = gsap.to(el, { ...primaryFrom, duration: dur, ease })
                         cssTweens.push(el[key])
                     })
                 }
@@ -1664,27 +1747,317 @@ export default function initListeners(root = document, throttlePerFrame) {
                 if (anim.single) {
                     // Single-value click: tween to the target while pressed, then
                     // revert to the element's original value on mouseup.
-                    const original = gsap.getProperty(el, anim.prop)
+                    const original = {}
+                    for (const k of [anim.prop, ...Object.keys(anim.extras || {})]) original[k] = gsap.getProperty(el, k)
                     addListener(area, "mousedown", () => {
                         el[key]?.kill()
-                        el[key] = gsap.to(el, { [anim.prop]: anim.to, duration: dur, ease })
+                        el[key] = gsap.to(el, { ...primaryVars, duration: dur, ease })
                         el[key].eventCallback("onComplete", () => fireOnComplete(el, "click"))
                         cssTweens.push(el[key])
                     })
                     addListener(area, "mouseup", () => {
                         el[key]?.kill()
-                        el[key] = gsap.to(el, { [anim.prop]: original, duration: dur, ease })
+                        el[key] = gsap.to(el, { ...original, duration: dur, ease })
                         cssTweens.push(el[key])
                     })
                 } else {
                     addListener(area, "mousedown", () => {
                         el[key]?.kill()
-                        el[key] = gsap.fromTo(el, { [anim.prop]: anim.from }, { [anim.prop]: anim.to, duration: dur, ease, yoyo: true, repeat: 1 })
+                        el[key] = gsap.fromTo(el, { ...primaryFrom }, { ...primaryVars, duration: dur, ease, yoyo: true, repeat: 1 })
                         el[key].eventCallback("onComplete", () => fireOnComplete(el, "click"))
                         cssTweens.push(el[key])
                     })
                 }
             }
+        }
+
+        // =====================================================================
+        // .gc-tween-[...] / .gc-tl / .gc-<n>-[...]   (beta.24)
+        // =====================================================================
+        // The escape hatch for anything the 43-item menu doesn't cover: you
+        // write the GSAP vars inline and the engine builds the tween.
+        //
+        //   gc-tween-[y:40,opacity:0]        one tween: FROM these vars TO the
+        //                                   element's live resting values
+        //   gc-tl                            marks the element as a timeline host
+        //   gc-1-[y:40] gc-2-[opacity:1]    ordered timeline steps, ascending
+        //
+        // Why the bracket is the FROM state and not a from/to pair: hardcoding
+        // the end value breaks theme-responsiveness (a dark-mode or breakpoint
+        // change leaves the end state stale). resolveResting() reads the real
+        // resting value at wire time instead, so the animation ends wherever
+        // CSS says it should.
+        //
+        // COLLISION SAFETY - the one hard rule, verified against Tailwind 3.4
+        // and 4.x: exactly ONE bracket group per class. Tailwind re-lexes
+        // bracket contents as standalone candidates, so a SECOND group leaks
+        // real CSS into the consumer's stylesheet:
+        //     gc-tween-[y:40]        -> nothing emitted (safe)
+        //     gc-tween-[y:40]-[y:0]  -> Tailwind emits `.[y:0] { y: 0 }` (LEAK)
+        // Never write two bracket groups in one .gc class. For a two-value
+        // tween use two numbered steps, or the existing css-<prop>-<a>-<b>.
+        // NOTE on the regexes: the bracket body is matched as ONE balanced-ish group
+        // using a negated class, so `[^]]*` stops at the FIRST `]`. That is
+        // exactly the invariant we want - a second bracket group can never be
+        // part of a legal .gc class, which is what stops `gc-tween-[a]-[b]`
+        // from silently leaking `.[b]` into a consumer's Tailwind build.
+        // `(?:...)` not `(hover|click)` on purpose: a capturing group would shift
+        // every later index by one (m[3] would be the order digits rather than
+        // the bracket body). Cost me a confusing round of failing tests.
+        // `[^\]]` and not `[^]]` - an unescaped `]` immediately after `[^` is
+        // parsed by JS as closing the (empty) negated class, so `[^]]` matches
+        // nothing at all and every .gc class silently fails to parse.
+        const GC_TWEEN_RE = /^(?:(hover|click)-)?gc-tween-\[([^\]]*)\]$/
+        const GC_STEP_RE = /^(?:(hover|click)-)?gc-(\d+)-\[([^\]]*)\]$/
+        const GC_TL = "gc-tl"
+
+        // Splits "a:1,b:2" on commas that are NOT inside parens, so a value
+        // like `filter:blur(8px)` or `background:rgba(0,0,0,.5)` survives
+        // intact. `_` is accepted as a space, matching the Tailwind
+        // convention, because a literal space would split the class attribute.
+        const splitTopLevel = (s) => {
+            const out = []
+            let depth = 0, buf = ""
+            for (let i = 0; i < s.length; i++) {
+                const ch = s[i]
+                if (ch === "(") depth++
+                else if (ch === ")") depth--
+                if (ch === "," && depth === 0) { out.push(buf); buf = ""; continue }
+                buf += ch
+            }
+            if (buf.trim()) out.push(buf)
+            return out.map(x => x.trim()).filter(Boolean)
+        }
+
+        // Reads one property's live resting value via getComputedStyle.
+        // Returns undefined when the property can't be resolved numerically and
+        // no hint was supplied, which makes the caller skip that prop rather
+        // than tween it to a wrong number.
+        const UNITLESS = new Set([
+            "opacity", "scale", "scaleX", "scaleY", "zIndex", "fontWeight",
+            "lineHeight", "flexGrow", "flexShrink", "order", "fillOpacity",
+            "strokeOpacity", "blur", "roughness", "metalness",
+        ])
+        // Keys whose numeric values GSAP expects in px by default.
+        const PX_KEYS = new Set([
+            "x", "y", "z", "width", "height", "top", "left", "right", "bottom",
+            "radius", "borderRadius", "fontSize", "strokeWidth", "blur",
+        ])
+        const DEG_KEYS = new Set(["rotate", "rotation", "skewX", "skewY", "skew", "rotateX", "rotateY", "rotateZ"])
+
+
+        const resolveResting = (el, key) => {
+            // GSAP transform props live on the element's transform, not as
+            // plain CSS properties, so getComputedStyle is the wrong source
+            // for them. GSAP's own getter already tracks the current value.
+            const isTransformish = /^(x|y|z|scale|rotation|rotate|skew)/.test(key)
+            const toKebab = (k) => k.replace(/[A-Z]/g, m => "-" + m.toLowerCase())
+            let raw
+            if (isTransformish) {
+                raw = gsap.getProperty(el, key)
+            } else {
+                raw = getComputedStyle(el).getPropertyValue(toKebab(key))
+            }
+            if (raw == null || raw === "") return undefined
+            const s = String(raw).trim()
+            if (UNITLESS.has(key) || DEG_KEYS.has(key)) {
+                const n = parseFloat(s)
+                return Number.isNaN(n) ? undefined : n
+            }
+            if (/^-?[\d.]+$/.test(s)) {
+                const n = parseFloat(s)
+                return DEG_KEYS.has(key) ? n : n   // bare numbers pass through
+            }
+            return s
+        }
+
+
+        // Turns the bracket body into GSAP vars.
+        //   "y:40"            -> { y: 40 }        (px inferred for x/y/width...)
+        //   "rotate:45"       -> { rotation: 45 } (deg inferred, normalised to
+        //                                    GSAP's `rotation` spelling)
+        //   "opacity:0"       -> { opacity: 0 }
+        //   "filter:blur(8px)"-> { filter: "blur(8px)" }
+        //   "background:#fff" -> { backgroundColor: "#fff" }
+        //   "at:\">\""        -> timeline position, NOT a tween prop
+        //   "time:0.5"        -> duration override for this step
+        const parseGcVars = (body) => {
+            const vars = {}
+            let duration = null, position = null, ease = null
+            for (const pair of splitTopLevel(body.replace(/_/g, " "))) {
+                const ci = pair.indexOf(":")
+                if (ci === -1) continue
+                let key = pair.slice(0, ci).trim()
+                let raw = pair.slice(ci + 1).trim().replace(/^["']|["']$/g, "")
+                if (!key) continue
+                // GClass-specific control keys, consumed by the engine rather
+                // than handed to GSAP as properties.
+                if (key === "at") { position = raw; continue }
+                if (key === "ease") { ease = raw; continue }
+                if (key === "time" || key === "dur") {
+                    const n = parseFloat(raw)
+                    if (!Number.isNaN(n)) duration = n
+                    continue
+                }
+                // Normalise shorthand -> GSAP's canonical prop names.
+                const ALIAS = { rotate: "rotation", bg: "backgroundColor", bgColor: "backgroundColor" }
+                if (ALIAS[key]) key = ALIAS[key]
+                else if (/[A-Z]/.test(key) || key.includes("-")) {
+                    // kebab-case -> camelCase so clip-path / border-radius work
+                    key = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+                }
+                if (key === "x" || key === "y" || key === "z") {
+                    const n = parseFloat(raw)
+                    // A bare number on a transform axis means px.
+                    vars[key] = !Number.isNaN(n) && /^-?[\d.]+$/.test(raw) ? n : raw
+                    continue
+                }
+                if (DEG_KEYS.has(key)) {
+                    const n = parseFloat(raw)
+                    vars[key] = Number.isNaN(n) ? raw : (/(deg|rad|turn)$/.test(raw) ? raw : n)
+                    continue
+                }
+                if (key === "scale" || key === "scaleX" || key === "scaleY") {
+                    const n = parseFloat(raw)
+                    vars[key] = Number.isNaN(n) ? raw : n
+                    continue
+                }
+                vars[key] = raw
+            }
+            return { vars, duration, position, ease }
+        }
+
+        // Reads every gc-* class on the element, honouring bp: prefixes.
+        // Returns { tween, steps, mode } or null when the element has none.
+        const parseGc = (el) => {
+            // Multiple gc-tween-[...] classes on one element are MERGED (beta.24), so a
+            // long tween can span several classes - `gc-tween-[y:40]
+            // gc-tween-[opacity:0]` is one tween touching both properties.
+            let tween = null
+            let mode = null
+            const steps = []
+            for (const c of el.classList) {
+                // Strip an active bp: prefix, keeping the core name.
+                let core = c, bp = null
+                const bm = c.match(bpPrefixRE())
+                if (bm) {
+                    if (!isBreakpointActive(bm[1])) continue
+                    bp = bm[1]; core = bm[2]
+                }
+                let m = core.match(GC_TWEEN_RE)
+                if (m) {
+                    const parsed = parseGcVars(m[2])
+                    if (!tween) {
+                        tween = parsed
+                        mode = m[1] || "spawn"
+                    } else {
+                        // Merge: later classes add/override properties. A
+                        // per-class time:/at:/ease: from the FIRST class wins,
+                        // since a merged tween has one duration and one ease.
+                        tween.vars = { ...tween.vars, ...parsed.vars }
+                        if (tween.duration == null) tween.duration = parsed.duration
+                        if (tween.ease == null) tween.ease = parsed.ease
+                        if (tween.position == null) tween.position = parsed.position
+                    }
+                    continue
+                }
+                m = core.match(GC_STEP_RE)
+                if (m) {
+                    steps.push({ order: Number(m[2]), trigger: m[1] || null, ...parseGcVars(m[3]) })
+                    if (!mode) mode = m[1] || "spawn"
+                    continue
+                }
+                if (core === GC_TL) { mode = mode || "spawn"; continue }
+            }
+            if (!tween && !steps.length) return null
+            steps.sort((a, b) => a.order - b.order)
+            return { tween, steps, mode }
+        }
+
+        // Builds the "to" half of a tween from the element's live resting
+        // state, so end values follow CSS (theme / breakpoint / media queries)
+        // instead of being frozen into the class.
+        const restingVarsFor = (el, fromVars) => {
+            const to = {}
+            for (const k of Object.keys(fromVars)) {
+                // Special-cased inverted props, same rules computeTo uses.
+                if (k === "opacity") { to.opacity = 1; continue }
+                if (k === "filter") { to.filter = "blur(0px)"; continue }
+                if (k === "clipPath") { to.clipPath = "inset(0% 0% 0% 0%)"; continue }
+                if (k === "drawSVG") { to.drawSVG = "100%"; continue }
+                if (k === "scale" || k === "scaleX" || k === "scaleY") { to[k] = 1; continue }
+                if (k === "x" || k === "y" || k === "z" || k === "rotation" || k === "rotateX" || k === "rotateY" || k === "skewX" || k === "skewY") { to[k] = 0; continue }
+                const r = resolveResting(el, k)
+                // Unresolvable -> leave it out instead of tweening to garbage.
+                if (r !== undefined) to[k] = r
+            }
+            return to
+        }
+
+        const gcTweens = []
+        const gcStore = (el, key, tween) => {
+            const bag = el._gcAnims || (el._gcAnims = {})
+            bag[key]?.kill?.()
+            bag[key] = tween
+            gcTweens.push(tween)
+            return tween
+        }
+        const buildGcTween = (el, spec, timing) => {
+            const t = gsap.fromTo(el, { ...spec.vars }, {
+                ...restingVarsFor(el, spec.vars),
+                duration: spec.duration ?? timing.duration,
+                ease: spec.ease ?? timing.ease,
+                delay: timing.delay,
+            })
+            t.eventCallback("onComplete", () => fireOnComplete(el, "spawn"))
+            return t
+        }
+        const buildGcTimeline = (el, steps, timing) => {
+            // A timeline makes the class-level delay/ease the defaults for
+            // every step that doesn't override them.
+            const tl = gsap.timeline({
+                delay: timing.delay,
+                defaults: { duration: timing.duration, ease: timing.ease },
+            })
+            for (const s of steps) {
+                tl.fromTo(el, { ...s.vars }, {
+                    ...restingVarsFor(el, s.vars),
+                    duration: s.duration ?? timing.duration,
+                    ease: s.ease ?? timing.ease,
+                }, s.position ?? undefined)
+            }
+            tl.eventCallback("onComplete", () => fireOnComplete(el, "spawn"))
+            return tl
+        }
+        const setupGcAnims = (el) => {
+            if (isReduced(el)) return
+            const spec = parseGc(el)
+            if (!spec) return
+            // Tagged so teardown can find these again without re-scanning
+            // every class on every element.
+            el.dataset.gsapGc = "1"
+            const timing = readTiming(el)
+            if (spec.steps.length) {
+                // Numbered steps imply a timeline, .gc-tl or not - the ordering
+                // prefix is the signal. .gc-tl stays useful for declaring the
+                // intent (and for elements that only want a tl with one step).
+                gcStore(el, "tl", buildGcTimeline(el, spec.steps, timing))
+                return
+            }
+            if (spec.mode === "hover" || spec.mode === "click") {
+                const area = wrapTarget(el)
+                const evt = spec.mode === "hover" ? ["mouseenter", "mouseleave"] : ["mousedown", "mouseup"]
+                const original = restingVarsFor(el, spec.tween.vars)
+                addListener(area, evt[0], () => {
+                    gcStore(el, spec.mode, buildGcTween(el, spec.tween, { duration: timing.duration, ease: timing.ease, delay: 0 }))
+                })
+                addListener(area, evt[1], () => {
+                    const back = gsap.to(el, { ...original, duration: timing.duration, ease: timing.ease })
+                    gcStore(el, spec.mode, back)
+                })
+                return
+            }
+            gcStore(el, "tween", buildGcTween(el, spec.tween, timing))
         }
 
         // Per-entry `setup` hook: a "special abilities" extension point. Any
@@ -1714,6 +2087,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             setupLoops(el)
             setupHoverClick(el)
             setupCssAnims(el)
+            setupGcAnims(el)
             runSetup(el)
         })
         applyMagnet()
@@ -1819,6 +2193,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                         setupLoops(el)
                         setupHoverClick(el)
                         setupCssAnims(el)
+                        setupGcAnims(el)
                         runSetup(el)
                         const wasPinned = el.dataset.gsapPinned
                         setupPin(el)
@@ -1923,7 +2298,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // matchMedia entry is naturally handled by runWithBreakpoint/mm.add for gated animations,
         // but modifier-only changes (e.g. `amount-10 m:amount-30` on same element) require a rebuild.
         // Listen to all breakpoints and refresh ScrollTrigger + re-evaluate active prefixed classes.
-        const bpMqls = bpEntries.map(([bp, px]) => {
+        const bpMqls = bpData().entries.map(([bp, px]) => {
             const mql = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(`(min-width: ${px}px)`) : null
             if (!mql) return null
             const fn = () => ScrollTrigger.refresh()
@@ -1982,6 +2357,15 @@ export default function initListeners(root = document, throttlePerFrame) {
         document.querySelectorAll('[data-gsap-radiate]').forEach((n) => n.remove())
         cssTweens.forEach((t) => t?.kill())
         cssTweens.length = 0
+        // Same sweep for the .gc-* escape-hatch tweens/timelines (beta.24),
+        // plus dropping the per-element bags so a re-init rebuilds cleanly.
+        gcTweens.forEach((t) => t?.kill())
+        gcTweens.length = 0
+        qAll("[data-gsap-gc]").forEach(el => {
+            el._gcAnims && Object.values(el._gcAnims).forEach(t => t?.kill?.())
+            el._gcAnims = null
+            delete el.dataset.gsapGc
+        })
         qAll(".typewriter, .scramble").forEach(el => {
             // Preserved-region typewriters/scrambles stay as-is (already at
             // their end state); finalize the rest so a mid-type/mid-scramble

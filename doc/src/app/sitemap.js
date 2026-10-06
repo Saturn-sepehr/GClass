@@ -74,6 +74,7 @@ export default function sitemap() {
     "/documentation/hover-click",
     "/documentation/magnet",
     "/documentation/css-classes",
+    "/documentation/gc-classes",
     "/documentation/eases",
     "/documentation/randomize",
     "/documentation/defaults",

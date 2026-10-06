@@ -2,7 +2,13 @@
   import { defaults, animations } from './Config.js'
   import { gsap } from 'gsap'
 import { GSDevTools } from 'gsap/all'
-gsap.registerPlugin(GSDevTools)
+// GSDevTools is intentionally NOT registered at module scope. This module is
+// imported by index.js, and package.json declares "sideEffects": false-a
+// bundler is then free to drop the registration, leaving gclassDev() to call
+// GSDevTools.create() against an unregistered plugin. It is also unnecessary:
+// gclassDev() is usable standalone (the docs site and dev-react-strict both
+// call it without ever calling initAnimations()), so registration must happen
+// at the point of use instead of at import time.
 // localStorage key controlling whether the GSAP animation system is mounted.
 const STORAGE_KEY = 'gclass-animations-enabled'
 // localStorage key for a forced reduced-motion override (see
@@ -47,7 +53,7 @@ function readReducedOverride() {
 //   - Otherwise, if the user HAS an explicit stored choice, respect it
 //     (override wins), even under reduced motion.
 //   - Otherwise (no stored value) fall back to the default, which is ON unless
-//     reduced motion is detected - in which case animations are off.
+//     reduced motion is detected-in which case animations are off.
 function getEnabled() {
   if (forcedReduced) return false
   return stored === null ? !reduced : stored
@@ -119,7 +125,7 @@ let bootTimeout = null
 let bootStyle = null
 let hasBooted = false // true after first hard-load boot, skips boot on SPA path changes (remains false until first boot, resets on hard reload)
 
-// Runtime config for gclassOpts — 0 = defaults (no throttle, default GSAP ticker)
+// Runtime config for gclassOpts-0 = defaults (no throttle, default GSAP ticker)
 let currentThrottle = 0
 let currentFps = 0
 const configSubscribers = new Set()
@@ -145,7 +151,7 @@ function normalizeGclassArgs(throttlePerFrame, fps) {
 
 /**
  * Change GClass runtime options on the fly without reload.
- * gclassOpts(throttlePerFrame, fps) — both optional numbers.
+ * gclassOpts(throttlePerFrame, fps)-both optional numbers.
  * gclassOpts() or gclassOpts(undefined, undefined) resets to defaults (no throttle, default ticker).
  * Also accepts gclassOpts({throttlePerFrame, fps}).
  * Example low-end button: onClick={() => gclassOpts(1, 30)}
@@ -187,6 +193,8 @@ const readBootTime = (els, fallback) => {
  * Accepts: gclassDev() | gclassDev("width:50%; bottom:30px") | gclassDev({width:"50%"}) | gclassDev({css:{}, minimal:true, animation:tl})
  */
 export function gclassDev(cssOrOpts){
+  // Register at point of use-see the note at the top of this file.
+  gsap.registerPlugin(GSDevTools)
   const docCss = {
     backgroundColor: "rgba(15,23,42,0.96)", // slate-900 ~ doc bg-slate-950/900
     border: "1px solid rgba(51,65,85,0.8)", // ring-slate-700 Header.jsx:8
@@ -223,12 +231,12 @@ export function gclassDev(cssOrOpts){
 // or reduced-motion fallback with no explicit choice). Idempotent: calling it
 // again tears down any previous run first.
 // Now also handles boot screen: any HTML/JSX with `.boot-up` anywhere is treated as the boot overlay.
-// No separate initBoot needed - just call initAnimations().
+// No separate initBoot needed-just call initAnimations().
 // Boot stops all DOM rendering for defaults.bootTime (overwritten by boot-time-N class).
 // throttlePerFrame / fps: forwarded to gclassOpts-equivalent runtime.
-//   initAnimations(throttlePerFrame, fps) — positional numbers, 0/undefined = defaults
-//   initAnimations({throttlePerFrame, fps}) — object overload
-//   initAnimations() — uses last gclassOpts values (defaults on first call)
+//   initAnimations(throttlePerFrame, fps)-positional numbers, 0/undefined = defaults
+//   initAnimations({throttlePerFrame, fps})-object overload
+//   initAnimations()-uses last gclassOpts values (defaults on first call)
 export function initAnimations(throttlePerFrame, fps) {
   // gclassOpts-style normalization: (throttle, fps) positional or {throttlePerFrame, fps} object
   // no args -> fallback to last gclassOpts values (defaults 0 = no throttle, default ticker)
@@ -248,9 +256,9 @@ export function initAnimations(throttlePerFrame, fps) {
     else gsap.ticker.fps(0)
   }
   if (typeof window === 'undefined' || !getEnabled()) return
-  // boot already in progress (first mount in StrictMode) - ignore second mount
+  // boot already in progress (first mount in StrictMode)-ignore second mount
   if (bootTimeout) {
-    console.log(`[initAnimations] boot already in progress - ignoring duplicate call`)
+    console.log(`[initAnimations] boot already in progress-ignoring duplicate call`)
     return
   }
   if (cleanup) { cleanup(); cleanup = null }
@@ -258,7 +266,7 @@ export function initAnimations(throttlePerFrame, fps) {
   if (bootStyle) { bootStyle.remove(); bootStyle = null; document.documentElement.classList.remove('gclass-booting') }
 
   const hideBootEls = (els) => {
-    // React-safe: don't el.remove() - React owns the nodes and will throw
+    // React-safe: don't el.remove()-React owns the nodes and will throw
     // insertBefore/removeChild on next commit if we mutate outside React.
     // Hiding keeps React's tree intact but visually removes boot screen.
     els.forEach(el => {
@@ -272,12 +280,12 @@ export function initAnimations(throttlePerFrame, fps) {
   if (!bootEls.length) {
     // no .boot-up -> completely skip boot
   } else if (bootEls.length > 1) {
-    console.error(`[initAnimations] Multiple .boot-up elements detected (${bootEls.length}) - skipping all boot animations`, bootEls)
+    console.error(`[initAnimations] Multiple .boot-up elements detected (${bootEls.length})-skipping all boot animations`, bootEls)
     hideBootEls(bootEls)
     hasBooted = true
     // fall through to normal initListeners without pausing DOM
   } else if (hasBooted && !bootTimeout) {
-    // path change after already booted (SPA navigation) - skip boot, hard reload resets hasBooted
+    // path change after already booted (SPA navigation)-skip boot, hard reload resets hasBooted
     console.log(`[initAnimations] skipping boot on path change (already booted)`, bootEls)
     hideBootEls(bootEls)
     hasBooted = true
@@ -303,7 +311,7 @@ export function initAnimations(throttlePerFrame, fps) {
     // ensure boot els are visible even if nested inside hidden ancestors
     bootEls.forEach(el => { el.style.visibility = 'visible' })
 
-    // animations inside boot screen must play while rest of DOM is hidden - init scoped to boot-up
+    // animations inside boot screen must play while rest of DOM is hidden-init scoped to boot-up
     bootCleanup = initListeners(bootEl, effThrottle)
 
     bootTimeout = setTimeout(() => {
@@ -338,7 +346,7 @@ export function initAnimations(throttlePerFrame, fps) {
       }
 
       if (!cfg || !from) {
-        console.warn(`[initAnimations] boot-end-${name} has no from state - removing without animation`)
+        console.warn(`[initAnimations] boot-end-${name} has no from state-removing without animation`)
         finish()
         return
       }

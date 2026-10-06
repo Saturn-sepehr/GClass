@@ -2,12 +2,32 @@ import { DrawSVGPlugin, Flip, MotionPathPlugin, ScrambleTextPlugin, SplitText, T
 import { gsap } from "gsap";
 import { defaults } from './Config.js'
 
-gsap.registerPlugin(Flip)
-gsap.registerPlugin(SplitText)
-gsap.registerPlugin(TextPlugin)
-gsap.registerPlugin(DrawSVGPlugin)
-gsap.registerPlugin(MotionPathPlugin)
-gsap.registerPlugin(ScrambleTextPlugin)
+// Plugins are deliberately NOT registered here at module scope.
+//
+// package.json declares "sideEffects": false, which tells a consumer's
+// bundler that importing this module has no observable side effects and that
+// it may be dropped entirely when nothing is imported from it. Registering
+// plugins on import contradicts that promise: a bundler that tree-shakes this
+// module away silently un-registers SplitText / DrawSVG / ScrambleText and the
+// corresponding classes then throw at runtime, with a stack trace that points
+// nowhere useful.
+//
+// Registration is therefore deferred to registerPlugins() below, which
+// initListeners() calls (Listeners.js). This module stays safe to import for
+// side-effect-free helpers, and the whole set is registered exactly once.
+let pluginsRegistered = false
+export function registerPlugins() {
+    if (pluginsRegistered) return
+    pluginsRegistered = true
+    gsap.registerPlugin(
+        Flip,
+        SplitText,
+        TextPlugin,
+        DrawSVGPlugin,
+        MotionPathPlugin,
+        ScrambleTextPlugin,
+    )
+}
 
 // --- Breakpoint helpers for modifiers (xs/s/m/l/xl) -------------------------
 // Lazy to avoid circular init (Config.js <-> Animations.js)
@@ -322,7 +342,14 @@ export function splitPaths (paths){
     const path = toSplit[0]
     if (!path) return newPaths
     if (path._gcSplitPaths?.[0]?.isConnected) return path._gcSplitPaths
+    // Only SVG <path> elements can be split. A non-path target (or a detached
+    // node) makes MotionPathPlugin.getRawPath return undefined, and the
+    // .map() below then throws and takes the whole engine init down with it.
+    // Bail out quietly instead: draw-split is a decorative extra and a
+    // misapplied class must never be fatal.
+    if (path.nodeType !== 1 || path.tagName?.toLowerCase() !== "path" || !path.isConnected) return newPaths
     const rawPath = MotionPathPlugin.getRawPath(path)
+    if (!rawPath || !Array.isArray(rawPath)) return newPaths
     const parent = path.parentNode
     const attributes = [...path.attributes]
     newPaths = rawPath.map(segment => {

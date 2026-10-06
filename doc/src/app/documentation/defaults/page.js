@@ -26,7 +26,6 @@ export default function Page() {
   effectOffset: 20,            // loop amount
   progressStart: "top bottom", // scroll-progress range start
   progressEnd: "center center",
-  textStagger: 0.03,
   typewriterSplitCharDuration: 0.05,
   minTextPartDuration: 0.3,    // floor for back-solved split durations
   revealDelay: 0,              // scramble reveal delay
