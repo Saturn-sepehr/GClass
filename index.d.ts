@@ -184,6 +184,20 @@ export const customAnims: AnimationConfig[]
 /** A GSAP tweenable target (element / selector / array). */
 export type TweenTarget = any
 
+/**
+ * Register the GSAP plugin set GClass depends on (Flip, SplitText, TextPlugin,
+ * DrawSVGPlugin, MotionPathPlugin, ScrambleTextPlugin). Idempotent - the second
+ * and later calls are no-ops.
+ *
+ * `initAnimations()` / `initListeners()` already call this, so you only need it
+ * when you want the classes available without booting the engine (e.g. driving
+ * a tween by hand via a `registerComplete` handler, or in a shadow root you
+ * initialise later). Safe to call early: registration is deferred out of module
+ * scope so that importing this package stays free of side effects, which is why
+ * `package.json` can declare `sideEffects: false`.
+ */
+export function registerPlugins(): void
+
 /** Spawn an element vertically by `dir` px. */
 export function SpawnV(target: TweenTarget, delay: number, dir: number, dur: number, ease: string): any
 /** Spawn an element horizontally by `dir` px. */
