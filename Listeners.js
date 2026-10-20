@@ -9,6 +9,27 @@ import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
 const TEXT_PREFIX = "spawn-text-"
 const TEXT_PREFIX_LEN = TEXT_PREFIX.length
 
+// --- Cross-run element memory (never write this to the DOM) ------------------
+// This state used to live in `data-gsap-wired` / `data-gsap-preserved`
+// attributes on the element itself. That mutates consumer-owned DOM, which
+// React (and any other hydrating framework) reports as an attribute mismatch
+// whenever init runs before a streamed segment has hydrated - the exact bug
+// this replaced. WeakSets are keyed by element identity, cost nothing, and are
+// invisible to the DOM.
+//
+// MODULE scope on purpose: `.preserve` and "already wired" are deliberately
+// remembered ACROSS engine runs (teardown never resets them), so a per-run set
+// would lose that memory. Identity also means a clone (cloneNode/outerHTML) no
+// longer inherits the state - a clone is new DOM the engine has not wired.
+const wiredEls = new WeakSet()      // was data-gsap-wired
+const preservedEls = new WeakSet()  // was data-gsap-preserved
+
+// Subtree opt-out for framework-owned regions (SSR shells, portals, dev
+// overlays). Matching elements and everything below them are invisible to the
+// engine: no wiring, no observers, no leave/flip tracking.
+const IGNORE_SEL = '[data-gsap-ignore], .no-gclass'
+const isIgnored = (el) => !!(el && el.closest && el.closest(IGNORE_SEL))
+
 // The engine is fully config-driven. All animation definitions live in
 // Config.js; here we just normalise them into the two internal views the
 // machinery consumes (spawn/entrance + loop) plus the raw `all` list.
@@ -210,15 +231,16 @@ export default function initListeners(root = document, throttlePerFrame) {
     const { all: animAll, spawnConfigs, loopConfigs } = normalize(customAnims)
 
     // helper to scope queries to root (for boot screen: only boot-up subtree animates during boot)
+    // Also drops anything inside an opt-out subtree (data-gsap-ignore / .no-gclass).
     const qAll = (sel) => {
-        if (root === document || root === document.documentElement || root === document.body) return gsap.utils.toArray(sel)
-        if (sel === "body *") return gsap.utils.toArray(root.querySelectorAll("*"))
+        if (root === document || root === document.documentElement || root === document.body) return gsap.utils.toArray(sel).filter(el => !isIgnored(el))
+        if (sel === "body *") return gsap.utils.toArray(root.querySelectorAll("*")).filter(el => !isIgnored(el))
         try {
             const els = [...(root.querySelectorAll ? root.querySelectorAll(sel) : [])]
             if (root.matches?.(sel)) els.unshift(root)
             // handle comma selectors where root itself may match one part
-            return els
-        } catch { return gsap.utils.toArray(sel) }
+            return els.filter(el => !isIgnored(el))
+        } catch { return gsap.utils.toArray(sel).filter(el => !isIgnored(el)) }
     }
     // breakpoint-aware helpers (s/m/l/xl) - s/m/l avoids Tailwind sm/md/lg collision
     const mm = gsap.matchMedia()
@@ -258,6 +280,20 @@ export default function initListeners(root = document, throttlePerFrame) {
     }
     // Active-only view (used for order calculations that must reflect current viewport)
     const qAllActive = wrapQAll(qAll)
+
+    // --- Per-run bookkeeping (never write this to the DOM) --------------------
+    // These replace the old data-gsap-* tags on consumer nodes. They are
+    // discarded with the run, exactly like the attributes were on teardown.
+    // WeakSet: teardown already tracks listeners, loops, css tweens and scroll
+    // triggers in its own arrays, so these only need to answer "seen yet?".
+    const setupEls = new WeakSet()        // was data-gsap-setup
+    const scrolledEls = new WeakSet()     // was data-gsap-scroll
+    const pinnedEls = new WeakSet()       // was data-gsap-pinned
+    const scrollDrivenEls = new WeakSet() // was data-gsap-scroll-driven
+    // Strong sets on purpose: teardown walks these to kill `_gcAnims` and drop
+    // `_appeared`. (WeakSets are not iterable, so they cannot be swept.)
+    const gcEls = new Set()               // was data-gsap-gc
+    const appearedEls = new Set()
 
     const registeredListeners = []
         const onCompleteTweens = []
@@ -317,20 +353,20 @@ export default function initListeners(root = document, throttlePerFrame) {
         //   • markPreserved() tags the FULL preserve-ancestor chain, so a bare
         //     `.preserve` container without its own spawn class (a site header,
         //     say) still gets tagged when one of its children animates.
-        //   • Suppression requires the element ITSELF to carry data-gsap-wired
-        //     (set when a previous run animated it). Freshly mounted content
-        //     under a preserved root therefore still plays its entrance - only
-        //     DOM that survived from an earlier run stays frozen.
+        //   • Suppression requires the element ITSELF to have been wired by a
+        //     previous run (tracked in the module-scope `wiredEls`). Freshly
+        //     mounted content under a preserved root therefore still plays its
+        //     entrance - only DOM that survived from an earlier run stays frozen.
         const isPreserved = (el) => {
-            if (!el.dataset.gsapWired) return false
+            if (!wiredEls.has(el)) return false
             for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
-                if (node.classList.contains("preserve") && node.dataset.gsapPreserved) return true
+                if (node.classList.contains("preserve") && preservedEls.has(node)) return true
             }
             return false
         }
         const markPreserved = (el) => {
             for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
-                if (node.classList.contains("preserve")) node.dataset.gsapPreserved = "1"
+                if (node.classList.contains("preserve")) preservedEls.add(node)
             }
         }
         // True when el sits inside a `.preserve` root that a run has already
@@ -338,7 +374,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // teardown must leave their visual state untouched too.
         const underPreservedRoot = (el) => {
             for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
-                if (node.classList.contains("preserve") && node.dataset.gsapPreserved) return true
+                if (node.classList.contains("preserve") && preservedEls.has(node)) return true
             }
             return false
         }
@@ -369,6 +405,10 @@ export default function initListeners(root = document, throttlePerFrame) {
         const isGhost = (el) => el?.dataset?.gsapGhost === "1"
         // Ghosts (leave proxies) must be ignored by every observer, so strip all
         // magic classes and tag them. Otherwise they get re-captured and re-animated.
+        // NOTE: this attribute is allowed - the node is a detached ENGINE-created
+        // clone, not consumer DOM, so no framework will ever hydrate it. Same for
+        // `data-gsap-radiate` (Animations.js radiate) and `data-gsap-split`
+        // (Animations.js splitPaths). Do not move these into sets.
         const markGhost = (el) => {
             el.classList.remove("leave", "appear")
             spawnConfigs.forEach(({ sel }) => el.classList.remove(sel.slice(1)))
@@ -952,7 +992,7 @@ export default function initListeners(root = document, throttlePerFrame) {
         // classes are present (N = how many % into view to engage, and how far
         // out of view to release), else the full `top top` -> `bottom bottom`.
         const setupPin = (el) => {
-            if (!hasGClass(el, "pin") || el.dataset.gsapPinned) return
+            if (!hasGClass(el, "pin") || pinnedEls.has(el)) return
             const clamp = (n) => Math.min(100, Math.max(0, n))
             const startClass = readClassNumber(el, "progress-start-", null)
             const endClass = readClassNumber(el, "progress-end-", null)
@@ -966,7 +1006,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 pinSpacing: true,
                 anticipatePin: 1,
             })
-            el.dataset.gsapPinned = "1"
+            pinnedEls.add(el)
             scrollTriggers.push(t)
         }
 
@@ -991,8 +1031,8 @@ export default function initListeners(root = document, throttlePerFrame) {
         // (.clip-reveal and .curtain-* are spawn classes defined in Config.js,
         // so they flow through the normal spawn/scroll/appear/leave machinery.)
         const setupScrollDriven = (el) => {
-            if (el.dataset?.gsapScrollDriven) return
-            el.dataset.gsapScrollDriven = "1"
+            if (scrollDrivenEls.has(el)) return
+            scrollDrivenEls.add(el)
             if (isReduced(el)) return
             const cls = [...el.classList]
             const clamp = (n) => Math.min(100, Math.max(0, n))
@@ -1085,10 +1125,10 @@ export default function initListeners(root = document, throttlePerFrame) {
         // already in the DOM at setup time. A `.scroll` element is owned by its
         // ScrollTrigger; `animateAppear` skips it so the entrance never double-fires.
         const setupScroll = (el) => {
-            if (el.dataset?.gsapScroll) return
+            if (scrolledEls.has(el)) return
             if (isTextElement(el)) return
             if (isReduced(el)) return
-            el.dataset.gsapScroll = "1"
+            scrolledEls.add(el)
             const config = findSpawn(el)
             if (!config) return
             const { from, typewriter: isTypewriter, typewriterSplit, play } = config
@@ -1367,7 +1407,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                     })
                 }
                 markPreserved(el)
-                el.dataset.gsapWired = "1"
+                wiredEls.add(el)
                 }; runWithBreakpointForSel(el, sel, run)
             })
         })
@@ -1387,7 +1427,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 const { delay, duration } = readTiming(el)
                 el._spawnTween = playText(el, from, delay, duration, getEase(el))
                 markPreserved(el)
-                el.dataset.gsapWired = "1"
+                wiredEls.add(el)
                 }; runWithBreakpointForSel(el, tSel, run)
             })
         })
@@ -2033,9 +2073,9 @@ export default function initListeners(root = document, throttlePerFrame) {
             if (isReduced(el)) return
             const spec = parseGc(el)
             if (!spec) return
-            // Tagged so teardown can find these again without re-scanning
-            // every class on every element.
-            el.dataset.gsapGc = "1"
+            // Tracked in gcEls so teardown can find these again without
+            // re-scanning every class on every element.
+            gcEls.add(el)
             const timing = readTiming(el)
             if (spec.steps.length) {
                 // Numbered steps imply a timeline, .gc-tl or not - the ordering
@@ -2078,11 +2118,12 @@ export default function initListeners(root = document, throttlePerFrame) {
             })
         }
 
-        // Bind click + loop animations to every element present at load, tagging
-        // them so the MutationObserver below never double-binds a dynamic one.
+        // Bind click + loop animations to every element present at load. The
+        // set is per run, so a MutationObserver pass never double-binds a node
+        // that this loop already handled.
         qAll("body *").forEach((el) => {
-            if (el.dataset?.gsapSetup) return
-            el.dataset.gsapSetup = "1"
+            if (setupEls.has(el)) return
+            setupEls.add(el)
             setupClicks(el)
             setupLoops(el)
             setupHoverClick(el)
@@ -2111,11 +2152,11 @@ export default function initListeners(root = document, throttlePerFrame) {
             flipRoots.forEach((scope) => {
                 if (!scope) return
                 gsap.utils.toArray(scope.querySelectorAll?.(".flip") || [])
-                    .forEach((el) => { if (el.isConnected) toFlip.add(el) })
+                    .forEach((el) => { if (el.isConnected && !isIgnored(el)) toFlip.add(el) })
             })
             toFlip.forEach(playFlip)
             // Refresh baselines for any .flip that settled this frame.
-            gsap.utils.toArray(document.body.querySelectorAll?.(".flip") || []).forEach(captureFlip)
+            gsap.utils.toArray(document.body.querySelectorAll?.(".flip") || []).forEach((el) => { if (!isIgnored(el)) captureFlip(el) })
             flipRoots = new Set()
         }
         let flipObserver = null
@@ -2124,7 +2165,7 @@ export default function initListeners(root = document, throttlePerFrame) {
 
 
         const animateAppear = (el) => {
-            if (!hasGClass(el, "appear") || el._appeared) return
+            if (!hasGClass(el, "appear") || el._appeared || isIgnored(el)) return
             // A `.scroll`/`.scroll-progress` element is owned by its ScrollTrigger
             // (see setupScroll); `.appear` must not also fire, or it plays on mount
             // AND again on scroll-enter. Text elements are the exception: their
@@ -2133,6 +2174,7 @@ export default function initListeners(root = document, throttlePerFrame) {
             if (!isTextElement(el) && (hasGClass(el, "scroll") || hasGClass(el, "scroll-progress"))) return
             if (isReduced(el)) return
             el._appeared = true
+            appearedEls.add(el)
             const { delay, duration, ease } = readTiming(el)
 
             const config = findSpawn(el)
@@ -2171,6 +2213,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 if (mutation.type !== "childList") continue
                 const target = mutation.target
                 if (target.nodeType !== 1) continue
+                if (isIgnored(target)) continue
                 flipRoots.add(target)
             }
         }
@@ -2181,23 +2224,24 @@ export default function initListeners(root = document, throttlePerFrame) {
                     const els = node.querySelectorAll?.("*") ? [node, ...node.querySelectorAll("*")] : [node]
                     let pinned = false
                     els.forEach((el) => {
+                        if (isIgnored(el)) return
                         // `.appear` is the opt-in gate for dynamically-added
                         // elements: without it a newly inserted node is ignored.
                         if (!hasGClass(el, "appear")) return
                         animateAppear(el)
                         setupScroll(el)
                         setupScrollDriven(el)
-                        if (el.dataset?.gsapSetup) return
-                        el.dataset.gsapSetup = "1"
+                        if (setupEls.has(el)) return
+                        setupEls.add(el)
                         setupClicks(el)
                         setupLoops(el)
                         setupHoverClick(el)
                         setupCssAnims(el)
                         setupGcAnims(el)
                         runSetup(el)
-                        const wasPinned = el.dataset.gsapPinned
+                        const wasPinned = pinnedEls.has(el)
                         setupPin(el)
-                        if (!wasPinned && el.dataset.gsapPinned) pinned = true
+                        if (!wasPinned && pinnedEls.has(el)) pinned = true
                     })
                     applyMagnet()
                     // A newly added pin changes layout; refresh so its spacer is
@@ -2209,8 +2253,8 @@ export default function initListeners(root = document, throttlePerFrame) {
         const handleLeaveBatch = (mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type !== "childList") return
-                mutation.addedNodes.forEach((n) => collectLeave(n).forEach(captureLeave))
-                mutation.removedNodes.forEach((n) => collectLeave(n).forEach(playLeave))
+                mutation.addedNodes.forEach((n) => collectLeave(n).forEach((el) => { if (!isIgnored(el)) captureLeave(el) }))
+                mutation.removedNodes.forEach((n) => collectLeave(n).forEach((el) => { if (!isIgnored(el)) playLeave(el) }))
             })
         }
         const hubHandlers = [handleFlipBatch, handleAppearBatch, handleLeaveBatch]
@@ -2334,21 +2378,21 @@ export default function initListeners(root = document, throttlePerFrame) {
             delete t.trigger._scrollTween
         })
         ScrollTrigger.refresh()
-        // Clear per-element wire-up tags. Without this, any engine restart
+        // Drop per-run wire-up state. Without this, any engine restart
         // (initAnimations() called again, StrictMode remounts, route-level
         // re-mounts that keep DOM nodes alive) would silently skip rewiring:
         // .scroll/.pin/parallax triggers stay dead (their old ones were just
         // killed) and clicks/loops/hover never re-bind. `_appeared` goes too,
         // so dynamically-added .appear elements can animate under the new
-        // engine run. data-gsap-preserved (cross-reset memory) and
-        // data-gsap-ghost (detached .leave clones) are intentionally KEPT.
-        qAll('[data-gsap-scroll],[data-gsap-setup],[data-gsap-pinned],[data-gsap-scroll-driven]').forEach((el) => {
-            delete el.dataset.gsapScroll
-            delete el.dataset.gsapSetup
-            delete el.dataset.gsapPinned
-            delete el.dataset.gsapScrollDriven
-            delete el._appeared
-        })
+        // engine run.
+        //
+        // `wiredEls` and `preservedEls` are MODULE scope and intentionally NOT
+        // cleared: that cross-run memory is what makes `.preserve` work.
+        appearedEls.forEach((el) => { delete el._appeared })
+        appearedEls.clear()
+        // The WeakSet tags (setup/scroll/pinned/scroll-driven) belong to this
+        // run's closure and need no teardown: WeakSets are not iterable and
+        // hold no resources, so they are simply discarded with the run.
         registeredListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
         magnetListeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn))
         magnetQuery?.removeEventListener("change", applyMagnet)
@@ -2361,11 +2405,11 @@ export default function initListeners(root = document, throttlePerFrame) {
         // plus dropping the per-element bags so a re-init rebuilds cleanly.
         gcTweens.forEach((t) => t?.kill())
         gcTweens.length = 0
-        qAll("[data-gsap-gc]").forEach(el => {
+        gcEls.forEach(el => {
             el._gcAnims && Object.values(el._gcAnims).forEach(t => t?.kill?.())
             el._gcAnims = null
-            delete el.dataset.gsapGc
         })
+        gcEls.clear()
         qAll(".typewriter, .scramble").forEach(el => {
             // Preserved-region typewriters/scrambles stay as-is (already at
             // their end state); finalize the rest so a mid-type/mid-scramble

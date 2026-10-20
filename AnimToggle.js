@@ -237,9 +237,47 @@ export function gclassDev(cssOrOpts){
 //   initAnimations(throttlePerFrame, fps)-positional numbers, 0/undefined = defaults
 //   initAnimations({throttlePerFrame, fps})-object overload
 //   initAnimations()-uses last gclassOpts values (defaults on first call)
+// SSR / hydration (both opt-in, both best-effort):
+//   initAnimations({defer: true})-wait for the document to settle, then wire
+//   initAnimations({after: promise})-wait for a caller-provided hydration signal
+//   Combine both: the engine waits for whichever finishes last.
+// --- Deferred init helpers (SSR / hydration safety) -------------------------
+// Both are best-effort. A framework can stream a segment AFTER `load`, so the
+// reliable answer is still "call init in the boundary that owns the DOM".
+// Defaults are unchanged: no options = eager init, same timing as always.
+function domSettled() {
+  if (typeof document === 'undefined') return Promise.resolve()
+  const nextFrame = () => new Promise((resolve) => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve())
+    else setTimeout(resolve, 0)
+  })
+  if (document.readyState === 'complete') return nextFrame()
+  return new Promise((resolve) => {
+    window.addEventListener('load', () => nextFrame().then(resolve), { once: true })
+  })
+}
+
+// A visible boot screen hides the page by itself; deferring init would only
+// delay `html.gclass-booting` and flash the whole document. So boot wins.
+function hasVisibleBootScreen() {
+  if (typeof document === 'undefined') return false
+  return [...document.querySelectorAll('.boot-up')]
+    .some((el) => !el.hasAttribute('data-gclass-boot-hidden'))
+}
+
+// Every initAnimations() call supersedes a still-pending deferred run. This is
+// also what collapses React StrictMode's double effect into one init instead
+// of two scheduled runs.
+let initGeneration = 0
+
 export function initAnimations(throttlePerFrame, fps) {
   // gclassOpts-style normalization: (throttle, fps) positional or {throttlePerFrame, fps} object
   // no args -> fallback to last gclassOpts values (defaults 0 = no throttle, default ticker)
+  // `defer` / `after` are init-only, so read them BEFORE normalization flattens
+  // the object down to {throttlePerFrame, fps}.
+  const opts = (typeof throttlePerFrame === 'object' && throttlePerFrame !== null) ? throttlePerFrame : null
+  const defer = opts?.defer === true
+  const after = opts?.after
   let effThrottle = currentThrottle
   let effFps = currentFps
   if (throttlePerFrame !== undefined || fps !== undefined) {
@@ -255,7 +293,30 @@ export function initAnimations(throttlePerFrame, fps) {
     if (effFps > 0) gsap.ticker.fps(effFps)
     else gsap.ticker.fps(0)
   }
-  if (typeof window === 'undefined' || !getEnabled()) return
+  if (typeof window === 'undefined') return
+
+  const generation = ++initGeneration
+  const waits = []
+  if (defer && !hasVisibleBootScreen()) waits.push(domSettled())
+  if (after) {
+    waits.push(Promise.resolve(after).catch((err) => {
+      // Fail open: a rejected hydration signal must not leave a dead page.
+      console.warn('[initAnimations] `after` rejected - initialising anyway', err)
+    }))
+  }
+  if (waits.length) {
+    Promise.all(waits).then(() => {
+      if (generation !== initGeneration) return // superseded by a newer call
+      if (!getEnabled()) return
+      startEngine(effThrottle)
+    })
+    return
+  }
+  if (!getEnabled()) return
+  startEngine(effThrottle)
+}
+
+function startEngine(effThrottle) {
   // boot already in progress (first mount in StrictMode)-ignore second mount
   if (bootTimeout) {
     console.log(`[initAnimations] boot already in progress-ignoring duplicate call`)

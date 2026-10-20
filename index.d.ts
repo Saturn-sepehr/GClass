@@ -10,20 +10,33 @@ export interface GClassConfig {
 }
 
 /**
+ * Options accepted by `initAnimations()` (object overload).
+ * `defer` and `after` are SSR/hydration helpers and are opt-in: omitting both
+ * keeps the original eager timing.
+ */
+export interface GClassInitOptions extends Partial<GClassConfig> {
+  /** Wait for the document to settle (load + one frame) before wiring. */
+  defer?: boolean
+  /** Wait for a caller-provided hydration signal before wiring. */
+  after?: PromiseLike<unknown>
+}
+
+/**
  * Boots the GSAP animation system (idempotent).
  * @param throttlePerFrame-number of observer handlers allowed per rAF frame (0 = no throttling, default).
- *   Also accepts initAnimations({throttlePerFrame, fps}) object overload.
+ *   Also accepts initAnimations({throttlePerFrame, fps, defer, after}) object overload.
  * @param fps-GSAP ticker fps cap (0 = default rAF, e.g. 30 for low-end). 0/undefined = no cap.
  */
-export function initAnimations(throttlePerFrame?: number | GClassConfig, fps?: number): void
+export function initAnimations(throttlePerFrame?: number | GClassInitOptions, fps?: number): void
 /**
  * Change GClass runtime options on the fly without reload.
  * gclassOpts(throttlePerFrame, fps)-both optional numbers, missing -> defaults (0).
  * gclassOpts() resets to defaults (no throttle, default ticker).
  * Also accepts gclassOpts({throttlePerFrame, fps}).
+ * `defer` / `after` are init-time only and are ignored here.
  * Example low-end button: onClick={() => gclassOpts(1, 30)}
  */
-export function gclassOpts(throttlePerFrame?: number | GClassConfig, fps?: number): GClassConfig
+export function gclassOpts(throttlePerFrame?: number | Partial<GClassConfig>, fps?: number): GClassConfig
 export function getGClassConfig(): GClassConfig
 export function subscribeGClassConfig(cb: (cfg: GClassConfig) => void): () => void
 /** Toggle animations on/off and reload the page. */
