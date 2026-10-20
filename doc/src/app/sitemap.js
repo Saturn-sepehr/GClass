@@ -87,6 +87,7 @@ export default function sitemap() {
     "/documentation/gclass-dev",
     "/documentation/toggle-reduced-motion",
     "/documentation/about",
+    "/documentation/ssr-hydration",
   ];
 
   const now = new Date();

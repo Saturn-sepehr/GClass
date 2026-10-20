@@ -65,6 +65,7 @@ const SECTIONS = [
       ["registerComplete", "register-complete"],
       ["on-*-complete-*", "on-complete"],
       ["gclassDev", "gclass-dev"],
+      ["SSR", "ssr-hydration"],
     ],
   },
     {
