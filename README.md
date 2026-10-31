@@ -127,3 +127,7 @@ gclassDev() // styled GSDevTools.create() bar (beta.23)
 
 MIT - except GSAP, which is used under the Webflow Standard No-Charge GSAP
 License and is not bundled or redistributed. See `LICENSE`.
+
+
+## Note
+This package might get moved to other platforms and get deprecated from npm if the 2FA system is not fixed until January 2027. I am currently unable to enable 2FA due to a bug in npm's WebAuthn/passkey flow on Linux, and npm has removed support for TOTP authenticator apps.
