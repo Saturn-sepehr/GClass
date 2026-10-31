@@ -2,6 +2,83 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **`.flicker` modifier / standalone animation** - flashes an element between
+  its resting opacity and an "off" value at a rate that follows the ease
+  curve. A tween cannot interpolate a frequency, so the tween drives a phase
+  counter and the opacity is derived from `floor(phase)`: every integer
+  crossing flips the element. `ease-none` therefore gives an evenly spaced
+  (constant) flash and `ease-power2.in` gives a long hold followed by rapid
+  flapping, exactly like `.ease-*` already redistributes any other tween.
+  - Modifier mode: on an element that also has a spawn class (or `.appear`),
+    the spawn keeps its transform and timing while the flicker takes over
+    opacity for its `time-N` window. Attached in `invokePlay()` after the
+    spawn tween so it renders last each tick and wins the property - the
+    spawn tween is deliberately left intact because `.leave` reverses it.
+  - Standalone mode: `.flicker` with no spawn class is the animation itself -
+    it flashes in place for `time-N` after `delay-N`, then settles visible.
+  - `flicker-N` = flips per second (default `defaults.flickerRate`, 10). A
+    rate rather than a total count, so `.time-4` lasts longer instead of
+    flashing slower.
+  - `flicker-min-N` = the "off" opacity x100 (default `defaults.flickerFloor`,
+    0 = fully hidden).
+  - The flip count is kept even so the element always ends visible, and the
+    step is forced monotonic so overshooting eases (`back`, `elastic`) cannot
+    re-flash it during the tail.
+  - Suppressed entirely under `prefers-reduced-motion: reduce` without needing
+    the per-element `.reduced` opt-in - flashing is a photosensitivity hazard,
+    not just a comfort preference.
+  - Registered as a `gclassPlay()` modifier, so `gclassPlay(el, "spawn-up",
+    "flicker")` works; skipped on `.scroll-progress` (time-based, would race
+    the scrub) and documented as element-level only for `.spawn-text-*`.
+  - Killed on `.leave`, on scroll exit, and at teardown so the exit fade owns
+    opacity again and a re-init cannot stack a second flicker.
+
+## [1.0.0-beta.26.1] - 2026-10-27
+ Forgot to include typescript declerations for gclassPlay(), oops
+
+## [1.0.0-beta.26] - 2026-10-27
+### Fixed
+- **Hydration errors when `initAnimations()` is called before a framework's
+  hydration pass.** beta.25 removed `data-gsap-*` bookkeeping attributes from
+  consumer nodes, but the engine still writes to consumer-owned DOM during
+  init: GSAP inline styles from `gsap.fromTo` (applied synchronously when the
+  tween is created), the `typewriter()` `whiteSpace` inline style,
+  `scrambleSegments()` span wrapping, `splitPaths()` path replacement,
+  `marquee()` child restructuring, and `wrapTarget()` / `wrapFlexTarget()`
+  wrapper injection. When `initAnimations()` ran before a streamed segment
+  hydrated, those writes landed on elements the server rendered without them
+  and produced attribute / style / child-list mismatches.
+  `initAnimations()` now defaults to `defer: 'auto'`, which waits for the DOM
+  to stop mutating (framework-agnostic `domQuiet()` heuristic: two consecutive
+  mutation-free animation frames, 1s ceiling) before wiring. A visible
+  `.boot-up` screen still wins and runs eagerly.
+
+### Changed
+- `initAnimations()` `defer` option now accepts `'auto'` and defaults to it
+  when omitted. `defer: true` keeps the old "wait for `load` + one frame"
+  behaviour; `defer: false` opts into eager init. Existing `defer: true`
+  callers are unaffected (still valid), but callers relying on eager
+  no-options init will now see a deferred init. Pass `{ defer: false }` to
+  restore the old timing.
+- `typewriter()` no longer sets `el.style.whiteSpace` synchronously; it is
+  applied in the tween's `onStart`, after the DOM-quiet wait has resolved.
+
+### Notes for consumers
+- `initAnimations()` is now safe to call from a layout-level `useEffect` /
+  `onMounted` / `onMount` before a streamed segment hydrates. If you have
+  already gated the call on a hydration boundary yourself, pass
+  `{ defer: false }` to avoid the extra two-frame wait.
+- `.boot-up` behaviour is unchanged: a visible boot screen runs eagerly.
+- `gclassPlay(target, ...classes)` - imperative one-shot player that resolves
+  class names against the engine's config and invokes matching `play()` /
+  `build()` tweens without booting the full engine. Does not require
+  `initAnimations()`. Accepts an element, CSS selector, ref, id, or array of
+  elements. Classes may be space/comma separated strings or multiple args.
+  Returns the tween/timeline, or an array when multiple tweens are created.
+
 ## [1.0.0-beta.25] - 2026-10-20
 
 ### Fixed

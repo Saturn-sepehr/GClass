@@ -26,6 +26,12 @@ import {
 //                  • `.leave` reverse exit
 //                  • a `.spawn-text-<name>` SplitText variant (unless text:false)
 //
+//                Modifiers that any spawn (or `.appear`) picks up for free:
+//                  • `.flicker` (+ `flicker-N`, `flicker-min-N`) - flashes the
+//                    element on/off at a rate that follows the spawn's ease.
+//                    With no spawn class it stands alone and flashes in place
+//                    for `time-N` after `delay-N`. See Listeners.js#attachFlicker.
+//
 //   from       - optional. The hidden starting state ({ opacity: 0, ... }).
 //                Required if you want leave/scroll reversal to look right.
 //
@@ -70,6 +76,10 @@ export const defaults = {
   minTextPartDuration: 0.3,
   revealDelay:0,
   characterlist:"AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz",
+  // `.flicker` defaults: flashes per second, and the "off" opacity as a
+  // percentage (0 = fully hidden). See Animations.js#flicker.
+  flickerRate: 10,
+  flickerFloor: 0,
   bootTime: 5,
   breakpoints : {xs : 475 , s:640 , m:768 , l:1024 , xl:1280}
 }

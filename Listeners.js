@@ -1,5 +1,5 @@
 import { gsap } from 'gsap'
-import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText, scrambleVars, registerPlugins } from './Animations.js'
+import { SpawnV, verticalmove, expandmove, magnet, magnet3d, reset, typewriter, countTargetVars, stashText, scrambleVars, flicker, registerPlugins } from './Animations.js'
 import { customAnims } from './CustomAnims.js'
 import { defaults, normalize } from './Config.js'
 import { TextPlugin, ScrollTrigger, SplitText } from 'gsap/all'
@@ -195,18 +195,393 @@ const randomEnds = (keys) => Object.fromEntries(keys.map((k) => [
 // makes a scoped gsap.fromTo swap safe - patch, let the config construct,
 // restore in finally{}. Without .randomize-* this is a bare passthrough.
 const invokePlay = (config, el, delay, dur, ease) => {
-    if (!hasRandom(el)) return config.play(el, delay, dur, ease)
-    const rnd = randomVars(el)
-    const keys = Object.keys(rnd)
-    if (!keys.length) return config.play(el, delay, dur, ease)
-    const ends = randomEnds(keys)
-    const origFromTo = gsap.fromTo
-    gsap.fromTo = (t, from, to) => origFromTo(t, { ...from, ...rnd }, { ...ends, ...to })
-    try {
-        return config.play(el, delay, dur, ease)
-    } finally {
-        gsap.fromTo = origFromTo
+    let tween
+    const rnd = hasRandom(el) ? randomVars(el) : null
+    const keys = rnd ? Object.keys(rnd) : []
+    if (!keys.length) {
+        tween = config.play(el, delay, dur, ease)
+    } else {
+        const ends = randomEnds(keys)
+        const origFromTo = gsap.fromTo
+        gsap.fromTo = (t, from, to) => origFromTo(t, { ...from, ...rnd }, { ...ends, ...to })
+        try {
+            tween = config.play(el, delay, dur, ease)
+        } finally {
+            gsap.fromTo = origFromTo
+        }
     }
+    // `.flicker` is attached AFTER the spawn is built so its tween renders
+    // last on every tick and wins the opacity property. The spawn tween is
+    // deliberately left intact: `.leave` reverses it, and the exit fade still
+    // needs its opacity channel.
+    if (hasGClass(el, "flicker")) attachFlicker(el, delay, dur, ease)
+    return tween
+}
+
+// --- Imperative one-shot player: gclassPlay(target, ...classes) ------------
+// Reuses the same config and helpers as the scanner, but does not boot the
+// engine, add observers, or mutate the element's class list permanently. It
+// resolves the requested class names against Config.js and invokes the matching
+// `play` / `build` directly.
+const reducedMotionNow = () =>
+    (typeof window !== "undefined" && window.matchMedia?.(`(prefers-reduced-motion: reduce)`)?.matches) ?? false
+
+// --- `.flicker` -------------------------------------------------------------
+// Flashes an element on/off at a rate that follows an ease curve. Two modes:
+//
+//   modifier   - alongside a spawn / `.appear`: the spawn keeps its transform
+//                (and its timing), and the flicker overrides opacity for the
+//                spawn's `time-N` window. Built by invokePlay(), and by the
+//                text paths that bypass invokePlay.
+//   standalone - `.flicker` with no spawn class: it IS the animation. Flashes
+//                in place for `time-N` after `delay-N`, then settles visible.
+//
+// Returns the flicker tween, or null when it should not run.
+const attachFlicker = (el, delay, dur, ease) => {
+    if (!hasGClass(el, "flicker")) return null
+    // Flashing is a photosensitivity hazard, not just a comfort preference, so
+    // it is gated on the OS setting alone. `.reduced` stays an extra per-element
+    // opt-out on top of that (isReduced() in the engine).
+    if (reducedMotionNow()) return null
+    el._flickerTween?.kill()
+    // `.order` only counts spawn-class elements (orderSelector() is built from
+    // spawnConfigs), so a STANDALONE flicker carrying `.order` would otherwise
+    // compute indexOf() === -1 and get a negative delay.
+    el._flickerTween = flicker(el, Math.max(0, delay), dur, ease)
+    return el._flickerTween
+}
+const GCLASS_PLAY_MODIFIER_EXACT = new Set([
+    "order", "reverse", "reduced", "words", "lines", "letter",
+    "no-revert", "marquee-no-repeat", "flicker",
+])
+const gclassPlayIsModifier = (name) => {
+    const bare = name.replace(/^[a-z]+:/, "")
+    if (GCLASS_PLAY_MODIFIER_EXACT.has(bare)) return true
+    return /^(?:time-|delay-|priority-|ease-|stagger-|edelay-|etime-|amount-|marquee-horizontal-offset-|marquee-vertical-offset-|radiate-z-|randomize-|complete-time-|complete-delay-|flicker-)/.test(bare)
+}
+const gclassPlayHasClass = (classes, name) => {
+    if (classes.includes(name)) return true
+    for (const bp of bpNames()) {
+        if (classes.includes(`${bp}:${name}`) && isBreakpointActive(bp)) return true
+    }
+    return false
+}
+const gclassPlayActivePrefixed = (classes, prefix) => {
+    let best = null
+    let bestPx = -2
+    for (const c of classes) {
+        let bp = null
+        let core = c
+        const m = c.match(bpPrefixRE())
+        if (m) { bp = m[1]; core = m[2] }
+        if (!core.startsWith(prefix)) continue
+        if (bp && !isBreakpointActive(bp)) continue
+        const px = bp ? bpMap()[bp] : -1
+        if (px > bestPx) { best = c; bestPx = px }
+    }
+    return best
+}
+const gclassPlayNumber = (classes, prefix, fallback) => {
+    const match = gclassPlayActivePrefixed(classes, prefix)
+    if (!match) return fallback
+    const idx = match.indexOf(prefix)
+    const n = Number(match.slice(idx + prefix.length))
+    return Number.isNaN(n) ? fallback : n
+}
+const gclassPlayEase = (classes) => {
+    const match = gclassPlayActivePrefixed(classes, "ease-")
+    if (!match) return defaults.ease
+    const idx = match.indexOf("ease-")
+    return match.slice(idx + "ease-".length) || defaults.ease
+}
+const gclassPlayTiming = (classes) => ({
+    delay: gclassPlayNumber(classes, "priority-", 0) * defaults.spawnDelayMultiplier
+        + gclassPlayNumber(classes, "delay-", 0),
+    duration: gclassPlayNumber(classes, "time-", 1),
+    ease: gclassPlayEase(classes),
+})
+const gclassPlayLoopCtx = (classes) => ({
+    edelay: gclassPlayNumber(classes, "edelay-", defaults.effectDelay),
+    amount: gclassPlayNumber(classes, "amount-", defaults.effectOffset),
+    etime: gclassPlayNumber(classes, "etime-", defaults.effectDuration),
+    ease: gclassPlayEase(classes),
+    time: gclassPlayNumber(classes, "time-", 20),
+    mH: gclassPlayNumber(classes, "marquee-horizontal-offset-", 0),
+    mV: gclassPlayNumber(classes, "marquee-vertical-offset-", 0),
+    radiateZ: gclassPlayNumber(classes, "radiate-z-", null),
+})
+const gclassPlayComputeTo = (from) => {
+    const to = {}
+    for (const [key] of Object.entries(from || {})) {
+        if (key === "opacity") to[key] = 1
+        else if (key === "filter") to[key] = "blur(0px)"
+        else if (key === "clipPath") to[key] = "inset(0% 0% 0% 0%)"
+        else if (key === "drawSVG") to[key] = "100%"
+        else to[key] = key.startsWith("scale") ? 1 : 0
+    }
+    return to
+}
+const gclassPlayGranularity = (classes) => {
+    if (gclassPlayHasClass(classes, "lines")) return "lines"
+    if (gclassPlayHasClass(classes, "words")) return "words"
+    if (gclassPlayHasClass(classes, "letter")) return "chars"
+    return "words"
+}
+const gclassPlaySplits = new WeakMap()
+const gclassPlayGetSplit = (el, gran) => {
+    let s = gclassPlaySplits.get(el)
+    if (s && s._gcGranularity === gran) return s
+    if (s) {
+        try { s.revert() } catch {}
+        gclassPlaySplits.delete(el)
+    }
+    s = new SplitText(el, {
+        type: gran,
+        linesClass: "gsap-line",
+        wordsClass: "gsap-word",
+        charsClass: "gsap-char",
+    })
+    s._gcGranularity = gran
+    gclassPlaySplits.set(el, s)
+    return s
+}
+const gclassPlayStyleParts = (parts, gran) => {
+    for (const part of parts) {
+        part.style.willChange = "transform, opacity"
+        if (gran === "chars" || gran === "words") part.style.display = "inline-block"
+    }
+}
+const gclassPlayRevertSplit = (el, s) => {
+    try { s.revert() } catch {}
+    if (gclassPlaySplits.get(el) === s) gclassPlaySplits.delete(el)
+}
+const gclassPlaySplitSpawn = (el, entry, classes, delay, dur, ease) => {
+    const gran = gclassPlayGranularity(classes)
+    const s = gclassPlayGetSplit(el, gran)
+    const parts = s[gran] || []
+    if (!parts.length) return null
+    gclassPlayStyleParts(parts, gran)
+
+    const requestedStagger = gclassPlayNumber(classes, "stagger-", null)
+    let stagger, duration
+    if (requestedStagger != null) {
+        stagger = requestedStagger
+        duration = Math.max(dur - stagger * (parts.length - 1), defaults.minTextPartDuration)
+    } else {
+        duration = Math.min(dur, Math.max(dur / 3, defaults.minTextPartDuration))
+        stagger = parts.length > 1 ? (dur - duration) / (parts.length - 1) : 0
+    }
+
+    let effFrom = entry.from || {}
+    if (hasRandom(el)) {
+        const rnd = randomVars(el)
+        if (Object.keys(rnd).length) effFrom = { ...effFrom, ...rnd }
+    }
+    const noRevert = gclassPlayHasClass(classes, "no-revert")
+    return gsap.fromTo(parts, effFrom, {
+        ...gclassPlayComputeTo(effFrom), ease, duration, delay, stagger,
+        onComplete: () => {
+            if (!noRevert) gclassPlayRevertSplit(el, s)
+        },
+    })
+}
+const gclassPlayTypewriterSplit = (el, classes, delay, dur, ease) => {
+    const gran = gclassPlayGranularity(classes)
+    const s = gclassPlayGetSplit(el, gran)
+    const parts = s[gran] || []
+    if (!parts.length) return null
+    gclassPlayStyleParts(parts, gran)
+    const perChar = dur / Math.max(parts.length, 1)
+    const noRevert = gclassPlayHasClass(classes, "no-revert")
+    return gsap.fromTo(parts, { opacity: 0 }, {
+        opacity: 1,
+        ease,
+        duration: Math.min(defaults.typewriterSplitCharDuration, perChar),
+        delay,
+        stagger: perChar,
+        onComplete: () => {
+            if (!noRevert) gclassPlayRevertSplit(el, s)
+        },
+    })
+}
+const gclassPlayFindEntry = (all, name) => {
+    const entry = all.find((a) => a.sel === "." + name)
+    if (entry) return { entry, text: false }
+    if (name.startsWith(TEXT_PREFIX)) {
+        const baseName = name.slice(TEXT_PREFIX.length)
+        const base = all.find((a) => a.sel === "." + baseName)
+        if (base?.play && !base.typewriter && base.text !== false) {
+            return { entry: base, text: true }
+        }
+    }
+    return null
+}
+const gclassPlayResolveTargets = (target) => {
+    const out = []
+    const add = (value) => {
+        if (value == null) return
+        if (typeof value === "string") {
+            const raw = value.trim()
+            if (!raw) return
+            let found = []
+            const simple = /^[A-Za-z_][\w-]*$/.test(raw)
+            if (simple) {
+                const byId = document.getElementById(raw)
+                if (byId) found = [byId]
+                if (!found.length) {
+                    try { found = [...document.querySelectorAll("." + raw)] } catch {}
+                }
+            }
+            if (!found.length) {
+                try { found = [...document.querySelectorAll(raw)] } catch {}
+            }
+            for (const el of found) {
+                if (el?.nodeType === 1 && !out.includes(el)) out.push(el)
+            }
+            return
+        }
+        if (value.current) {
+            add(value.current)
+            return
+        }
+        if (value.nodeType === 1) {
+            if (!out.includes(value)) out.push(value)
+            return
+        }
+        if (typeof value.length === "number") {
+            for (const item of value) add(item)
+        }
+    }
+    add(target)
+    return out
+}
+const gclassPlayTokens = (args) => {
+    const tokens = []
+    const walk = (value) => {
+        if (value == null) return
+        if (Array.isArray(value)) {
+            value.forEach(walk)
+            return
+        }
+        if (typeof value === "string") {
+            value.split(/[\s,]+/).forEach((part) => {
+                const name = part.trim().replace(/^\.+/, "")
+                if (name) tokens.push(name)
+            })
+            return
+        }
+        walk(String(value))
+    }
+    args.forEach(walk)
+    return [...new Set(tokens)]
+}
+const gclassPlayWithModifiers = (el, modifiers, fn) => {
+    const added = []
+    for (const m of modifiers) {
+        if (!el.classList.contains(m)) {
+            el.classList.add(m)
+            added.push(m)
+        }
+    }
+    try {
+        return fn()
+    } finally {
+        for (const m of added) el.classList.remove(m)
+    }
+}
+const gclassPlayOne = (el, spec, classes) => {
+    const { entry, text } = spec
+    const timing = gclassPlayTiming(classes)
+
+    if (entry.play) {
+        if (text) {
+            const tween = gclassPlaySplitSpawn(el, entry, classes, timing.delay, timing.duration, timing.ease)
+            if (hasGClass(el, "flicker")) attachFlicker(el, timing.delay, timing.duration, timing.ease)
+            return tween
+        }
+        if (entry.typewriter) {
+            const elEase = gclassPlayActivePrefixed(classes, "ease-") ? gclassPlayEase(classes) : "none"
+            if (entry.typewriterSplit) {
+                const tween = gclassPlayTypewriterSplit(el, classes, timing.delay, timing.duration, elEase)
+                el._spawnTween = tween
+                return tween
+            }
+            const tween = typewriter(el, stashText(el), timing.duration, timing.delay, elEase)
+            el.typewriter = tween
+            return tween
+        }
+        const tween = invokePlay(entry, el, timing.delay, timing.duration, timing.ease)
+        el._spawnTween = tween
+        return tween
+    }
+
+    if (entry.build) {
+        const key = entry.key || entry.sel.slice(1)
+        el[key]?.kill()
+        const tween = entry.build(el, gclassPlayLoopCtx(classes))
+        if (!tween) return null
+        if (entry.loop !== false) tween.repeat(-1)
+        el[key] = tween
+        return tween
+    }
+    return null
+}
+
+/**
+ * Imperatively play one or more GClass animation classes on a target.
+ * `target` accepts an element, a ref (`{ current }`), a CSS selector, a raw id,
+ * or a raw class name. `classes` may be one string (`"spawn-up float"`), an
+ * array, or multiple arguments. Returns the tween/timeline, or an array when
+ * more than one tween is created. Does not require initAnimations().
+ */
+export function gclassPlay(target, ...classArgs) {
+    if (typeof document === "undefined") return null
+    registerPlugins()
+    const els = gclassPlayResolveTargets(target)
+    if (!els.length) {
+        console.warn("[gclassPlay] target not found", target)
+        return null
+    }
+    const tokens = gclassPlayTokens(classArgs)
+    if (!tokens.length) {
+        console.warn("[gclassPlay] no animation classes supplied")
+        return null
+    }
+
+    const { all } = normalize(customAnims)
+    const specs = []
+    const modifiers = []
+    for (const token of tokens) {
+        const spec = gclassPlayFindEntry(all, token)
+        if (spec) specs.push(spec)
+        else if (gclassPlayIsModifier(token)) modifiers.push(token)
+        else console.warn(`[gclassPlay] no animation found for class "${token}"`)
+    }
+    if (!specs.length) return null
+
+    const hasSpawn = specs.some(({ entry }) => entry.play)
+    const results = []
+    for (const el of els) {
+        if (isIgnored(el)) continue
+        const classes = [...el.classList, ...modifiers]
+        if (reducedMotionNow() && gclassPlayHasClass(classes, "reduced")) continue
+
+        const played = gclassPlayWithModifiers(el, modifiers, () => {
+            if (hasSpawn) {
+                el._spawnTween?.kill?.()
+                el.typewriter?.kill?.()
+            }
+            const created = []
+            for (const spec of specs) {
+                const tween = gclassPlayOne(el, spec, classes)
+                if (tween) created.push(tween)
+            }
+            return created
+        })
+        results.push(...played)
+    }
+    if (!results.length) return null
+    return results.length === 1 ? results[0] : results
 }
 
 export default function initListeners(root = document, throttlePerFrame) {
@@ -510,6 +885,10 @@ export default function initListeners(root = document, throttlePerFrame) {
             leaveStates.delete(node)
             if (!snap || node._leaving) return
             node._leaving = true
+            // A running flicker would keep re-writing opacity and fight the
+            // exit fade, so hand opacity back to the spawn tween first.
+            node._flickerTween?.kill()
+            delete node._flickerTween
 
             // Hold the removed node's layout space during the leave animation so
             // the content below doesn't jump up the instant it's removed. The
@@ -1240,9 +1619,14 @@ export default function initListeners(root = document, throttlePerFrame) {
                         ? playTypewriterSplit(el, delay, duration, ease)
                         : typewriter(el, fullText, duration, delay, ease))
                     : invokePlay(config, el, delay, duration, ease)
+                // typewriter paths bypass invokePlay, so flicker is attached here.
+                if (isTypewriter) attachFlicker(el, delay, duration, ease)
                 el._scrollTween.eventCallback("onComplete", () => fireOnComplete(el, "spawn"))
             }
             const reverseToStart = () => {
+                // The exit tween owns opacity; a live flicker would overwrite it.
+                el._flickerTween?.kill()
+                delete el._flickerTween
                 if (config.count) {
                     // A count spawn is a pure number timeline. Reversing it counts
                     // back down to the `.spawn-num-N` start value, so re-entering
@@ -1376,6 +1760,16 @@ export default function initListeners(root = document, throttlePerFrame) {
         setTimeout(scheduleRefresh, 400)
         setTimeout(scheduleRefresh, 1200)
 
+        // A standalone `.flicker` has no spawn tween to hang the usual
+        // completion hooks on, so it runs the same tail itself: capture leave /
+        // flip state once it settles, then fire on-spawn-complete-*.
+        const flickerSettled = (el) => {
+            if (hasGClass(el, "leave")) refreshLeaveRect(el)
+            if (hasGClass(el, "flip")) captureFlip(el)
+            scheduleRefresh()
+            fireOnComplete(el, "spawn")
+        }
+
         spawnConfigs.forEach((config) => {
             const { sel, typewriter: isTypewriter, typewriterSplit } = config
             qAllAllVariants(sel).forEach((el) => {
@@ -1412,6 +1806,22 @@ export default function initListeners(root = document, throttlePerFrame) {
             })
         })
 
+        // Standalone `.flicker`: with no spawn class to modify, it IS the
+        // animation - flash in place on load for `time-N` after `delay-N`, then
+        // settle visible. Elements that DO carry a spawn are handled by
+        // invokePlay(), so a modified spawn never flashes twice.
+        qAllActive(".flicker").forEach((el) => {
+            if (isIgnored(el) || isPreserved(el) || isReduced(el)) return
+            if (findSpawn(el)) return
+            if (hasGClass(el, "scroll") || hasGClass(el, "scroll-progress")) return
+            const { delay, duration, ease } = readTiming(el)
+            const tween = attachFlicker(el, delay, duration, ease)
+            if (!tween) return
+            tween.eventCallback("onComplete", () => flickerSettled(el))
+            markPreserved(el)
+            wiredEls.add(el)
+        })
+
         // SplitText static pass: `.spawn-text-<spawn>` plays the per-part tween on
         // load (no scroll/appear). Derived from spawnConfigs so any new spawn
         // class automatically gets a `.spawn-text-` variant.
@@ -1426,6 +1836,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 if (!elementMatchesSel(el, tSel)) return
                 const { delay, duration } = readTiming(el)
                 el._spawnTween = playText(el, from, delay, duration, getEase(el))
+                attachFlicker(el, delay, duration, getEase(el))
                 markPreserved(el)
                 wiredEls.add(el)
                 }; runWithBreakpointForSel(el, tSel, run)
@@ -2180,9 +2591,19 @@ export default function initListeners(root = document, throttlePerFrame) {
             const config = findSpawn(el)
             if (isTextElement(el)) {
                 el._spawnTween = playText(el, config.from, delay, duration, ease)
+                attachFlicker(el, delay, duration, ease)
                 return
             }
-            if (!config) return el._spawnTween = SpawnV(el, delay, -defaults.spawnOffset, duration, ease)
+            if (!config) {
+                // Standalone `.flicker` under `.appear`: flash in place instead of
+                // the default slide-in, which would otherwise blur the effect.
+                if (hasGClass(el, "flicker")) {
+                    const tween = attachFlicker(el, delay, duration, ease)
+                    if (tween) tween.eventCallback("onComplete", () => flickerSettled(el))
+                    return
+                }
+                return el._spawnTween = SpawnV(el, delay, -defaults.spawnOffset, duration, ease)
+            }
 
             if (config.typewriter) {
                 const easeClass = [...el.classList].find(c => c.startsWith("ease-"))
@@ -2190,6 +2611,7 @@ export default function initListeners(root = document, throttlePerFrame) {
                 el._spawnTween = config.typewriterSplit
                     ? playTypewriterSplit(el, delay, duration, elEase)
                     : invokePlay(config, el, delay, duration, elEase)
+                if (config.typewriterSplit) attachFlicker(el, delay, duration, elEase)
             } else {
                 el._spawnTween = invokePlay(config, el, delay, duration, ease)
                 el._spawnTween.eventCallback("onComplete", () => {
@@ -2376,6 +2798,8 @@ export default function initListeners(root = document, throttlePerFrame) {
             t.kill(true)
             t.trigger._scrollTween?.kill()
             delete t.trigger._scrollTween
+            t.trigger._flickerTween?.kill()
+            delete t.trigger._flickerTween
         })
         ScrollTrigger.refresh()
         // Drop per-run wire-up state. Without this, any engine restart
@@ -2390,6 +2814,13 @@ export default function initListeners(root = document, throttlePerFrame) {
         // cleared: that cross-run memory is what makes `.preserve` work.
         appearedEls.forEach((el) => { delete el._appeared })
         appearedEls.clear()
+        // Standalone flickers are not tied to a spawn tween, so sweep the DOM
+        // for them explicitly - otherwise a re-init would stack a second flicker
+        // on top of the first and double the flash rate.
+        gsap.utils.toArray(document.body.querySelectorAll?.(".flicker") || []).forEach((el) => {
+            el._flickerTween?.kill()
+            delete el._flickerTween
+        })
         // The WeakSet tags (setup/scroll/pinned/scroll-driven) belong to this
         // run's closure and need no teardown: WeakSets are not iterable and
         // hold no resources, so they are simply discarded with the run.

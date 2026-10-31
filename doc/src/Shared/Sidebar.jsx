@@ -52,6 +52,7 @@ const SECTIONS = [
       ["Magnet", "magnet"],
       ["css-* classes", "css-classes"],
       [".gc-* escape hatch", "gc-classes"],
+      [".flicker", "flicker"],
       [".ease-N", "eases"],
       ["Randomization", "randomize"],
 
@@ -65,6 +66,7 @@ const SECTIONS = [
       ["registerComplete", "register-complete"],
       ["on-*-complete-*", "on-complete"],
       ["gclassDev", "gclass-dev"],
+      ["gclassPlay", "gclass-play"],
       ["SSR", "ssr-hydration"],
     ],
   },

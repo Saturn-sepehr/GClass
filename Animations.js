@@ -139,9 +139,20 @@ export function expandA (target , delay , dur , ease){
 export function typewriter (target , text , dur , delay , ease){
     // Any element using TextPlugin gets pre-wrap so "\n" from VSCode Enter or JS strings
     // renders as a real line break and any innerHTML formatting is preserved.
-    gsap.utils.toArray(target).forEach(el => { if (el.style) el.style.whiteSpace = "pre-wrap" })
+    // Written in onStart (not here) so constructing the tween does not mutate
+    // consumer nodes before hydration settles - see initAnimations()'s
+    // DOM-quiet wait.
     const value = String(text).replace(/\n/g, "<br>")
-    return gsap.fromTo(target , {text:""} , {ease:easeOf(ease) , duration:dur , delay:delay , text:{value}})
+    const els = gsap.utils.toArray(target)
+    return gsap.fromTo(target , {text:""} , {
+        ease:easeOf(ease) ,
+        duration:dur ,
+        delay:delay ,
+        text:{value} ,
+        onStart: () => {
+            els.forEach(el => { if (el.style) el.style.whiteSpace = "pre-wrap" })
+        } ,
+    })
 }
 
 export function spawnSpinCCW (target , delay , dur , ease){
@@ -528,6 +539,75 @@ export function scramble (target , delay , dur , ease){
     return tl
 }
 
+
+// `.flicker` - rapid on/off flashing whose RATE follows the ease curve.
+//
+// A tween cannot interpolate a frequency, so the tween drives a *phase counter*
+// and the opacity is derived from floor(phase): every time the counter crosses
+// an integer the element flips on/off. The counter still follows the element's
+// ease, so the interval between flips changes with it:
+//
+//   ease-none          -> evenly spaced flips (constant rate)
+//   ease-power2.in     -> long "on" hold, then rapid flapping (accelerating)
+//   ease-power2.out    -> rapid flapping, then settles (decelerating)
+//
+// Modifiers:
+//   .flicker-N      - flips per SECOND (default defaults.flickerRate). This is
+//                     a RATE, not a total count, so `.time-4` flashes just as
+//                     fast as `.time-1` and only lasts longer.
+//   .flicker-min-N  - the "off" opacity x100, 0-100 (default 0 = fully hidden).
+//
+// The step is forced monotonic: overshooting eases (`back`, `elastic`) push the
+// counter past the end and back, which would otherwise re-cross integers and
+// flash the element back on during the tail. Clamping keeps one clean square
+// wave in time; the overshoot simply reads as a pause.
+export function flicker (target , delay , dur , ease){
+    const el = gsap.utils.toArray(target)[0]
+    if (!el) return null
+
+    // Reads a `flicker*` modifier, honouring an optional breakpoint prefix
+    // (`m:flicker-20`) and skipping inactive ones. `flicker-min-40` must not be
+    // mistaken for a rate of 40, hence one regex per modifier.
+    const num = (re , fallback) => {
+        for (const c of el.classList){
+            const i = c.indexOf(":")
+            const bp = i === -1 ? null : c.slice(0 , i)
+            if (bp && !isBreakpointActiveMod(bp)) continue
+            const m = (bp ? c.slice(i + 1) : c).match(re)
+            if (m) return Number(m[1])
+        }
+        return fallback
+    }
+
+    const rate = Math.max(1 , num(/^flicker-(\d+(?:\.\d+)?)$/ , defaults.flickerRate ?? 10))
+    const offPct = Math.min(100 , Math.max(0 , num(/^flicker-min-(\d+(?:\.\d+)?)$/ , (defaults.flickerFloor ?? 0) * 100)))
+
+    // Read the resting opacity ONCE. When `.flicker` rides on a spawn, that
+    // spawn has already installed its `from` state inline (opacity 0), and
+    // finalOpacity() temporarily strips it to read the CSS-defined value.
+    // Repeating that per frame would force a style recalc on every flip.
+    const on = finalOpacity(el)
+    const off = Math.min(offPct / 100 , on)
+
+    // Even flip count => the final step is even => the element ends "on",
+    // matching onComplete().
+    const flips = Math.max(2 , 2 * Math.round((rate * dur) / 2))
+
+    const state = { phase: 0 }
+    let step = 0
+    return gsap.to(state , {
+        phase: flips ,
+        delay ,
+        duration: dur ,
+        ease: easeOf(ease) ,
+        onUpdate () {
+            const s = Math.floor(Math.min(flips , Math.max(0 , state.phase)))
+            if (s > step) step = s
+            el.style.opacity = step % 2 === 0 ? on : off
+        } ,
+        onComplete () { el.style.opacity = on } ,
+    })
+}
 
 //Mouse animations
 

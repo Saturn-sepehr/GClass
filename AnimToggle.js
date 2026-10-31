@@ -237,14 +237,17 @@ export function gclassDev(cssOrOpts){
 //   initAnimations(throttlePerFrame, fps)-positional numbers, 0/undefined = defaults
 //   initAnimations({throttlePerFrame, fps})-object overload
 //   initAnimations()-uses last gclassOpts values (defaults on first call)
-// SSR / hydration (both opt-in, both best-effort):
+// SSR / hydration / streamed-hydration safety:
+//   initAnimations()-defaults to defer: 'auto', waiting for the DOM to go quiet
+//   initAnimations({defer: 'auto'})-same explicit form
 //   initAnimations({defer: true})-wait for the document to settle, then wire
+//   initAnimations({defer: false})-eager init, the pre-beta.26 timing
 //   initAnimations({after: promise})-wait for a caller-provided hydration signal
-//   Combine both: the engine waits for whichever finishes last.
+//   Combine any defer form with `after`: the engine waits for both.
 // --- Deferred init helpers (SSR / hydration safety) -------------------------
-// Both are best-effort. A framework can stream a segment AFTER `load`, so the
+// All are best-effort. A framework can stream a segment AFTER `load`, so the
 // reliable answer is still "call init in the boundary that owns the DOM".
-// Defaults are unchanged: no options = eager init, same timing as always.
+// Default is `defer: 'auto'`-see domQuiet().
 function domSettled() {
   if (typeof document === 'undefined') return Promise.resolve()
   const nextFrame = () => new Promise((resolve) => {
@@ -254,6 +257,40 @@ function domSettled() {
   if (document.readyState === 'complete') return nextFrame()
   return new Promise((resolve) => {
     window.addEventListener('load', () => nextFrame().then(resolve), { once: true })
+  })
+}
+
+// Framework-agnostic "the DOM has stopped mutating" signal. Resolves after
+// `quietFrames` consecutive animation frames with zero childList/attribute
+// mutations under <body>, with a hard ceiling so a chatty app (live ticker,
+// auto-carousel) never blocks init forever. This is what makes init safe to
+// call before hydration: a framework hydrating a streamed segment is
+// mutating the DOM, so we wait it out. No framework-specific hooks.
+function domQuiet(quietFrames = 2, ceilingMs = 1000) {
+  if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
+    return Promise.resolve()
+  }
+  return new Promise((resolve) => {
+    let frame = 0
+    let raf = 0
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
+      obs.disconnect()
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+      resolve()
+    }
+    const obs = new MutationObserver(() => { frame = 0 })
+    obs.observe(document.body, { childList: true, subtree: true, attributes: true })
+    const tick = () => {
+      frame++
+      if (frame >= quietFrames) return finish()
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    const timer = setTimeout(finish, ceilingMs)
   })
 }
 
@@ -270,13 +307,22 @@ function hasVisibleBootScreen() {
 // of two scheduled runs.
 let initGeneration = 0
 
+// SSR / hydration safety: `defer` defaults to 'auto' (wait for the DOM to stop
+// mutating) unless a visible `.boot-up` screen exists or the caller passes
+// defer: false. `after` still accepts any thenable. Both are best-effort escape
+// hatches; a framework can stream a segment after any signal, so the reliable
+// answer is still "call init in the boundary that owns the animated DOM".
 export function initAnimations(throttlePerFrame, fps) {
   // gclassOpts-style normalization: (throttle, fps) positional or {throttlePerFrame, fps} object
   // no args -> fallback to last gclassOpts values (defaults 0 = no throttle, default ticker)
   // `defer` / `after` are init-only, so read them BEFORE normalization flattens
   // the object down to {throttlePerFrame, fps}.
   const opts = (typeof throttlePerFrame === 'object' && throttlePerFrame !== null) ? throttlePerFrame : null
-  const defer = opts?.defer === true
+  // defer default is 'auto': wait for DOM quiet unless (a) a visible .boot-up
+  // screen is present (the screen already hides the page and deferring only
+  // flashes it), or (b) the caller explicitly passed defer: false.
+  const deferOpt = opts?.defer
+  const defer = deferOpt === undefined ? 'auto' : deferOpt
   const after = opts?.after
   let effThrottle = currentThrottle
   let effFps = currentFps
@@ -297,7 +343,9 @@ export function initAnimations(throttlePerFrame, fps) {
 
   const generation = ++initGeneration
   const waits = []
-  if (defer && !hasVisibleBootScreen()) waits.push(domSettled())
+  if (defer !== false && !hasVisibleBootScreen()) {
+    waits.push(defer === 'auto' ? domQuiet() : domSettled())
+  }
   if (after) {
     waits.push(Promise.resolve(after).catch((err) => {
       // Fail open: a rejected hydration signal must not leave a dead page.

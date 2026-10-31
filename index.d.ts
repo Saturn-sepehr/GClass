@@ -11,12 +11,22 @@ export interface GClassConfig {
 
 /**
  * Options accepted by `initAnimations()` (object overload).
- * `defer` and `after` are SSR/hydration helpers and are opt-in: omitting both
- * keeps the original eager timing.
+ * `defer` defaults to `'auto'` (wait for the DOM to stop mutating);
+ * `defer: true` keeps the older document-settled wait, `defer: false` opts
+ * into eager init. `after` accepts any caller-provided hydration signal.
  */
 export interface GClassInitOptions extends Partial<GClassConfig> {
-  /** Wait for the document to settle (load + one frame) before wiring. */
-  defer?: boolean
+  /**
+   * Wait before wiring.
+   *  - `'auto'` (default when omitted): wait for the DOM to stop mutating
+   *    (framework-agnostic, works with React/Vue/Svelte streamed hydration),
+   *    with a 1s ceiling. Skipped automatically when a visible `.boot-up`
+   *    element exists.
+   *  - `true`: wait only for `load` + one frame (older behaviour).
+   *  - `false`: eager init, same timing as pre-beta.25. Use when you have
+   *    already gated the call on a hydration boundary yourself.
+   */
+  defer?: boolean | 'auto'
   /** Wait for a caller-provided hydration signal before wiring. */
   after?: PromiseLike<unknown>
 }
@@ -50,6 +60,15 @@ export function disableReducedMotion(): void
  * Accepts: gclassDev() | gclassDev("width:50%; bottom:30px") | gclassDev({width:"50%"}) | gclassDev({css, animation, minimal, ...GSDevTools opts})
  */
 export function gclassDev(cssOrOpts?: string | Record<string, string> | Record<string, any>): any
+
+/**
+ * Imperatively play one or more GClass animation classes on a target.
+ * `target` accepts an element, a ref (`{ current }`), a CSS selector, a raw id,
+ * or a raw class name. `classes` may be one string (`"spawn-up float"`), an
+ * array, or multiple args. Returns the tween/timeline, or an array when
+ * more than one tween is created. Does not require initAnimations().
+ */
+export function gclassPlay(target: Element | { current?: Element | null } | string | NodeListOf<Element> | Element[], classes: string | string[], ...moreClasses: string[]): any
 
 // --- Listeners -------------------------------------------------------------
 
@@ -165,6 +184,10 @@ export interface Defaults {
   minTextPartDuration: number
   revealDelay: number
   characterlist: string
+  /** `.flicker` flashes per second when no `.flicker-N` class is present. */
+  flickerRate: number
+  /** `.flicker` "off" opacity percentage (0 = fully hidden) when no `.flicker-min-N` is present. */
+  flickerFloor: number
   bootTime: number
   /**
    * Responsive breakpoint widths keyed by prefix, applied as `min-width`.
@@ -284,6 +307,23 @@ export function scramble(target: TweenTarget, delay: number, dur: number, ease: 
  * top-level runs are wrapped so nested elements stay untouched.
  */
 export function scrambleSegments(target: TweenTarget): { t: TweenTarget; text: string }[]
+/**
+ * Flashes the target on/off at a rate that follows the ease curve. A phase
+ * counter is tweened with `ease` and the opacity is derived from
+ * `floor(phase)` - every integer crossing flips the element, so `none` gives a
+ * constant rate, `power2.in` accelerates, `power2.out` decelerates. The flip
+ * count is kept even, so the element always ends visible, and the step is
+ * forced monotonic so overshooting eases (`back`, `elastic`) cannot re-flash
+ * the element on the way out.
+ *
+ * Modifiers read from the element:
+ *   .flicker-N      flips per second (default `defaults.flickerRate`) - a rate,
+ *                   not a total count, so `.time-4` lasts longer, not slower.
+ *   .flicker-min-N  the "off" opacity x100, 0-100 (default 0 = fully hidden).
+ *
+ * Suppressed entirely while the OS requests reduced motion.
+ */
+export function flicker(target: TweenTarget, delay: number, dur: number, ease: string): any
 /** Progressively draws the target's SVG stroke from 0% to 100% (strokes only). */
 export function drawsvg(target: TweenTarget, delay: number, dur: number, ease: string): any
 /**
