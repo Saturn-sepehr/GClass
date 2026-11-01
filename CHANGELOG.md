@@ -2,7 +2,7 @@
 
 All notable changes to `gclass-anims` will be documented in this file.
 
-## [Unreleased]
+## [1.0.0-beta.27.1]
 
 ### Added
 - **`.flicker` modifier / standalone animation** - flashes an element between
